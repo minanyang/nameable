@@ -9,6 +9,7 @@
     "noUncheckedIndexedAccess": true,
     "verbatimModuleSyntax": true,
     "declaration": true,
+    "isolatedDeclarations": true,
     "sourceMap": true,
     "skipLibCheck": true
   }

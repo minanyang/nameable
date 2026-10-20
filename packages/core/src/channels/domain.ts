@@ -25,13 +25,28 @@ export function domain(tld: string): Channel {
     category: "domain",
     async check(name, ctx): Promise<CheckResult> {
       const fqdn = `${name.toLowerCase()}.${tld}`;
-      const base = { channel: this.id, label: this.label, url: `https://lookup.icann.org/en/lookup?name=${fqdn}` };
+      const base = {
+        channel: this.id,
+        label: this.label,
+        url: `https://lookup.icann.org/en/lookup?name=${fqdn}`,
+      };
       if (!LABEL.test(name.toLowerCase())) {
-        return { ...base, status: "unavailable", note: "domain labels are letters, digits and inner hyphens (max 63)" };
+        return {
+          ...base,
+          status: "unavailable",
+          note: "domain labels are letters, digits and inner hyphens (max 63)",
+        };
       }
       const rdap = await rdapBase(ctx, tld);
-      if (!rdap) return { ...base, status: "unknown", note: `.${tld} has no RDAP service; whois support is planned` };
-      const res = await get(ctx, `${rdap}domain/${fqdn}`, { headers: { accept: "application/rdap+json" } });
+      if (!rdap)
+        return {
+          ...base,
+          status: "unknown",
+          note: `.${tld} has no RDAP service; whois support is planned`,
+        };
+      const res = await get(ctx, `${rdap}domain/${fqdn}`, {
+        headers: { accept: "application/rdap+json" },
+      });
       if (res.status === 404) {
         return {
           ...base,
@@ -40,15 +55,20 @@ export function domain(tld: string): Channel {
           note: "not registered; premium or reserved names can still be refused, confirm at a registrar",
         };
       }
-      if (res.status !== 200) return { ...base, status: "unknown", note: `RDAP returned HTTP ${res.status}` };
+      if (res.status !== 200)
+        return { ...base, status: "unknown", note: `RDAP returned HTTP ${res.status}` };
       const doc = (await res.json()) as { events?: { eventAction: string; eventDate: string }[] };
-      const event = (action: string) => doc.events?.find((e) => e.eventAction === action)?.eventDate.slice(0, 10);
+      const event = (action: string) =>
+        doc.events?.find((e) => e.eventAction === action)?.eventDate.slice(0, 10);
       const registered = event("registration");
       const expires = event("expiration");
       return {
         ...base,
         status: "taken",
-        note: [registered && `registered ${registered}`, expires && `expires ${expires}`].filter(Boolean).join(", ") || undefined,
+        note:
+          [registered && `registered ${registered}`, expires && `expires ${expires}`]
+            .filter(Boolean)
+            .join(", ") || undefined,
         meta: { registered, expires },
       };
     },

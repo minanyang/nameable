@@ -21,7 +21,12 @@ export const github: Channel = {
     if (ctx.githubToken) headers.authorization = `Bearer ${ctx.githubToken}`;
     const res = await get(ctx, `https://api.github.com/users/${name}`, { headers });
     if (res.status === 200) {
-      const user = (await res.json()) as { login: string; type: string; public_repos: number; updated_at: string };
+      const user = (await res.json()) as {
+        login: string;
+        type: string;
+        public_repos: number;
+        updated_at: string;
+      };
       return {
         ...base,
         url: `https://github.com/${user.login}`,
@@ -40,7 +45,11 @@ export const github: Channel = {
       };
     }
     if (res.status === 403 || res.status === 429) {
-      return { ...base, status: "unknown", note: "rate limited; set GITHUB_TOKEN or log in with `gh auth login`" };
+      return {
+        ...base,
+        status: "unknown",
+        note: "rate limited; set GITHUB_TOKEN or log in with `gh auth login`",
+      };
     }
     return { ...base, status: "unknown", note: `GitHub returned HTTP ${res.status}` };
   },

@@ -7,9 +7,14 @@ export type Reply = number | [number, unknown] | Error;
 export const seq = (...replies: Reply[]) => ({ seq: replies });
 
 /** A fetch that answers from a route table keyed by exact URL. Unrouted URLs fail the test loudly. */
-export function fakeFetch(routes: Record<string, Reply | { seq: Reply[] }>): Fetch & { calls: string[] } {
+export function fakeFetch(
+  routes: Record<string, Reply | { seq: Reply[] }>,
+): Fetch & { calls: string[] } {
   const queues = new Map(
-    Object.entries(routes).map(([url, r]) => [url, typeof r === "object" && "seq" in r ? [...r.seq] : [r]]),
+    Object.entries(routes).map(([url, r]) => [
+      url,
+      typeof r === "object" && "seq" in r ? [...r.seq] : [r],
+    ]),
   );
   const calls: string[] = [];
   const f = async (url: string) => {

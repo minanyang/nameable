@@ -4,13 +4,19 @@
   "private": true,
   "description": "Find out if a name is free everywhere it matters for your project, and whether someone already built the same thing.",
   "license": "MIT",
-  "author": { "name": "Min-An Yang", "url": "https://github.com/minanyang" },
+  "author": {
+    "name": "Min-An Yang",
+    "url": "https://github.com/minanyang"
+  },
+  "bin": {
+    "nameable": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
-  "bin": { "nameable": "./dist/cli.js" },
-  "files": ["dist"],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "vp pack"
   },
   "dependencies": {
     "@nameable/core": "workspace:*"

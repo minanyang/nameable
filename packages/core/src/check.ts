@@ -9,8 +9,17 @@ export type CheckOptions = {
 };
 
 /** Runs every channel concurrently. A channel that throws becomes `unknown`, never `available`. */
-export async function check(name: string, channels: Channel[], opts: CheckOptions = {}): Promise<CheckResult[]> {
-  const ctx: Context = { fetch: opts.fetch ?? fetch, githubToken: opts.githubToken, cache: new Map(), backoffMs: opts.backoffMs };
+export async function check(
+  name: string,
+  channels: Channel[],
+  opts: CheckOptions = {},
+): Promise<CheckResult[]> {
+  const ctx: Context = {
+    fetch: opts.fetch ?? fetch,
+    githubToken: opts.githubToken,
+    cache: new Map(),
+    backoffMs: opts.backoffMs,
+  };
   return Promise.all(
     channels.map(async (channel) => {
       let result: CheckResult;
@@ -22,7 +31,9 @@ export async function check(name: string, channels: Channel[], opts: CheckOption
           channel: channel.id,
           label: channel.label,
           status: "unknown",
-          note: timedOut ? "timed out" : `request failed: ${err instanceof Error ? err.message : String(err)}`,
+          note: timedOut
+            ? "timed out"
+            : `request failed: ${err instanceof Error ? err.message : String(err)}`,
         };
       }
       opts.onResult?.(result);

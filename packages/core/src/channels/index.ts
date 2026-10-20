@@ -6,7 +6,7 @@ import { homebrew } from "./homebrew.js";
 import { npm } from "./npm.js";
 import { pypi } from "./pypi.js";
 
-export const DEFAULT_TLDS = ["com", "dev"];
+export const DEFAULT_TLDS: string[] = ["com", "dev"];
 
 const fixed = [npm, pypi, crates, homebrew, github];
 
@@ -33,7 +33,8 @@ export function selectChannels({ only, tlds = DEFAULT_TLDS }: Selection = {}): C
       picked.push(domain(id.slice("domain:".length).replace(/^\./, "")));
     } else {
       const channel = fixed.find((c) => c.id === id);
-      if (!channel) throw new Error(`unknown channel "${raw}"; expected one of: ${channelIds().join(", ")}`);
+      if (!channel)
+        throw new Error(`unknown channel "${raw}"; expected one of: ${channelIds().join(", ")}`);
       picked.push(channel);
     }
   }

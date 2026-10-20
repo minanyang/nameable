@@ -6,13 +6,15 @@ Work in progress.
 
 ## Development
 
+Built with [Vite+](https://viteplus.dev) (`vp`): Oxfmt, Oxlint with type checks, Vitest and tsdown.
+
 ```sh
 pnpm install
 pnpm nameable <name>          # run the CLI from source
+pnpm check                    # format, lint and type-check (vp check; --fix to apply)
 pnpm test                     # unit tests
 pnpm test:live                # also hit the real registries
-pnpm typecheck
-pnpm build
+pnpm build                    # vp pack in every package
 ```
 
 ## License

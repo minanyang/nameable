@@ -11,10 +11,14 @@ function problem(name: string): string | undefined {
   if (name.length > 214) return "npm names are at most 214 characters";
   if (name !== name.toLowerCase()) return "npm names must be lowercase";
   if (/^[._]/.test(bare)) return "npm names cannot start with . or _";
-  if (encodeURIComponent(bare) !== bare || (scoped && encodeURIComponent(scoped[1]!) !== scoped[1])) {
+  if (
+    encodeURIComponent(bare) !== bare ||
+    (scoped && encodeURIComponent(scoped[1]!) !== scoped[1])
+  ) {
     return "npm names may only contain URL-safe characters";
   }
-  if (!scoped && (RESERVED.has(name) || builtinModules.includes(name))) return "npm reserves this name";
+  if (!scoped && (RESERVED.has(name) || builtinModules.includes(name)))
+    return "npm reserves this name";
   return undefined;
 }
 
@@ -42,11 +46,16 @@ async function similar(ctx: Context, name: string): Promise<string | undefined> 
     .find((n) => !n.startsWith("@") && n !== name && squash(n) === squash(name));
   if (found || name !== squash(name)) return found;
 
-  const hyphenated = Array.from({ length: name.length - 1 }, (_, i) => `${name.slice(0, i + 1)}-${name.slice(i + 1)}`);
+  const hyphenated = Array.from(
+    { length: name.length - 1 },
+    (_, i) => `${name.slice(0, i + 1)}-${name.slice(i + 1)}`,
+  );
   const probes = await Promise.all(
     hyphenated.map(async (variant) => {
       // The abbreviated document is far smaller than the full one for popular packages.
-      const res = await get(ctx, `${REGISTRY}/${variant}`, { headers: { accept: "application/vnd.npm.install-v1+json" } });
+      const res = await get(ctx, `${REGISTRY}/${variant}`, {
+        headers: { accept: "application/vnd.npm.install-v1+json" },
+      });
       if (res.status !== 200 && res.status !== 404) throw new Error(`registry HTTP ${res.status}`);
       return res.status === 200 ? variant : undefined;
     }),
@@ -59,7 +68,11 @@ export const npm: Channel = {
   label: "npm",
   category: "package",
   async check(name, ctx): Promise<CheckResult> {
-    const base = { channel: this.id, label: this.label, url: `https://www.npmjs.com/package/${name}` };
+    const base = {
+      channel: this.id,
+      label: this.label,
+      url: `https://www.npmjs.com/package/${name}`,
+    };
     const invalid = problem(name);
     if (invalid) return { ...base, status: "unavailable", note: invalid, url: undefined };
 
@@ -85,17 +98,28 @@ export const npm: Channel = {
         meta: { latest: doc["dist-tags"]?.latest, modified: doc.time?.modified },
       };
     }
-    if (res.status !== 404) return { ...base, status: "unknown", note: `registry returned HTTP ${res.status}` };
+    if (res.status !== 404)
+      return { ...base, status: "unknown", note: `registry returned HTTP ${res.status}` };
 
     if (name.startsWith("@")) return { ...base, status: "available", certainty: "confirmed" };
     try {
       const clash = await similar(ctx, name);
       if (clash) {
-        return { ...base, status: "unavailable", note: `npm rejects names too similar to "${clash}"`, url: undefined };
+        return {
+          ...base,
+          status: "unavailable",
+          note: `npm rejects names too similar to "${clash}"`,
+          url: undefined,
+        };
       }
       return { ...base, status: "available", certainty: "confirmed" };
     } catch {
-      return { ...base, status: "available", certainty: "probable", note: "could not check npm's similar-name rule" };
+      return {
+        ...base,
+        status: "available",
+        certainty: "probable",
+        note: "could not check npm's similar-name rule",
+      };
     }
   },
 };

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { check, selectChannels } from "../src/index.js";
 
 // Hits the real services. Run with `pnpm test:live`; a service outage fails here on purpose.
@@ -28,10 +28,16 @@ live("live channels", () => {
     }, 30_000);
   }
 
-  for (const [name, clash] of [["first-one", "firstone"], ["lodashes", "lodash-es"]]) {
+  for (const [name, clash] of [
+    ["first-one", "firstone"],
+    ["lodashes", "lodash-es"],
+  ]) {
     it(`npm: "${name}" is unavailable because "${clash}" exists`, async () => {
       const [r] = await check(name!, selectChannels({ only: ["npm"] }));
-      expect(r, JSON.stringify(r)).toMatchObject({ status: "unavailable", note: `npm rejects names too similar to "${clash}"` });
+      expect(r, JSON.stringify(r)).toMatchObject({
+        status: "unavailable",
+        note: `npm rejects names too similar to "${clash}"`,
+      });
     }, 30_000);
   }
 });

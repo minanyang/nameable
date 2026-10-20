@@ -3,18 +3,22 @@
   "version": "0.1.0",
   "description": "Name availability checks behind Nameable.",
   "license": "MIT",
-  "author": { "name": "Min-An Yang", "url": "https://github.com/minanyang" },
+  "author": {
+    "name": "Min-An Yang",
+    "url": "https://github.com/minanyang"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "exports": {
     ".": {
       "source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
     }
   },
-  "files": ["dist"],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "vp pack"
   }
 }

@@ -20,7 +20,8 @@ export const crates: Channel = {
     // crates.io treats `-` and `_` and letter case as the same name, and the API resolves either spelling.
     const res = await get(ctx, `https://crates.io/api/v1/crates/${name}`);
     if (res.status === 404) return { ...base, status: "available", certainty: "confirmed" };
-    if (res.status !== 200) return { ...base, status: "unknown", note: `crates.io returned HTTP ${res.status}` };
+    if (res.status !== 200)
+      return { ...base, status: "unknown", note: `crates.io returned HTTP ${res.status}` };
     const { crate } = (await res.json()) as {
       crate: { name: string; description?: string; updated_at?: string; downloads?: number };
     };

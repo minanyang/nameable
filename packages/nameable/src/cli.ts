@@ -70,14 +70,18 @@ async function main(): Promise<number> {
     usage((err as Error).message);
   }
   const { values, positionals } = parsed;
-  if (values.help) return process.stdout.write(HELP), 0;
-  if (values.version) return process.stdout.write(`${version}\n`), 0;
+  if (values.help) return (process.stdout.write(HELP), 0);
+  if (values.version) return (process.stdout.write(`${version}\n`), 0);
 
   const args = positionals[0] === "check" ? positionals.slice(1) : positionals;
   if (args.length !== 1) usage(args.length ? "check one name at a time" : "missing <name>");
   const name = args[0]!;
 
-  const split = (s?: string) => s?.split(",").map((x) => x.trim()).filter(Boolean);
+  const split = (s?: string) =>
+    s
+      ?.split(",")
+      .map((x) => x.trim())
+      .filter(Boolean);
   let channels;
   try {
     channels = selectChannels({ only: split(values.only), tlds: split(values.tlds) });

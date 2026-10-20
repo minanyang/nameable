@@ -23,8 +23,13 @@ function clip(text: string, max: number): string {
 /** One row, clipped to `columns` so it never wraps (a wrapped row would break the live redraw). */
 export function line(result: CheckResult, width: number, columns = Infinity): string {
   const look = LOOK[result.status];
-  const status = result.status === "available" && result.certainty === "probable" ? "probably available" : result.status;
-  const detail = [result.note, result.status === "taken" ? result.url : undefined].filter(Boolean).join(" · ");
+  const status =
+    result.status === "available" && result.certainty === "probable"
+      ? "probably available"
+      : result.status;
+  const detail = [result.note, result.status === "taken" ? result.url : undefined]
+    .filter(Boolean)
+    .join(" · ");
   const used = 2 + 1 + 1 + width + 1 + STATUS_WIDTH + 1;
   return `  ${paint(look.style, look.mark)} ${result.label.padEnd(width)} ${paint(look.style, status.padEnd(STATUS_WIDTH))} ${paint("dim", clip(detail, columns - used - 1))}`;
 }
@@ -36,13 +41,21 @@ export function line(result: CheckResult, width: number, columns = Infinity): st
 export function liveTable(channels: Channel[]) {
   const width = Math.max(...channels.map((c) => c.label.length));
   const out = process.stdout;
-  const rows = channels.map((c) => `  ${paint("dim", "·")} ${c.label.padEnd(width)} ${paint("dim", "checking…")}`);
+  const rows = channels.map(
+    (c) => `  ${paint("dim", "·")} ${c.label.padEnd(width)} ${paint("dim", "checking…")}`,
+  );
   const draw = (redraw: boolean) => {
-    out.write(`${redraw ? `\x1b[${rows.length}A` : ""}${rows.map((r) => `\r\x1b[2K${r}\n`).join("")}`);
+    out.write(
+      `${redraw ? `\x1b[${rows.length}A` : ""}${rows.map((r) => `\r\x1b[2K${r}\n`).join("")}`,
+    );
   };
   draw(false);
   return (result: CheckResult) => {
-    rows[channels.findIndex((c) => c.id === result.channel)] = line(result, width, out.columns || 80);
+    rows[channels.findIndex((c) => c.id === result.channel)] = line(
+      result,
+      width,
+      out.columns || 80,
+    );
     draw(true);
   };
 }

@@ -16,15 +16,36 @@ export const homebrew: Channel = {
     ]);
     if (formula.status === 200) {
       const { desc } = (await formula.json()) as { desc?: string };
-      return { ...base, status: "taken", url: `https://formulae.brew.sh/formula/${lower}`, note: desc, meta: { kind: "formula" } };
+      return {
+        ...base,
+        status: "taken",
+        url: `https://formulae.brew.sh/formula/${lower}`,
+        note: desc,
+        meta: { kind: "formula" },
+      };
     }
     if (cask.status === 200) {
       const { desc } = (await cask.json()) as { desc?: string };
-      return { ...base, status: "taken", url: `https://formulae.brew.sh/cask/${lower}`, note: desc, meta: { kind: "cask" } };
+      return {
+        ...base,
+        status: "taken",
+        url: `https://formulae.brew.sh/cask/${lower}`,
+        note: desc,
+        meta: { kind: "cask" },
+      };
     }
     if (formula.status === 404 && cask.status === 404) {
-      return { ...base, status: "available", certainty: "confirmed", note: "no homebrew-core formula or cask" };
+      return {
+        ...base,
+        status: "available",
+        certainty: "confirmed",
+        note: "no homebrew-core formula or cask",
+      };
     }
-    return { ...base, status: "unknown", note: `Homebrew API returned HTTP ${formula.status}/${cask.status}` };
+    return {
+      ...base,
+      status: "unknown",
+      note: `Homebrew API returned HTTP ${formula.status}/${cask.status}`,
+    };
   },
 };
