@@ -1,4 +1,20 @@
-import type { Fetch } from "../src/index.js";
+import type { Fetch, Whois } from "../src/index.js";
+
+/** A whois that answers from `"server query"` keys; anything else fails the test, so no real socket opens. */
+export function fakeWhois(
+  routes: Record<string, string | Error> = {},
+): Whois & { calls: string[] } {
+  const calls: string[] = [];
+  const w = async (server: string, query: string) => {
+    const key = `${server} ${query}`;
+    calls.push(key);
+    const reply = routes[key];
+    if (reply === undefined) throw new Error(`unexpected whois: ${key}`);
+    if (reply instanceof Error) throw reply;
+    return reply;
+  };
+  return Object.assign(w, { calls });
+}
 
 /** A status code, a status with a JSON body, or an error to throw (a network failure). */
 export type Reply = number | [number, unknown] | Error;

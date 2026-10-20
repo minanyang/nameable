@@ -1,5 +1,6 @@
 import { get, memo } from "../http.js";
 import type { Channel, CheckResult, Context } from "../types.js";
+import { readWhois, whoisQuery, whoisServer } from "../whois.js";
 
 const BOOTSTRAP = "https://data.iana.org/rdap/dns.json";
 const LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
@@ -16,6 +17,35 @@ async function rdapBase(ctx: Context, tld: string): Promise<string | undefined> 
   const service = boot.services.find(([tlds]) => tlds.includes(tld));
   const url = service?.[1].find((u) => u.startsWith("https://")) ?? service?.[1][0];
   return url && (url.endsWith("/") ? url : `${url}/`);
+}
+
+type Base = { channel: string; label: string; url: string };
+
+async function viaWhois(ctx: Context, fqdn: string, tld: string, base: Base): Promise<CheckResult> {
+  const server = await whoisServer(ctx, tld);
+  if (!server) return { ...base, status: "unknown", note: `.${tld} has neither RDAP nor whois` };
+  const text = await whoisQuery(ctx, server, fqdn);
+  const answer = readWhois(text);
+  if (answer === "free") {
+    return {
+      ...base,
+      status: "available",
+      certainty: "probable",
+      note: "not registered (whois); premium or reserved names can still be refused, confirm at a registrar",
+    };
+  }
+  if (answer === "registered") {
+    const registered = /^\s*(?:creation date|created|registered on):\s*(\d{4}-\d{2}-\d{2})/im.exec(
+      text,
+    )?.[1];
+    return {
+      ...base,
+      status: "taken",
+      note: registered ? `registered ${registered} (whois)` : "registered (whois)",
+      meta: { registered, whois: server },
+    };
+  }
+  return { ...base, status: "unknown", note: `unrecognized whois answer from ${server}` };
 }
 
 export function domain(tld: string): Channel {
@@ -37,13 +67,9 @@ export function domain(tld: string): Channel {
           note: "domain labels are letters, digits and inner hyphens (max 63)",
         };
       }
-      const rdap = await rdapBase(ctx, tld);
-      if (!rdap)
-        return {
-          ...base,
-          status: "unknown",
-          note: `.${tld} has no RDAP service; whois support is planned`,
-        };
+      // Many ccTLDs (.io, .sh, .co, .me, .de, .jp) have no RDAP service; whois answers for them.
+      const rdap = await rdapBase(ctx, tld).catch(() => undefined);
+      if (!rdap) return viaWhois(ctx, fqdn, tld, base);
       const res = await get(ctx, `${rdap}domain/${fqdn}`, {
         headers: { accept: "application/rdap+json" },
       });

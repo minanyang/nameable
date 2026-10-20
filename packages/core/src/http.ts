@@ -1,3 +1,4 @@
+import { gateFor } from "./gate.js";
 import type { Context } from "./types.js";
 
 const USER_AGENT = "nameable (+https://www.npmjs.com/package/nameable)";
@@ -20,14 +21,18 @@ function retryable(status: number): boolean {
 export async function get(ctx: Context, url: string, opts: RequestOptions = {}): Promise<Response> {
   const { retries = 2, timeoutMs = 10_000 } = opts;
   const backoffMs = ctx.backoffMs ?? 500;
+  const gate = gateFor(ctx.gates, new URL(url).host);
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     if (attempt > 0) await new Promise((r) => setTimeout(r, backoffMs * 2 ** (attempt - 1)));
     try {
-      const res = await ctx.fetch(url, {
-        headers: { "user-agent": USER_AGENT, ...opts.headers },
-        signal: AbortSignal.timeout(timeoutMs),
-      });
+      // The timeout starts once a slot is free, so queueing behind other requests never counts against it.
+      const res = await gate.run(() =>
+        ctx.fetch(url, {
+          headers: { "user-agent": USER_AGENT, ...opts.headers },
+          signal: AbortSignal.timeout(timeoutMs),
+        }),
+      );
       if (!retryable(res.status) || attempt === retries) return res;
       lastError = new Error(`HTTP ${res.status}`);
     } catch (err) {

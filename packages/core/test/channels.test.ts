@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vite-plus/test";
-import { check, normalizePypi, selectChannels, type CheckResult } from "../src/index.js";
-import { fakeFetch, seq, type Reply } from "./fake-fetch.js";
+import {
+  check,
+  checkMany,
+  normalizePypi,
+  readWhois,
+  selectChannels,
+  type CheckResult,
+} from "../src/index.js";
+import { Gate } from "../src/gate.js";
+import { fakeFetch, fakeWhois, seq, type Reply } from "./fake-fetch.js";
 
 const NPM = "https://registry.npmjs.org";
 const searchUrl = (name: string) => `${NPM}/-/v1/search?text=${name}&size=50`;
@@ -15,9 +23,11 @@ async function one(
   channel: string,
   name: string,
   routes: Parameters<typeof fakeFetch>[0],
+  whois: Parameters<typeof fakeWhois>[0] = {},
 ): Promise<CheckResult> {
   const [result] = await check(name, selectChannels({ only: [channel] }), {
     fetch: fakeFetch(routes),
+    whois: fakeWhois(whois),
     backoffMs: 0,
   });
   return result!;
@@ -170,8 +180,59 @@ describe("domain", () => {
     expect(r).toMatchObject({ status: "taken", meta: { registered: "1999-02-13" } });
   });
 
-  it("is unknown for a TLD without RDAP", async () => {
-    expect((await one("domain:sh", "zz", { [BOOTSTRAP]: bootstrap })).status).toBe("unknown");
+  describe("whois fallback for TLDs without RDAP", () => {
+    const iana = { "whois.iana.org sh": "refer: whois.nic.sh\nwhois:        whois.nic.sh\n" };
+
+    it("is probably available when the registry says not found", async () => {
+      const r = await one(
+        "domain:sh",
+        "zz",
+        { [BOOTSTRAP]: bootstrap },
+        { ...iana, "whois.nic.sh zz.sh": "Domain not found.\n>>> Last update of WHOIS database" },
+      );
+      expect(r).toMatchObject({ status: "available", certainty: "probable" });
+    });
+
+    it("is taken with the creation date when registered", async () => {
+      const text = "Domain Name: zz.sh\nCreation Date: 2001-04-02T00:00:00Z\n";
+      const r = await one(
+        "domain:sh",
+        "zz",
+        { [BOOTSTRAP]: bootstrap },
+        { ...iana, "whois.nic.sh zz.sh": text },
+      );
+      expect(r).toMatchObject({ status: "taken", meta: { registered: "2001-04-02" } });
+    });
+
+    it("is unknown when the answer is not recognized", async () => {
+      const r = await one(
+        "domain:sh",
+        "zz",
+        { [BOOTSTRAP]: bootstrap },
+        { ...iana, "whois.nic.sh zz.sh": "Rate limit exceeded\n" },
+      );
+      expect(r.status).toBe("unknown");
+    });
+
+    it("is unknown when IANA lists no whois server", async () => {
+      const r = await one(
+        "domain:sh",
+        "zz",
+        { [BOOTSTRAP]: bootstrap },
+        { "whois.iana.org sh": "" },
+      );
+      expect(r.status).toBe("unknown");
+    });
+
+    it("also covers a failed RDAP bootstrap", async () => {
+      const r = await one(
+        "domain:sh",
+        "zz",
+        { [BOOTSTRAP]: 503 },
+        { ...iana, "whois.nic.sh zz.sh": "Domain not found." },
+      );
+      expect(r.status).toBe("available");
+    });
   });
 
   it("fetches the bootstrap once for several TLDs", async () => {
@@ -218,9 +279,108 @@ describe("check", () => {
         "https://pypi.org/pypi/zz/json": 404,
         "https://crates.io/api/v1/crates/zz": 404,
       }),
-      onResult: (r) => seen.push(r.channel),
+      onResult: (_name, r) => seen.push(r.channel),
     });
     expect(seen.sort()).toEqual(["crates", "pypi"]);
+  });
+
+  it("checks several names and shares lookups between them", async () => {
+    const fetch = fakeFetch({
+      [BOOTSTRAP]: bootstrap,
+      "https://rdap.example/v1/domain/aa.dev": 404,
+      "https://rdap.example/v1/domain/bb.dev": [200, {}],
+    });
+    const reports = await checkMany(["aa", "bb"], selectChannels({ only: ["domain:dev"] }), {
+      fetch,
+      backoffMs: 0,
+    });
+    expect(reports.map((r) => [r.name, r.results[0]!.status])).toEqual([
+      ["aa", "available"],
+      ["bb", "taken"],
+    ]);
+    expect(fetch.calls.filter((u) => u === BOOTSTRAP)).toHaveLength(1);
+  });
+
+  it("keeps requests to one host within its concurrency limit", async () => {
+    let active = 0;
+    let peak = 0;
+    const fetch = async () => {
+      peak = Math.max(peak, ++active);
+      await new Promise((r) => setTimeout(r, 5));
+      active--;
+      return new Response("{}", { status: 404 });
+    };
+    // A 12-letter name makes the npm channel probe 11 hyphenated spellings at once.
+    await check("abcdefghijkl", selectChannels({ only: ["npm"] }), {
+      fetch: async (url) =>
+        url.includes("/-/v1/search")
+          ? new Response(JSON.stringify({ objects: [] }), { status: 200 })
+          : fetch(),
+      backoffMs: 0,
+    });
+    expect(peak).toBeLessThanOrEqual(8);
+    expect(peak).toBeGreaterThan(1);
+  });
+});
+
+describe("Gate", () => {
+  it("never runs more than its limit and runs every task", async () => {
+    const gate = new Gate(2);
+    let active = 0;
+    let peak = 0;
+    const done = await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        gate.run(async () => {
+          peak = Math.max(peak, ++active);
+          await new Promise((r) => setTimeout(r, 2));
+          active--;
+          return i;
+        }),
+      ),
+    );
+    expect(done).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(peak).toBe(2);
+  });
+
+  it("frees the slot when a task throws", async () => {
+    const gate = new Gate(1);
+    await expect(gate.run(() => Promise.reject(new Error("boom")))).rejects.toThrow("boom");
+    expect(await gate.run(async () => "next")).toBe("next");
+  });
+});
+
+describe("readWhois", () => {
+  // Shapes captured from real registries on 2026-10-21.
+  it.each([
+    ["io free", "Domain not found.\n>>> Last update of WHOIS database: 2026-10-21 <<<", "free"],
+    ["co free", "The queried object does not exist: DOMAIN NOT FOUND", "free"],
+    [
+      "so free echoes the name",
+      "Domain Name: zz.so\nThe queried object does not exist: No Object Found",
+      "free",
+    ],
+    ["de free", "Domain: zz.de\nStatus: free", "free"],
+    [
+      "jp free",
+      "[ JPRS database provides information on network administration. ]\nNo match!!",
+      "free",
+    ],
+    ["gg free", "NOT FOUND", "free"],
+    [
+      "io registered",
+      "Domain Name: google.io\nDomain Status: clientDeleteProhibited",
+      "registered",
+    ],
+    ["de registered", "Domain: google.de\nStatus: connect", "registered"],
+    ["jp registered", "[Domain Name]                   GOOGLE.JP", "registered"],
+    ["rate limited", "Your connection limit exceeded.", "unrecognized"],
+  ])("%s", (_label, text, expected) => {
+    expect(readWhois(text)).toBe(expected);
+  });
+
+  it("ignores 'not found' inside notices of a registered domain", () => {
+    const text = "% If the domain is not found, contact the registrar\nDomain Name: google.io";
+    expect(readWhois(text)).toBe("registered");
   });
 });
 

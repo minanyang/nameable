@@ -15,6 +15,12 @@ const cases: [channel: string, taken: string][] = [
   ["github", "torvalds"],
   ["domain:com", "google"],
   ["domain:dev", "google"],
+  // No RDAP: these go through whois.
+  ["domain:io", "google"],
+  ["domain:sh", "google"],
+  ["domain:co", "google"],
+  ["domain:de", "google"],
+  ["domain:jp", "google"],
 ];
 
 live("live channels", () => {

@@ -1,43 +1,73 @@
-import type { Channel, CheckResult, Context, Fetch } from "./types.js";
+import type { Channel, CheckResult, Context, Fetch, Report, Whois } from "./types.js";
+import { tcpWhois } from "./whois.js";
 
 export type CheckOptions = {
   fetch?: Fetch;
+  whois?: Whois;
   githubToken?: string;
   backoffMs?: number;
-  /** Called as each channel finishes, so a UI can stream results. */
-  onResult?: (result: CheckResult) => void;
+  /** Called as each channel finishes for a name, so a UI can stream results. */
+  onResult?: (name: string, result: CheckResult) => void;
 };
 
-/** Runs every channel concurrently. A channel that throws becomes `unknown`, never `available`. */
+function createContext(opts: CheckOptions): Context {
+  return {
+    fetch: opts.fetch ?? fetch,
+    whois: opts.whois ?? tcpWhois,
+    githubToken: opts.githubToken,
+    cache: new Map(),
+    gates: new Map(),
+    backoffMs: opts.backoffMs,
+  };
+}
+
+async function run(
+  name: string,
+  channel: Channel,
+  ctx: Context,
+  onResult: CheckOptions["onResult"],
+): Promise<CheckResult> {
+  let result: CheckResult;
+  try {
+    result = await channel.check(name, ctx);
+  } catch (err) {
+    const timedOut = err instanceof Error && err.name === "TimeoutError";
+    result = {
+      channel: channel.id,
+      label: channel.label,
+      status: "unknown",
+      note: timedOut
+        ? "timed out"
+        : `request failed: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+  onResult?.(name, result);
+  return result;
+}
+
+/**
+ * Checks every name on every channel concurrently, sharing lookups and per-host limits across names.
+ * A channel that throws becomes `unknown`, never `available`.
+ */
+export function checkMany(
+  names: string[],
+  channels: Channel[],
+  opts: CheckOptions = {},
+): Promise<Report[]> {
+  const ctx = createContext(opts);
+  return Promise.all(
+    names.map(async (name) => ({
+      name,
+      results: await Promise.all(channels.map((c) => run(name, c, ctx, opts.onResult))),
+    })),
+  );
+}
+
 export async function check(
   name: string,
   channels: Channel[],
   opts: CheckOptions = {},
 ): Promise<CheckResult[]> {
-  const ctx: Context = {
-    fetch: opts.fetch ?? fetch,
-    githubToken: opts.githubToken,
-    cache: new Map(),
-    backoffMs: opts.backoffMs,
-  };
-  return Promise.all(
-    channels.map(async (channel) => {
-      let result: CheckResult;
-      try {
-        result = await channel.check(name, ctx);
-      } catch (err) {
-        const timedOut = err instanceof Error && err.name === "TimeoutError";
-        result = {
-          channel: channel.id,
-          label: channel.label,
-          status: "unknown",
-          note: timedOut
-            ? "timed out"
-            : `request failed: ${err instanceof Error ? err.message : String(err)}`,
-        };
-      }
-      opts.onResult?.(result);
-      return result;
-    }),
-  );
+  const [report] = await checkMany([name], channels, opts);
+  return report!.results;
 }
