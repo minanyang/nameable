@@ -1,0 +1,187 @@
+import { describe, expect, it } from "vitest";
+import { check, normalizePypi, selectChannels, type CheckResult } from "../src/index.js";
+import { fakeFetch, seq, type Reply } from "./fake-fetch.js";
+
+const NPM = "https://registry.npmjs.org";
+const searchUrl = (name: string) => `${NPM}/-/v1/search?text=${name}&size=50`;
+const searchHits = (...names: string[]): Reply => [200, { objects: names.map((name) => ({ package: { name } })) }];
+const BOOTSTRAP = "https://data.iana.org/rdap/dns.json";
+const bootstrap: Reply = [200, { services: [[["dev", "app"], ["https://rdap.example/v1/"]]] }];
+
+async function one(channel: string, name: string, routes: Parameters<typeof fakeFetch>[0]): Promise<CheckResult> {
+  const [result] = await check(name, selectChannels({ only: [channel] }), { fetch: fakeFetch(routes), backoffMs: 0 });
+  return result!;
+}
+
+/** 404 routes for every single-hyphen spelling the npm channel probes. */
+const hyphenProbes = (name: string, override: Record<string, Reply> = {}) =>
+  Object.fromEntries(
+    Array.from({ length: name.length - 1 }, (_, i) => `${name.slice(0, i + 1)}-${name.slice(i + 1)}`).map((v) => [
+      `${NPM}/${v}`,
+      override[v] ?? 404,
+    ]),
+  );
+
+describe("npm", () => {
+  it("is available when the registry has no such package and no similar name", async () => {
+    const r = await one("npm", "zzname", {
+      [`${NPM}/zzname`]: 404,
+      [searchUrl("zzname")]: searchHits("zz-other"),
+      ...hyphenProbes("zzname"),
+    });
+    expect(r).toMatchObject({ status: "available", certainty: "confirmed" });
+  });
+
+  it("is unavailable when a hyphenated spelling exists that search does not surface", async () => {
+    const r = await one("npm", "lodashes", {
+      [`${NPM}/lodashes`]: 404,
+      [searchUrl("lodashes")]: searchHits(),
+      ...hyphenProbes("lodashes", { "lodash-es": 200 }),
+    });
+    expect(r).toMatchObject({ status: "unavailable", note: 'npm rejects names too similar to "lodash-es"' });
+  });
+
+  it("is unavailable when only punctuation separates it from an existing package", async () => {
+    const r = await one("npm", "first-one", {
+      [`${NPM}/first-one`]: 404,
+      [searchUrl("first-one")]: searchHits(),
+      [searchUrl("firstone")]: searchHits("firstone"),
+    });
+    expect(r.status).toBe("unavailable");
+    expect(r.note).toContain('"firstone"');
+  });
+
+  it("is reclaimable when every version was unpublished", async () => {
+    const doc = { name: "gone", time: { unpublished: { time: "2023-07-05T00:47:37.960Z", versions: ["1.0.0"] } } };
+    const r = await one("npm", "gone", { [`${NPM}/gone`]: [200, doc] });
+    expect(r.status).toBe("reclaimable");
+    expect(r.note).toContain("2023-07-05");
+  });
+
+  it("is taken when the package has versions", async () => {
+    const doc = { versions: { "1.0.0": {} }, description: "A thing", "dist-tags": { latest: "1.0.0" } };
+    expect(await one("npm", "thing", { [`${NPM}/thing`]: [200, doc] })).toMatchObject({ status: "taken", note: "A thing" });
+  });
+
+  it("rejects names npm would refuse without asking the registry", async () => {
+    for (const name of ["Upper", "_lead", "fs", "has space"]) {
+      expect((await one("npm", name, {})).status).toBe("unavailable");
+    }
+  });
+
+  it("downgrades to probable when the similar-name search fails", async () => {
+    const r = await one("npm", "zzname", { [`${NPM}/zzname`]: 404, [searchUrl("zzname")]: 500 });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
+});
+
+describe("pypi", () => {
+  it("normalizes names the way PyPI compares them", () => {
+    expect(normalizePypi("Foo_Bar..baz")).toBe("foo-bar-baz");
+  });
+
+  it("queries the normalized name", async () => {
+    const r = await one("pypi", "Foo_Bar", { "https://pypi.org/pypi/foo-bar/json": 404 });
+    expect(r.status).toBe("available");
+  });
+
+  it("is taken with the project's summary", async () => {
+    const body = { info: { name: "requests", summary: "HTTP for Humans.", version: "2.0" } };
+    const r = await one("pypi", "requests", { "https://pypi.org/pypi/requests/json": [200, body] });
+    expect(r).toMatchObject({ status: "taken", note: "HTTP for Humans." });
+  });
+});
+
+describe("homebrew", () => {
+  const api = "https://formulae.brew.sh/api";
+  it("is taken by a cask", async () => {
+    const r = await one("homebrew", "thing", { [`${api}/formula/thing.json`]: 404, [`${api}/cask/thing.json`]: [200, { desc: "App" }] });
+    expect(r).toMatchObject({ status: "taken", meta: { kind: "cask" } });
+  });
+
+  it("is unknown when one side fails", async () => {
+    const r = await one("homebrew", "thing", { [`${api}/formula/thing.json`]: 404, [`${api}/cask/thing.json`]: 503 });
+    expect(r.status).toBe("unknown");
+  });
+});
+
+describe("github", () => {
+  const url = "https://api.github.com/users/someone";
+  it("treats a 404 as only probably free, because hidden accounts also 404", async () => {
+    expect(await one("github", "someone", { [url]: 404 })).toMatchObject({ status: "available", certainty: "probable" });
+  });
+
+  it("is unknown when rate limited, never available", async () => {
+    expect((await one("github", "someone", { [url]: 403 })).status).toBe("unknown");
+  });
+
+  it("rejects invalid logins", async () => {
+    expect((await one("github", "-bad", {})).status).toBe("unavailable");
+  });
+});
+
+describe("domain", () => {
+  it("looks up the TLD's RDAP server from the IANA bootstrap", async () => {
+    const r = await one("domain:dev", "zz", { [BOOTSTRAP]: bootstrap, "https://rdap.example/v1/domain/zz.dev": 404 });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
+
+  it("reports registration dates when taken", async () => {
+    const doc = { events: [{ eventAction: "registration", eventDate: "1999-02-13T00:00:00Z" }] };
+    const r = await one("domain:dev", "zz", { [BOOTSTRAP]: bootstrap, "https://rdap.example/v1/domain/zz.dev": [200, doc] });
+    expect(r).toMatchObject({ status: "taken", meta: { registered: "1999-02-13" } });
+  });
+
+  it("is unknown for a TLD without RDAP", async () => {
+    expect((await one("domain:sh", "zz", { [BOOTSTRAP]: bootstrap })).status).toBe("unknown");
+  });
+
+  it("fetches the bootstrap once for several TLDs", async () => {
+    const fetch = fakeFetch({
+      [BOOTSTRAP]: bootstrap,
+      "https://rdap.example/v1/domain/zz.dev": 404,
+      "https://rdap.example/v1/domain/zz.app": 404,
+    });
+    await check("zz", selectChannels({ only: ["domain"], tlds: ["dev", "app"] }), { fetch, backoffMs: 0 });
+    expect(fetch.calls.filter((u) => u === BOOTSTRAP)).toHaveLength(1);
+  });
+});
+
+describe("check", () => {
+  it("retries a 429 and uses the answer that follows", async () => {
+    const r = await one("crates", "serde", { "https://crates.io/api/v1/crates/serde": seq(429, [200, { crate: { name: "serde" } }]) });
+    expect(r.status).toBe("taken");
+  });
+
+  it("turns repeated network failures into unknown, never available", async () => {
+    const r = await one("crates", "serde", { "https://crates.io/api/v1/crates/serde": new TypeError("fetch failed") });
+    expect(r).toMatchObject({ status: "unknown", note: "request failed: fetch failed" });
+  });
+
+  it("does not retry a timeout and reports it as unknown", async () => {
+    const timeout = Object.assign(new Error("aborted"), { name: "TimeoutError" });
+    const fetch = fakeFetch({ "https://crates.io/api/v1/crates/serde": timeout });
+    const [r] = await check("serde", selectChannels({ only: ["crates"] }), { fetch, backoffMs: 0 });
+    expect(r).toMatchObject({ status: "unknown", note: "timed out" });
+    expect(fetch.calls).toHaveLength(1);
+  });
+
+  it("streams each result as it finishes", async () => {
+    const seen: string[] = [];
+    await check("zz", selectChannels({ only: ["pypi", "crates"] }), {
+      fetch: fakeFetch({ "https://pypi.org/pypi/zz/json": 404, "https://crates.io/api/v1/crates/zz": 404 }),
+      onResult: (r) => seen.push(r.channel),
+    });
+    expect(seen.sort()).toEqual(["crates", "pypi"]);
+  });
+});
+
+describe("selectChannels", () => {
+  it("defaults to every channel with .com and .dev", () => {
+    expect(selectChannels().map((c) => c.id)).toEqual(["npm", "pypi", "crates", "homebrew", "github", "domain:com", "domain:dev"]);
+  });
+
+  it("rejects unknown channel ids", () => {
+    expect(() => selectChannels({ only: ["nope"] })).toThrow(/unknown channel "nope"/);
+  });
+});

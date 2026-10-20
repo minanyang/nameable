@@ -1,0 +1,20 @@
+{
+  "name": "nameable-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.30.3",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:live": "NAMEABLE_LIVE=1 vitest run",
+    "nameable": "node --conditions=source --import tsx packages/nameable/src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

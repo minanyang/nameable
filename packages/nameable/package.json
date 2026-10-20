@@ -1,0 +1,18 @@
+{
+  "name": "nameable",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Find out if a name is free everywhere it matters for your project, and whether someone already built the same thing.",
+  "license": "MIT",
+  "author": { "name": "Min-An Yang", "url": "https://github.com/minanyang" },
+  "type": "module",
+  "bin": { "nameable": "./dist/cli.js" },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@nameable/core": "workspace:*"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@nameable/core",
+  "version": "0.1.0",
+  "description": "Name availability checks behind Nameable.",
+  "license": "MIT",
+  "author": { "name": "Min-An Yang", "url": "https://github.com/minanyang" },
+  "type": "module",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
