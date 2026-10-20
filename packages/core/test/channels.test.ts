@@ -106,6 +106,25 @@ describe("npm", () => {
     const r = await one("npm", "zzname", { [`${NPM}/zzname`]: 404, [searchUrl("zzname")]: 500 });
     expect(r).toMatchObject({ status: "available", certainty: "probable" });
   });
+
+  // npm search rejects text outside 2–64 characters with HTTP 400.
+  it("confirms a one-letter name without searching, since it has no other spelling", async () => {
+    const r = await one("npm", "q", { [`${NPM}/q`]: 404 });
+    expect(r).toMatchObject({ status: "available", certainty: "confirmed" });
+  });
+
+  it("searches but does not probe hyphen spellings of a long name", async () => {
+    const name = "a".repeat(50);
+    const r = await one("npm", name, { [`${NPM}/${name}`]: 404, [searchUrl(name)]: searchHits() });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+    expect(r.note).toContain("too long");
+  });
+
+  it("does not search a name longer than npm search accepts", async () => {
+    const name = "a".repeat(70);
+    const r = await one("npm", name, { [`${NPM}/${name}`]: 404 });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
 });
 
 describe("pypi", () => {
@@ -232,6 +251,17 @@ describe("domain", () => {
         { ...iana, "whois.nic.sh zz.sh": "Domain not found." },
       );
       expect(r.status).toBe("available");
+    });
+  });
+
+  it("checks an internationalized name in its punycode form", async () => {
+    const r = await one("domain:dev", "Café", {
+      [BOOTSTRAP]: bootstrap,
+      "https://rdap.example/v1/domain/xn--caf-dma.dev": 404,
+    });
+    expect(r).toMatchObject({
+      status: "available",
+      url: expect.stringContaining("xn--caf-dma.dev"),
     });
   });
 

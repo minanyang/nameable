@@ -1,3 +1,4 @@
+import { domainToASCII } from "node:url";
 import { get, memo } from "../http.js";
 import type { Channel, CheckResult, Context } from "../types.js";
 import { readWhois, whoisQuery, whoisServer } from "../whois.js";
@@ -54,13 +55,15 @@ export function domain(tld: string): Channel {
     label: `.${tld}`,
     category: "domain",
     async check(name, ctx): Promise<CheckResult> {
-      const fqdn = `${name.toLowerCase()}.${tld}`;
+      // Internationalized names are registered in punycode (café → xn--caf-dma); this also lowercases.
+      const ascii = domainToASCII(name);
+      const fqdn = `${ascii}.${tld}`;
       const base = {
         channel: this.id,
         label: this.label,
         url: `https://lookup.icann.org/en/lookup?name=${fqdn}`,
       };
-      if (!LABEL.test(name.toLowerCase())) {
+      if (!LABEL.test(ascii)) {
         return {
           ...base,
           status: "unavailable",

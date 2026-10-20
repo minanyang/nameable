@@ -44,9 +44,8 @@ export function createRenderer(out: Output, color: boolean) {
   function line(result: CheckResult, width: number): string {
     const look = LOOK[result.status];
     const status = probable(result) ? "probably available" : result.status;
-    const detail = [result.note, result.status === "taken" ? result.url : undefined]
-      .filter(Boolean)
-      .join(" · ");
+    // Links are listed in full under the table (see `evidence`), so the row keeps its room for the note.
+    const detail = result.note ?? "";
     const used = 2 + 1 + 1 + width + 1 + STATUS_WIDTH + 1;
     return `  ${paint(look.style, look.mark)} ${result.label.padEnd(width)} ${paint(look.style, status.padEnd(STATUS_WIDTH))} ${paint("dim", clip(detail, columns() - used - 1))}`;
   }
@@ -114,6 +113,14 @@ export function createRenderer(out: Output, color: boolean) {
     ].join("\n");
   }
 
+  /** Full, unclipped links for every channel that is not free, printed once the table is final. */
+  function evidence(results: CheckResult[]): string {
+    const linked = results.filter((r) => !free(r) && r.url);
+    if (!linked.length) return "";
+    const width = Math.max(...linked.map((r) => r.label.length));
+    return `\n${linked.map((r) => `  ${r.label.padEnd(width)}  ${paint("dim", r.url!)}`).join("\n")}\n`;
+  }
+
   function summary(results: CheckResult[]): string {
     const counts = new Map<Status, number>();
     for (const r of results) counts.set(r.status, (counts.get(r.status) ?? 0) + 1);
@@ -122,5 +129,5 @@ export function createRenderer(out: Output, color: boolean) {
       .join(paint("dim", " · "));
   }
 
-  return { liveTable, liveGrid, gridFooter, summary };
+  return { liveTable, liveGrid, gridFooter, evidence, summary };
 }

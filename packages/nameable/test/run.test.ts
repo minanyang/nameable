@@ -38,6 +38,8 @@ describe("usage", () => {
 
   it.each([
     [[], "missing <name>"],
+    [["foo", "--only", ""], "--only needs at least one value"],
+    [["foo", "--tlds", " , "], "--tlds needs at least one value"],
     [["foo", "--only", "nope"], 'unknown channel "nope"'],
     [["foo", "--bogus"], "Unknown option"],
   ])("exits 64 for %j", async (argv, message) => {
@@ -111,6 +113,9 @@ describe("terminal output", () => {
     expect(text).toMatch(/✓ PyPI\s+available/);
     expect(text).toMatch(/✗ crates\.io\s+taken\s+A crate/);
     expect(text).toContain("1 available · 1 taken");
+    // The full link for every channel that is not free, under the table.
+    expect(text).toMatch(/crates\.io\s+https:\/\/crates\.io\/crates\/zz/);
+    expect(text).not.toContain("https://pypi.org/project/zz/");
   });
 
   it("shows a grid with free counts for several names", async () => {

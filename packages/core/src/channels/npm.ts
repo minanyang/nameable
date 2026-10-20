@@ -30,9 +30,18 @@ const squash = (s: string) => s.replace(/[-_.]/g, "");
  * Searching `first-one` does not surface `firstone`, so both spellings are searched. Search never surfaces
  * `lodash-es` for `lodashes`, so a name without punctuation also probes every single-hyphen spelling directly;
  * spellings with `_`, `.` or several separators are not probed.
+ *
+ * `complete` is false when part of the check had to be skipped: npm search only takes 2–64 characters,
+ * and probing every hyphen position of a very long name would flood the registry.
  */
-async function similar(ctx: Context, name: string): Promise<string | undefined> {
-  const queries = [...new Set([name, squash(name)])];
+const SEARCH_LENGTH = { min: 2, max: 64 };
+const MAX_PROBED_LENGTH = 40;
+
+async function similar(ctx: Context, name: string): Promise<{ clash?: string; complete: boolean }> {
+  const queries = [...new Set([name, squash(name)])].filter(
+    (q) => q.length >= SEARCH_LENGTH.min && q.length <= SEARCH_LENGTH.max,
+  );
+  let complete = queries.length > 0;
   const pages = await Promise.all(
     queries.map(async (q) => {
       const res = await get(ctx, `${REGISTRY}/-/v1/search?text=${encodeURIComponent(q)}&size=50`);
@@ -44,7 +53,9 @@ async function similar(ctx: Context, name: string): Promise<string | undefined> 
     .flat()
     .map((o) => o.package.name)
     .find((n) => !n.startsWith("@") && n !== name && squash(n) === squash(name));
-  if (found || name !== squash(name)) return found;
+  if (found) return { clash: found, complete: true };
+  if (name !== squash(name)) return { complete };
+  if (name.length > MAX_PROBED_LENGTH) return { complete: false };
 
   const hyphenated = Array.from(
     { length: name.length - 1 },
@@ -60,7 +71,10 @@ async function similar(ctx: Context, name: string): Promise<string | undefined> 
       return res.status === 200 ? variant : undefined;
     }),
   );
-  return probes.find(Boolean);
+  const clash = probes.find(Boolean);
+  // A one-letter name cannot be searched, but it has no hyphen spellings either, so nothing is missing.
+  if (name.length < SEARCH_LENGTH.min) complete = true;
+  return { clash, complete };
 }
 
 export const npm: Channel = {
@@ -103,13 +117,21 @@ export const npm: Channel = {
 
     if (name.startsWith("@")) return { ...base, status: "available", certainty: "confirmed" };
     try {
-      const clash = await similar(ctx, name);
+      const { clash, complete } = await similar(ctx, name);
       if (clash) {
         return {
           ...base,
           status: "unavailable",
           note: `npm rejects names too similar to "${clash}"`,
           url: undefined,
+        };
+      }
+      if (!complete) {
+        return {
+          ...base,
+          status: "available",
+          certainty: "probable",
+          note: "too long to fully check npm's similar-name rule",
         };
       }
       return { ...base, status: "available", certainty: "confirmed" };

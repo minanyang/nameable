@@ -96,6 +96,11 @@ export async function run(argv: string[], io: Io): Promise<number> {
     if (values.help) return (io.stdout.write(HELP), 0);
     if (values.version) return (io.stdout.write(`${version}\n`), 0);
     if (!names.length) throw new UsageError("missing <name>");
+    for (const flag of ["only", "tlds"] as const) {
+      if (values[flag] !== undefined && !split(values[flag])?.length) {
+        throw new UsageError(`--${flag} needs at least one value`);
+      }
+    }
     try {
       channels = selectChannels({ only: split(values.only), tlds: split(values.tlds) });
     } catch (err) {
@@ -126,7 +131,10 @@ export async function run(argv: string[], io: Io): Promise<number> {
   });
 
   if (json) io.stdout.write(`${JSON.stringify({ schema: 1, reports }, null, 2)}\n`);
-  else if (single) io.stdout.write(`\n  ${render.summary(reports[0]!.results)}\n\n`);
+  else if (single)
+    io.stdout.write(
+      `${render.evidence(reports[0]!.results)}\n  ${render.summary(reports[0]!.results)}\n\n`,
+    );
   else io.stdout.write(`${render.gridFooter(reports, channels)}\n\n`);
   return exitCode(reports);
 }
