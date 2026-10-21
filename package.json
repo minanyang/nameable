@@ -5,12 +5,16 @@
   "scripts": {
     "build": "vp run -r build",
     "check": "vp check",
-    "test": "vp test run",
+    "test": "vp test run --coverage",
     "test:live": "NAMEABLE_LIVE=1 vp test run",
-    "nameable": "node --conditions=source --import tsx packages/nameable/src/cli.ts"
+    "nameable": "node --conditions=source --import tsx packages/nameable/src/cli.ts",
+    "test:dist": "vp run -r build && NAMEABLE_DIST=1 vp test run packages/nameable/test/dist.test.ts",
+    "verify": "vp check && vp test run --coverage && pnpm test:dist"
   },
   "devDependencies": {
     "@types/node": "^24",
+    "@vitest/coverage-v8": "5.0.5",
+    "fast-check": "4.10.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite-plus": "catalog:"

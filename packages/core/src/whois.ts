@@ -1,25 +1,8 @@
-import { connect } from "node:net";
 import { gateFor, WHOIS_LIMIT } from "./gate.js";
 import { memo } from "./http.js";
-import type { Context, Whois } from "./types.js";
+import type { Context } from "./types.js";
 
 const IANA = "whois.iana.org";
-
-/** Plain whois over TCP port 43. */
-export const tcpWhois: Whois = (server, query) =>
-  new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    const socket = connect({ host: server, port: 43, timeout: 10_000 }, () => {
-      socket.write(`${query}\r\n`);
-    });
-    socket.on("data", (chunk) => chunks.push(chunk));
-    socket.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    socket.on("timeout", () => {
-      socket.destroy();
-      reject(Object.assign(new Error(`whois ${server} timed out`), { name: "TimeoutError" }));
-    });
-    socket.on("error", reject);
-  });
 
 /** One query, at most one at a time per server: whois servers ban bursts. */
 export function whoisQuery(ctx: Context, server: string, query: string): Promise<string> {

@@ -44,3 +44,34 @@ export function fakeFetch(
   };
   return Object.assign(f, { calls });
 }
+
+/** Builds a Response from a reply, or throws the reply when it is an error. */
+export function toResponse(reply: Reply): Response {
+  if (reply instanceof Error) throw reply;
+  const [status, body] = typeof reply === "number" ? [reply, {}] : reply;
+  return new Response(JSON.stringify(body), { status });
+}
+
+/** A fetch that asks `respond` for every URL, for tests that describe a whole service rather than routes. */
+export function fetchFrom(respond: (url: string) => Reply): Fetch & { calls: string[] } {
+  const calls: string[] = [];
+  const f = async (url: string) => {
+    calls.push(url);
+    return toResponse(respond(url));
+  };
+  return Object.assign(f, { calls });
+}
+
+/** A whois that asks `respond` for every query. */
+export function whoisFrom(
+  respond: (server: string, query: string) => string | Error,
+): Whois & { calls: string[] } {
+  const calls: string[] = [];
+  const w = async (server: string, query: string) => {
+    calls.push(`${server} ${query}`);
+    const reply = respond(server, query);
+    if (reply instanceof Error) throw reply;
+    return reply;
+  };
+  return Object.assign(w, { calls });
+}

@@ -1,5 +1,5 @@
 import type { Channel, CheckResult, Context, Fetch, Report, Whois } from "./types.js";
-import { tcpWhois } from "./whois.js";
+import { tcpWhois } from "./tcp-whois.js";
 
 export type CheckOptions = {
   fetch?: Fetch;

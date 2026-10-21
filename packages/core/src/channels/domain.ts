@@ -1,9 +1,11 @@
 import { domainToASCII } from "node:url";
 import { get, memo } from "../http.js";
-import type { Channel, CheckResult, Context } from "../types.js";
+import { defineChannel, unexpected, type Finding } from "../define.js";
+import type { Channel, Context } from "../types.js";
 import { readWhois, whoisQuery, whoisServer } from "../whois.js";
 
 const BOOTSTRAP = "https://data.iana.org/rdap/dns.json";
+// RFC 1035 labels (letters, digits, inner hyphens, at most 63), after IDNA conversion to punycode.
 const LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
 type Bootstrap = { services: [string[], string[]][] };
@@ -20,9 +22,8 @@ async function rdapBase(ctx: Context, tld: string): Promise<string | undefined> 
   return url && (url.endsWith("/") ? url : `${url}/`);
 }
 
-type Base = { channel: string; label: string; url: string };
-
-async function viaWhois(ctx: Context, fqdn: string, tld: string, base: Base): Promise<CheckResult> {
+async function viaWhois(ctx: Context, fqdn: string, tld: string, url: string): Promise<Finding> {
+  const base = { url };
   const server = await whoisServer(ctx, tld);
   if (!server) return { ...base, status: "unknown", note: `.${tld} has neither RDAP nor whois` };
   const text = await whoisQuery(ctx, server, fqdn);
@@ -50,50 +51,46 @@ async function viaWhois(ctx: Context, fqdn: string, tld: string, base: Base): Pr
 }
 
 export function domain(tld: string): Channel {
-  return {
+  return defineChannel({
     id: `domain:${tld}`,
     label: `.${tld}`,
     category: "domain",
-    async check(name, ctx): Promise<CheckResult> {
-      // Internationalized names are registered in punycode (café → xn--caf-dma); this also lowercases.
+    // Internationalized names are registered in punycode (café → xn--caf-dma); this also lowercases.
+    rules: (name) => {
       const ascii = domainToASCII(name);
-      const fqdn = `${ascii}.${tld}`;
-      const base = {
-        channel: this.id,
-        label: this.label,
-        url: `https://lookup.icann.org/en/lookup?name=${fqdn}`,
-      };
-      if (!LABEL.test(ascii)) {
-        return {
-          ...base,
-          status: "unavailable",
-          note: "domain labels are letters, digits and inner hyphens (max 63)",
-        };
+      if (!LABEL.test(ascii)) return "domain labels are letters, digits and inner hyphens (max 63)";
+      // RFC 5891: "--" in the 3rd and 4th position is reserved for punycode ("xn--").
+      if (ascii.slice(2, 4) === "--" && !ascii.startsWith("xn--")) {
+        return 'domain labels cannot have "--" in the 3rd and 4th position';
       }
+      return undefined;
+    },
+    async lookup(name, ctx) {
+      const fqdn = `${domainToASCII(name)}.${tld}`;
+      const url = `https://lookup.icann.org/en/lookup?name=${fqdn}`;
       // Many ccTLDs (.io, .sh, .co, .me, .de, .jp) have no RDAP service; whois answers for them.
       const rdap = await rdapBase(ctx, tld).catch(() => undefined);
-      if (!rdap) return viaWhois(ctx, fqdn, tld, base);
+      if (!rdap) return viaWhois(ctx, fqdn, tld, url);
       const res = await get(ctx, `${rdap}domain/${fqdn}`, {
         headers: { accept: "application/rdap+json" },
       });
       if (res.status === 404) {
         return {
-          ...base,
           status: "available",
           certainty: "probable",
+          url,
           note: "not registered; premium or reserved names can still be refused, confirm at a registrar",
         };
       }
-      if (res.status !== 200)
-        return { ...base, status: "unknown", note: `RDAP returned HTTP ${res.status}` };
+      if (res.status !== 200) return { ...unexpected("RDAP", res), url };
       const doc = (await res.json()) as { events?: { eventAction: string; eventDate: string }[] };
       const event = (action: string) =>
         doc.events?.find((e) => e.eventAction === action)?.eventDate.slice(0, 10);
       const registered = event("registration");
       const expires = event("expiration");
       return {
-        ...base,
         status: "taken",
+        url,
         note:
           [registered && `registered ${registered}`, expires && `expires ${expires}`]
             .filter(Boolean)
@@ -101,5 +98,5 @@ export function domain(tld: string): Channel {
         meta: { registered, expires },
       };
     },
-  };
+  });
 }

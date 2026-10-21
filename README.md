@@ -74,10 +74,15 @@ Built with [Vite+](https://viteplus.dev) (`vp`): Oxfmt, Oxlint with type checks,
 pnpm install
 pnpm nameable <name>          # run the CLI from source
 pnpm check                    # format, lint and type-check (vp check; --fix to apply)
-pnpm test                     # unit tests
-pnpm test:live                # also hit the real registries
+pnpm test                     # unit tests with coverage
+pnpm test:live                # also hit the real services (live and contract tests)
+pnpm test:dist                # build, then run the packed CLI
+pnpm verify                   # check + test + test:dist
 pnpm build                    # vp pack in every package
 ```
+
+Before committing, run `pnpm verify` (check, unit tests with coverage thresholds, packed CLI) and
+`pnpm test:live`. To add a channel, follow [docs/adding-a-channel.md](docs/adding-a-channel.md).
 
 ## License
 

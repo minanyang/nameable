@@ -145,4 +145,33 @@ describe("terminal output", () => {
     );
     expect(widest).toBeLessThanOrEqual(60);
   });
+
+  it("says how many names did not fit across the terminal", async () => {
+    const names = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot"];
+    const r = await cli(
+      [...names, "--only", "crates"],
+      Object.fromEntries(names.map((n) => [CRATES(n), 404])),
+      { interactive: true },
+      40,
+    );
+    const text = screen(r.stdout);
+    expect(text).toMatch(/\d+ more did not fit; use --json/);
+    // The redrawn grid must fit; the legend below is printed once, after the last redraw, and may wrap.
+    const lines = text.split("\n");
+    const grid = lines.slice(0, lines.findIndex((l) => l.startsWith("  free")) + 1);
+    expect(Math.max(...grid.map((l) => l.length))).toBeLessThanOrEqual(40);
+  });
+
+  it("colors marks only when color is on", async () => {
+    const routes = { [CRATES("zz")]: 404 };
+    const plain = await cli(["zz", "--only", "crates"], routes, { interactive: true });
+    const colored = await cli(["zz", "--only", "crates"], routes, {
+      interactive: true,
+      color: true,
+    });
+    // oxlint-disable-next-line no-control-regex
+    const sgr = /\x1b\[\d+m/;
+    expect(plain.stdout).not.toMatch(sgr);
+    expect(colored.stdout).toMatch(sgr);
+  });
 });

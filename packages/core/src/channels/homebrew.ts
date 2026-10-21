@@ -1,51 +1,50 @@
+import { defineChannel } from "../define.js";
 import { get } from "../http.js";
-import type { Channel, CheckResult } from "../types.js";
+import type { Channel } from "../types.js";
 
 const API = "https://formulae.brew.sh/api";
+// Formula and cask names are lowercase; formulae also use @ (versions), + and . (`openssl@3`, `c++`).
+const VALID = /^[a-z0-9][a-z0-9@+._-]*$/;
 
-export const homebrew: Channel = {
+export const homebrew: Channel = defineChannel({
   id: "homebrew",
   label: "Homebrew",
   category: "package",
-  async check(name, ctx): Promise<CheckResult> {
-    const base = { channel: this.id, label: this.label };
+  rules: (name) =>
+    VALID.test(name.toLowerCase())
+      ? undefined
+      : "Homebrew names are letters, digits and - _ . + @, starting with a letter or digit",
+  async lookup(name, ctx) {
     const lower = name.toLowerCase();
     const [formula, cask] = await Promise.all([
       get(ctx, `${API}/formula/${lower}.json`),
       get(ctx, `${API}/cask/${lower}.json`),
     ]);
-    if (formula.status === 200) {
-      const { desc } = (await formula.json()) as { desc?: string };
-      return {
-        ...base,
-        status: "taken",
-        url: `https://formulae.brew.sh/formula/${lower}`,
-        note: desc,
-        meta: { kind: "formula" },
-      };
-    }
-    if (cask.status === 200) {
-      const { desc } = (await cask.json()) as { desc?: string };
-      return {
-        ...base,
-        status: "taken",
-        url: `https://formulae.brew.sh/cask/${lower}`,
-        note: desc,
-        meta: { kind: "cask" },
-      };
+    // Either kind being present is proof enough, even if the other request failed.
+    for (const [kind, res] of [
+      ["formula", formula],
+      ["cask", cask],
+    ] as const) {
+      if (res.status === 200) {
+        const { desc } = (await res.json()) as { desc?: string };
+        return {
+          status: "taken",
+          url: `https://formulae.brew.sh/${kind}/${lower}`,
+          note: desc,
+          meta: { kind },
+        };
+      }
     }
     if (formula.status === 404 && cask.status === 404) {
       return {
-        ...base,
         status: "available",
         certainty: "confirmed",
         note: "no homebrew-core formula or cask",
       };
     }
     return {
-      ...base,
       status: "unknown",
       note: `Homebrew API returned HTTP ${formula.status}/${cask.status}`,
     };
   },
-};
+});

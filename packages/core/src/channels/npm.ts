@@ -1,13 +1,16 @@
 import { builtinModules } from "node:module";
 import { get } from "../http.js";
-import type { Channel, CheckResult, Context } from "../types.js";
+import { defineChannel, unexpected } from "../define.js";
+import type { Channel, Context } from "../types.js";
 
 const REGISTRY = "https://registry.npmjs.org";
 const RESERVED = new Set(["node_modules", "favicon.ico"]);
 
+// https://github.com/npm/validate-npm-package-name (rules for new packages).
 function problem(name: string): string | undefined {
   const scoped = /^@([^/]+)\/([^/]+)$/.exec(name);
   const bare = scoped ? scoped[2]! : name;
+  if (!bare) return "npm names cannot be empty";
   if (name.length > 214) return "npm names are at most 214 characters";
   if (name !== name.toLowerCase()) return "npm names must be lowercase";
   if (/^[._]/.test(bare)) return "npm names cannot start with . or _";
@@ -77,19 +80,13 @@ async function similar(ctx: Context, name: string): Promise<{ clash?: string; co
   return { clash, complete };
 }
 
-export const npm: Channel = {
+export const npm: Channel = defineChannel({
   id: "npm",
   label: "npm",
   category: "package",
-  async check(name, ctx): Promise<CheckResult> {
-    const base = {
-      channel: this.id,
-      label: this.label,
-      url: `https://www.npmjs.com/package/${name}`,
-    };
-    const invalid = problem(name);
-    if (invalid) return { ...base, status: "unavailable", note: invalid, url: undefined };
-
+  rules: problem,
+  async lookup(name, ctx) {
+    const url = `https://www.npmjs.com/package/${name}`;
     const res = await get(ctx, `${REGISTRY}/${name.replace("/", "%2f")}`);
     if (res.status === 200) {
       const doc = (await res.json()) as {
@@ -100,48 +97,40 @@ export const npm: Channel = {
       };
       if (!doc.versions && doc.time?.unpublished) {
         return {
-          ...base,
           status: "reclaimable",
+          url,
           note: `unpublished on ${doc.time.unpublished.time.slice(0, 10)}; anyone can publish it again`,
         };
       }
       return {
-        ...base,
         status: "taken",
+        url,
         note: doc.description,
         meta: { latest: doc["dist-tags"]?.latest, modified: doc.time?.modified },
       };
     }
-    if (res.status !== 404)
-      return { ...base, status: "unknown", note: `registry returned HTTP ${res.status}` };
+    if (res.status !== 404) return unexpected("npm registry", res);
 
-    if (name.startsWith("@")) return { ...base, status: "available", certainty: "confirmed" };
+    if (name.startsWith("@")) return { status: "available", certainty: "confirmed" };
     try {
       const { clash, complete } = await similar(ctx, name);
-      if (clash) {
-        return {
-          ...base,
-          status: "unavailable",
-          note: `npm rejects names too similar to "${clash}"`,
-          url: undefined,
-        };
-      }
+      if (clash)
+        return { status: "unavailable", note: `npm rejects names too similar to "${clash}"` };
       if (!complete) {
         return {
-          ...base,
           status: "available",
           certainty: "probable",
           note: "too long to fully check npm's similar-name rule",
         };
       }
-      return { ...base, status: "available", certainty: "confirmed" };
+      return { status: "available", certainty: "confirmed" };
     } catch {
+      // The exact name is free; only the similar-name check failed, so this is not proof.
       return {
-        ...base,
         status: "available",
         certainty: "probable",
         note: "could not check npm's similar-name rule",
       };
     }
   },
-};
+});
