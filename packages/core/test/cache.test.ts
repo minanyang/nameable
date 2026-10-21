@@ -134,7 +134,8 @@ describe("fileStore", () => {
     await fileStore(dir).write("pypi-projects", "x");
     const future = new Date(Date.now() + 86_400_000);
     await utimes(join(dir, "pypi-projects.gz"), future, future);
-    expect((await fileStore(dir).read("pypi-projects"))?.savedAt).toBe(future.getTime());
+    // Filesystems store mtimes with their own precision (ext4 reads back 1792706662703.999 for …704).
+    expect((await fileStore(dir).read("pypi-projects"))?.savedAt).toBeCloseTo(future.getTime(), -1);
   });
 });
 
