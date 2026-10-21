@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "nameable": {
+      "command": "npx",
+      "args": ["-y", "nameable", "mcp"]
+    }
+  }
+}

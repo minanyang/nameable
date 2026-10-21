@@ -1,0 +1,19 @@
+{
+  "name": "nameable",
+  "displayName": "Nameable",
+  "version": "0.1.0",
+  "description": "Check whether a name is free on package registries, GitHub and domains, find who already built the same thing, and pick a name you can use.",
+  "author": { "name": "Min-An Yang", "url": "https://github.com/minanyang" },
+  "license": "MIT",
+  "keywords": [
+    "naming",
+    "name availability",
+    "npm",
+    "pypi",
+    "crates",
+    "homebrew",
+    "github",
+    "domain",
+    "mcp"
+  ]
+}

@@ -86,6 +86,9 @@ GitHub checks use `GITHUB_TOKEN`, `GH_TOKEN` or `gh auth token` when available, 
 claude mcp add nameable -- npx -y nameable mcp
 ```
 
+`plugins/nameable` is a Claude Code plugin that bundles this server with a skill, which picks the channels that matter
+for the project, looks for prior art and recommends which candidates to keep.
+
 ## Development
 
 Built with [Vite+](https://viteplus.dev) (`vp`): Oxfmt, Oxlint with type checks, Vitest and tsdown.
