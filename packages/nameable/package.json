@@ -1,12 +1,40 @@
 {
   "name": "nameable",
   "version": "0.1.0",
-  "private": true,
   "description": "Find out if a name is free everywhere it matters for your project, and whether someone already built the same thing.",
+  "keywords": [
+    "agent-skill",
+    "availability",
+    "brand",
+    "claude-code",
+    "cli",
+    "codex",
+    "crates",
+    "domain",
+    "github",
+    "homebrew",
+    "mcp",
+    "mcp-server",
+    "name",
+    "name-availability",
+    "naming",
+    "npm",
+    "pypi",
+    "rdap",
+    "whois"
+  ],
+  "homepage": "https://github.com/minanyang/nameable#readme",
+  "bugs": {
+    "url": "https://github.com/minanyang/nameable/issues"
+  },
   "license": "MIT",
   "author": {
     "name": "Min-An Yang",
     "url": "https://github.com/minanyang"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/minanyang/nameable.git"
   },
   "bin": {
     "nameable": "./dist/cli.mjs"
@@ -16,11 +44,17 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "vp pack"
+    "build": "vp pack",
+    "prepack": "cp ../../README.md README.md"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.3.1",
-    "@nameable/core": "workspace:*",
     "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@nameable/core": "workspace:*"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

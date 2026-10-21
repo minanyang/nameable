@@ -4,3 +4,6 @@ dist/
 .DS_Store
 .vitest/
 coverage/
+
+# Copied from the repository root when the package is packed.
+packages/nameable/README.md

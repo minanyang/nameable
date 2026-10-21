@@ -1,6 +1,7 @@
 {
   "name": "@nameable/core",
   "version": "0.1.0",
+  "private": true,
   "description": "Name availability checks behind Nameable.",
   "license": "MIT",
   "author": {
