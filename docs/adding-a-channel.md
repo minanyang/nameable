@@ -39,7 +39,9 @@ Rules for `lookup`:
 - Use `get()` for HTTP and `whoisQuery()` for whois. They apply timeouts, retries and per-host limits.
 - Map only responses you have seen. Anything else returns `unexpected()`, never `available`.
 - Validate the shape of any list you download; a list in an unexpected shape must fail the check,
-  never read as "nothing matches".
+  never read as "nothing matches". Keep it with `cachedList`, adding its key to `LIST_KEYS`, and bump
+  `FORMAT` in `lists.ts` when the line format of any list changes.
+- Text from the registry is shown as is in JSON; the terminal renderer strips control characters.
 - Rules come from the registry's own source (its validator, auditor or database migrations), cited
   next to the code. Do not rely on secondhand descriptions, including reviews: verify each claim
   with a contract test.

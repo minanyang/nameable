@@ -21,10 +21,12 @@ export const ultranormalizePypi = (name: string): string =>
 // PEP 508 names: ASCII letters and digits, with . _ - allowed only between them.
 const VALID = /^([a-z0-9]|[a-z0-9][a-z0-9._-]*[a-z0-9])$/i;
 
+const SIMPLE_JSON = "application/vnd.pypi.simple.v1+json";
+
 /** Every project on PyPI, one `ultranormalized\tname` line each, from the simple index (about 10 MB). */
 async function projectList(ctx: Context): Promise<string> {
   const res = await get(ctx, "https://pypi.org/simple/", {
-    headers: { accept: "application/vnd.pypi.simple.v1+json" },
+    headers: { accept: SIMPLE_JSON },
     timeoutMs: 120_000,
   });
   if (!res.ok) throw new Error(`PyPI simple index returned HTTP ${res.status}`);
@@ -37,7 +39,7 @@ async function projectList(ctx: Context): Promise<string> {
 }
 
 // The rules are Warehouse's check_project_name (warehouse/packaging/services.py), except its
-// admin-prohibited names, which are not public.
+// admin-prohibited names, which are not public (see "certainty" in the README).
 export const pypi: Channel = defineChannel({
   id: "pypi",
   label: "PyPI",
@@ -64,8 +66,31 @@ export const pypi: Channel = defineChannel({
     }
     if (res.status !== 404) return unexpected("PyPI", res);
 
-    // The JSON API also answers 404 for a project with no releases or a quarantined one, and the
-    // similar-name rule needs every project name, so both come from the full project list.
+    // The JSON API also answers 404 for a project with no releases or a quarantined one; the simple
+    // page of a single project does not filter either (Warehouse's ProjectFactory).
+    const simple = await get(ctx, `https://pypi.org/simple/${normalized}/`, {
+      headers: { accept: SIMPLE_JSON },
+    });
+    if (simple.status === 200) {
+      const doc = (await simple.json()) as {
+        name?: string;
+        "project-status"?: { status?: string };
+      };
+      const state = doc["project-status"]?.status;
+      return {
+        status: "taken",
+        url,
+        note:
+          state && state !== "active"
+            ? `the project exists but is ${state}`
+            : "the project exists but has no installable release",
+        meta: { name: doc.name, state },
+      };
+    }
+    if (simple.status !== 404) return unexpected("PyPI", simple);
+
+    // The similar-name rule needs every project name. The full index leaves out quarantined projects,
+    // so a name similar only to one of those is not caught.
     let list;
     try {
       list = await cachedList(ctx, "pypi-projects", () => projectList(ctx));
@@ -77,15 +102,6 @@ export const pypi: Channel = defineChannel({
       };
     }
     const matches = linesFor(list.text, ultranormalizePypi(name)).map(([n]) => n!);
-    const same = matches.find((n) => normalizePypi(n) === normalized);
-    if (same) {
-      return {
-        status: "taken",
-        url,
-        note: "the project exists but has no installable release",
-        meta: { name: same },
-      };
-    }
     if (matches[0]) {
       return { status: "unavailable", note: `PyPI rejects names too similar to "${matches[0]}"` };
     }

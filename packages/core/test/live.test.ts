@@ -49,9 +49,13 @@ live("live channels", () => {
     ["pypi", "tomllib", "unavailable", "standard library"],
     ["pypi", "f1ask", "unavailable", "Flask"],
     ["crates", "std", "unavailable", "reserves"],
+    // Reserved by crates.io admins after the migrations: only the database dump lists them.
+    ["crates", "rust", "unavailable", "reserves"],
+    ["crates", "nightly", "unavailable", "reserves"],
     ["homebrew", "golang", "taken", "alias of go"],
     ["homebrew", "pip", "unavailable", "does not allow"],
     ["npm", "fs", "unavailable", "core module"],
+    ["npm", "test-unpublish", "reclaimable", "anyone can publish it again"],
     ["npm", "@babel/zq-not-a-real-pkg", "available", "@babel is an npm organization"],
   ];
   for (const [channel, name, status, note] of refused) {

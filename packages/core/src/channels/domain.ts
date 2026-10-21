@@ -1,4 +1,4 @@
-import { domainToASCII } from "node:url";
+import { domainToASCII, domainToUnicode } from "node:url";
 import { get, memo } from "../http.js";
 import { defineChannel, unexpected, type Finding } from "../define.js";
 import type { Channel, Context } from "../types.js";
@@ -64,12 +64,14 @@ export function domain(tld: string, display: string = tld): Channel {
     category: "domain",
     // Internationalized names are registered in punycode (café → xn--caf-dma); this also lowercases.
     rules: (name) => {
+      const ascii = domainToASCII(name);
       // IDNA2008 (RFC 5892) allows letters, marks and digits; Node's UTS-46 conversion would also turn
-      // emoji and symbols into punycode that registries refuse. This approximates the PVALID table.
-      if (/\P{ASCII}/u.test(name) && /[^\p{L}\p{M}\p{N}-]/u.test(name)) {
+      // emoji and symbols into punycode that registries refuse. This approximates the PVALID table, on
+      // the decoded label so that typing the punycode (xn--ls8h) is checked the same way.
+      const unicode = domainToUnicode(ascii);
+      if (/\P{ASCII}/u.test(unicode) && /[^\p{L}\p{M}\p{N}-]/u.test(unicode)) {
         return "internationalized domain labels may only use letters, marks and digits (no emoji or symbols)";
       }
-      const ascii = domainToASCII(name);
       if (!LABEL.test(ascii)) return "domain labels are letters, digits and inner hyphens (max 63)";
       // RFC 5891: "--" in the 3rd and 4th position is reserved for punycode ("xn--").
       if (ascii.slice(2, 4) === "--" && !ascii.startsWith("xn--")) {

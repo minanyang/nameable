@@ -8,14 +8,17 @@ import type { Whois } from "./types.js";
 export const tcpWhois: Whois = (server, query) =>
   new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    const socket = connect({ host: server, port: 43, timeout: 10_000 }, () => {
+    const socket = connect({ host: server, port: 43 }, () => {
       socket.write(`${query}\r\n`);
     });
-    socket.on("data", (chunk) => chunks.push(chunk));
-    socket.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    socket.on("timeout", () => {
+    // A deadline for the whole answer, not an idle timeout, which a server sending a byte at a time
+    // would never trigger.
+    const deadline = setTimeout(() => {
       socket.destroy();
       reject(Object.assign(new Error(`whois ${server} timed out`), { name: "TimeoutError" }));
-    });
+    }, 10_000);
+    socket.on("close", () => clearTimeout(deadline));
+    socket.on("data", (chunk) => chunks.push(chunk));
+    socket.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
     socket.on("error", reject);
   });

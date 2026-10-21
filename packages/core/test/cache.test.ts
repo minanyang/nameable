@@ -1,4 +1,4 @@
-import { mkdtemp, readdir } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
@@ -12,13 +12,14 @@ import {
   type Store,
   ultranormalizePypi,
 } from "../src/index.js";
+import { listHeader } from "../src/lists.js";
 import { fetchFrom } from "./fake-fetch.js";
 
 const INDEX = "https://pypi.org/simple/";
 const NOW = Date.parse("2026-10-21T12:00:00Z");
-// The stored list format: one `ultranormalized\tname` line per project.
+// The stored list format: a header line, then one `ultranormalized\tname` line per project.
 const index = (...names: string[]) =>
-  `\n${names.map((n) => `${ultranormalizePypi(n)}\t${n}`).join("\n")}\n`;
+  `${listHeader("pypi-projects")}\n${names.map((n) => `${ultranormalizePypi(n)}\t${n}`).join("\n")}\n`;
 
 /** A store holding one copy of the PyPI project list, saved `ageMs` before NOW. */
 function storeWith(text: string, ageMs: number): Store & { writes: string[] } {
@@ -83,6 +84,22 @@ describe("cached name lists", () => {
     expect(result.status).toBe("unavailable");
   });
 
+  it("ignores a copy without this version's header, as if there were none", async () => {
+    const foreign = `\n${ultranormalizePypi("flask")}\tflask\n`;
+    const { result, downloaded } = await pypi("f1ask", storeWith(foreign, 60_000), freshIndex);
+    expect(downloaded).toBe(true);
+    // Not "similar to flask": the unrecognized copy was not read at all.
+    expect(result).toMatchObject({ status: "available", certainty: "confirmed" });
+    const offline = await pypi("f1ask", storeWith(foreign, 60_000), () => 503);
+    expect(offline.result).toMatchObject({ status: "available", certainty: "probable" });
+    expect(offline.result.note).toContain("could not download");
+  });
+
+  it("downloads again when the copy is dated in the future", async () => {
+    const { downloaded } = await pypi("zz", storeWith(index("requests"), -60_000), freshIndex);
+    expect(downloaded).toBe(true);
+  });
+
   it("is only probable with no copy and a failed download", async () => {
     const { result } = await pypi("zz", undefined, () => 503);
     expect(result).toMatchObject({ status: "available", certainty: "probable" });
@@ -95,13 +112,46 @@ describe("fileStore", () => {
     const dir = await mkdtemp(join(tmpdir(), "nameable-"));
     const store = fileStore(join(dir, "nested"));
     expect(await store.read("missing")).toBeUndefined();
-    await store.write("list", "\nabc\tAbc\n");
-    const saved = await store.read("list");
+    await store.write("pypi-projects", "\nabc\tAbc\n");
+    const saved = await store.read("pypi-projects");
     expect(saved?.text).toBe("\nabc\tAbc\n");
     expect(Date.now() - saved!.savedAt).toBeLessThan(60_000);
-    expect(await readdir(join(dir, "nested"))).toEqual(["list.gz"]);
+    // Written to a temporary file and renamed, so nothing partial is left behind.
+    expect(await readdir(join(dir, "nested"))).toEqual(["pypi-projects.gz"]);
     await clearStore(join(dir, "nested"));
-    expect(await store.read("list")).toBeUndefined();
+    expect(await store.read("pypi-projects")).toBeUndefined();
+    expect(await readdir(dir)).toEqual([]);
+  });
+
+  it("reads a file that is not gzip as missing", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "nameable-"));
+    await writeFile(join(dir, "pypi-projects.gz"), "flask");
+    expect(await fileStore(dir).read("pypi-projects")).toBeUndefined();
+  });
+
+  it("reports a file's modification time as when it was saved", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "nameable-"));
+    await fileStore(dir).write("pypi-projects", "x");
+    const future = new Date(Date.now() + 86_400_000);
+    await utimes(join(dir, "pypi-projects.gz"), future, future);
+    expect((await fileStore(dir).read("pypi-projects"))?.savedAt).toBe(future.getTime());
+  });
+});
+
+describe("clearStore", () => {
+  it("deletes only the lists it saves, and keeps a directory that holds anything else", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "nameable-"));
+    await fileStore(dir).write("pypi-projects", "x");
+    await fileStore(dir).write("homebrew-names", "x");
+    await mkdir(join(dir, "sub"));
+    await writeFile(join(dir, "sub", "notes.txt"), "keep");
+    await writeFile(join(dir, "other.gz"), "keep");
+    await clearStore(dir);
+    expect((await readdir(dir)).sort()).toEqual(["other.gz", "sub"]);
+  });
+
+  it("does nothing to a directory that does not exist", async () => {
+    await expect(clearStore(join(tmpdir(), "nameable-missing-dir"))).resolves.toBeUndefined();
   });
 });
 
@@ -112,6 +162,10 @@ describe("defaultCacheDir", () => {
     [{ XDG_CACHE_HOME: "/x" }, "linux", "/x/nameable"],
     [{ LOCALAPPDATA: "C:/L" }, "win32", "C:/L/nameable/Cache"],
     [{ NAMEABLE_CACHE_DIR: "/custom" }, "darwin", "/custom"],
+    // An empty or relative base would put the cache, and --clear-cache, in the current directory.
+    [{ XDG_CACHE_HOME: "" }, "linux", "/Users/u/.cache/nameable"],
+    [{ XDG_CACHE_HOME: "relative" }, "linux", "/Users/u/.cache/nameable"],
+    [{ LOCALAPPDATA: "" }, "win32", "/Users/u/AppData/Local/nameable/Cache"],
   ] as const)("%j on %s → %s", (env, platform, expected) => {
     expect(defaultCacheDir(env, platform, "/Users/u").replaceAll("\\", "/")).toBe(expected);
   });

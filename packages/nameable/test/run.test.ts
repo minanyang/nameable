@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
 import { fakeFetch } from "../../core/test/fake-fetch.js";
+import { CRATES_DUMP, cratesDump } from "../../core/test/fixtures.js";
 import { existsSync } from "node:fs";
-import { mkdtemp, readdir, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { displayWidth } from "../src/render.js";
@@ -9,9 +10,12 @@ import { run, type Io } from "../src/run.js";
 
 const PYPI = (name: string) => `https://pypi.org/pypi/${name}/json`;
 const CRATES = (name: string) => `https://crates.io/api/v1/crates/${name}`;
-// PyPI checks a free name against its full project index; every test gets a small one.
-const PYPI_INDEX: Parameters<typeof fakeFetch>[0] = {
+// PyPI checks a free name against its full project index and crates.io against its database dump;
+// every test gets small ones, and no name used here has a PyPI simple page.
+const LISTS: Parameters<typeof fakeFetch>[0] = {
   "https://pypi.org/simple/": [200, { projects: [{ name: "requests" }] }],
+  "https://pypi.org/simple/zz/": 404,
+  [CRATES_DUMP]: cratesDump(),
 };
 
 async function cli(
@@ -27,7 +31,7 @@ async function cli(
     stderr: { write: (s: string) => (stderr += s) },
     interactive: false,
     color: false,
-    fetch: fakeFetch({ ...PYPI_INDEX, ...routes }),
+    fetch: fakeFetch({ ...LISTS, ...routes }),
     ...io,
   });
   return { code, stdout, stderr };
@@ -68,6 +72,15 @@ describe("cache", () => {
     const r = await cli(["--clear-cache"], {}, { cacheDir: dir });
     expect(r).toMatchObject({ code: 0, stdout: `Cleared ${dir}\n` });
     expect(existsSync(dir)).toBe(false);
+  });
+
+  it("leaves anything it did not save when the cache directory points somewhere shared", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "nameable-"));
+    await writeFile(join(dir, "pypi-projects.gz"), "x");
+    await mkdir(join(dir, "sub"));
+    await writeFile(join(dir, "sub", "notes.txt"), "keep");
+    await cli(["--clear-cache"], {}, { cacheDir: dir });
+    expect(await readdir(dir)).toEqual(["sub"]);
   });
 
   it("saves the PyPI list in the cache directory and reuses it", async () => {
@@ -211,6 +224,34 @@ describe("terminal output", () => {
     const lines = text.split("\n");
     const grid = lines.slice(0, lines.findIndex((l) => l.startsWith("  free")) + 1);
     expect(Math.max(...grid.map((l) => l.length))).toBeLessThanOrEqual(40);
+  });
+
+  it("prints registry text without its control characters, so it cannot rewrite the screen", async () => {
+    const description =
+      "held\x1b[2K\r  ✓ crates.io  available\x1b]8;;https://evil.example\x07\nnext";
+    const r = await cli(
+      ["zz", "--only", "crates"],
+      { [CRATES("zz")]: [200, { crate: { name: "zz", description } }] },
+      { interactive: true },
+    );
+    // The only control characters left are the renderer's own cursor moves, line clears and returns.
+    // oxlint-disable-next-line no-control-regex
+    expect(r.stdout.replace(/\x1b\[\d*[AK]|\r/g, "")).not.toMatch(/[\x00-\x09\x0b-\x1f\x7f]/);
+    expect(screen(r.stdout)).toMatch(/✗ crates\.io\s+taken\s+held \[2K/);
+  });
+
+  it("clips long names in the grid so no row is wider than the terminal", async () => {
+    const long = "a".repeat(100);
+    const r = await cli(
+      [long, "bb", "--only", "crates"],
+      { [CRATES(long)]: 404, [CRATES("bb")]: 404 },
+      { interactive: true },
+      80,
+    );
+    const lines = screen(r.stdout).split("\n");
+    const grid = lines.slice(0, lines.findIndex((l) => l.startsWith("  free")) + 1);
+    expect(Math.max(...grid.map((l) => displayWidth(l)))).toBeLessThanOrEqual(80);
+    expect(screen(r.stdout)).toContain("…");
   });
 
   it("measures wide characters by the columns they take", async () => {

@@ -21,8 +21,14 @@ function auditorProblem(name: string): string | undefined {
   return undefined;
 }
 
-// Formulary.class_s turns a name into a Ruby class name; only these characters survive that.
-const CHARSET = /^[a-z0-9@+._-]+$/;
+// Formulary.class_s (Library/Homebrew/formulary.rb): a formula loads as the Ruby constant this returns,
+// so a name whose class is not a valid constant (a leading digit, `@` not before a version) cannot be one.
+const formulaClass = (name: string) =>
+  (name.charAt(0).toUpperCase() + name.slice(1))
+    .replace(/[-_.\s]([a-zA-Z0-9])/g, (_, c: string) => c.toUpperCase())
+    .replaceAll("+", "x")
+    .replace(/(.)@(\d)/, "$1AT$2");
+const CONSTANT = /^[A-Z]\w*$/;
 
 // MissingFormula.disallowed_reason (Library/Homebrew/missing_formula.rb); the lzma pattern is unanchored there.
 const DISALLOWED =
@@ -41,24 +47,30 @@ async function nameList(ctx: Context): Promise<string> {
   };
   // Renamed formulae keep their old names in `oldnames`; there is no separate renames file in the API.
   const [formulae, casks] = (await Promise.all([load("formula.json"), load("cask.json")])) as [
-    { name: string; aliases?: string[]; oldnames?: string[] }[],
-    { token: string; old_tokens?: string[] }[],
+    { name: string; aliases: string[]; oldnames: string[] }[],
+    { token: string; old_tokens: string[] }[],
   ];
-  // A list in an unexpected shape must fail the check, not read as "no aliases at all".
-  const isList = (x: unknown, key: string) =>
-    Array.isArray(x) && x.length > 0 && x.every((e) => typeof e?.[key] === "string");
-  if (!isList(formulae, "name") || !isList(casks, "token")) {
+  // A list in an unexpected shape must fail the check, not read as "no aliases at all": every entry
+  // carries its name and the arrays of other names it holds.
+  const isList = (x: unknown, key: string, arrays: string[]) =>
+    Array.isArray(x) &&
+    x.length > 0 &&
+    x.every((e) => typeof e?.[key] === "string" && arrays.every((a) => Array.isArray(e[a])));
+  if (
+    !isList(formulae, "name", ["aliases", "oldnames"]) ||
+    !isList(casks, "token", ["old_tokens"])
+  ) {
     throw new Error("Homebrew name lists are not in the expected shape");
   }
   const lines: string[] = [];
   for (const f of formulae) {
     lines.push(`${f.name}\tformula\t${f.name}`);
-    for (const a of f.aliases ?? []) lines.push(`${a}\talias\t${f.name}`);
-    for (const o of f.oldnames ?? []) lines.push(`${o}\told name\t${f.name}`);
+    for (const a of f.aliases) lines.push(`${a}\talias\t${f.name}`);
+    for (const o of f.oldnames) lines.push(`${o}\told name\t${f.name}`);
   }
   for (const c of casks) {
     lines.push(`${c.token}\tcask\t${c.token}`);
-    for (const o of c.old_tokens ?? []) lines.push(`${o}\told cask token\t${c.token}`);
+    for (const o of c.old_tokens) lines.push(`${o}\told cask token\t${c.token}`);
   }
   return `\n${lines.join("\n")}\n`;
 }
@@ -72,7 +84,9 @@ export const homebrew: Channel = defineChannel({
     if (!name) return "Homebrew names cannot be empty";
     const problem = auditorProblem(name);
     if (problem) return `Homebrew names must not contain ${problem}`;
-    if (!CHARSET.test(name)) return "Homebrew names use only letters, digits and @ + . _ -";
+    if (!CONSTANT.test(formulaClass(name))) {
+      return "Homebrew formula names start with a letter and use letters, digits, + . _ - and @ before a version";
+    }
     if (disallowed(name)) return "homebrew/core does not allow this name";
     return undefined;
   },

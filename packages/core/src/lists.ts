@@ -4,6 +4,16 @@ import type { Context } from "./types.js";
 /** Lists change slowly; a day keeps them close to the registry without downloading on every run. */
 export const LIST_TTL_MS: number = 24 * 60 * 60 * 1000;
 
+/** Every list kept in the store, so clearing the cache removes exactly these files and nothing else. */
+export const LIST_KEYS = ["pypi-projects", "homebrew-names", "crates-names"] as const;
+export type ListKey = (typeof LIST_KEYS)[number];
+
+// Bump when the line format of a list changes: a copy saved by another version, or a file this tool did
+// not write, must read as missing, never as a list in which nothing matches.
+const FORMAT = 1;
+/** The first line of a stored list, naming the list and its format. */
+export const listHeader = (key: ListKey): string => `#nameable ${key} v${FORMAT}\n`;
+
 export type List = {
   text: string;
   savedAt: number;
@@ -18,17 +28,21 @@ export type List = {
  */
 export function cachedList(
   ctx: Context,
-  key: string,
+  key: ListKey,
   download: () => Promise<string>,
 ): Promise<List> {
   return memo(ctx, `list:${key}`, async () => {
     const now = ctx.now?.() ?? Date.now();
-    const saved = await ctx.store?.read(key);
-    if (saved && !ctx.refresh && now - saved.savedAt < LIST_TTL_MS)
-      return { ...saved, stale: false };
+    const stored = await ctx.store?.read(key);
+    const saved = stored?.text.startsWith(listHeader(key))
+      ? { ...stored, text: stored.text.slice(listHeader(key).length) }
+      : undefined;
+    // A copy dated in the future (a skewed clock, a restored file) is not trusted to be fresh.
+    const age = saved ? now - saved.savedAt : -1;
+    if (saved && !ctx.refresh && age >= 0 && age < LIST_TTL_MS) return { ...saved, stale: false };
     try {
       const text = await download();
-      await ctx.store?.write(key, text).catch(() => undefined);
+      await ctx.store?.write(key, listHeader(key) + text).catch(() => undefined);
       return { text, savedAt: now, stale: false };
     } catch (err) {
       if (saved) return { ...saved, stale: true };

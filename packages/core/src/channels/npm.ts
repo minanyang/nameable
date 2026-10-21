@@ -108,10 +108,21 @@ export const npm: Channel = defineChannel({
         time?: { modified?: string; unpublished?: { time: string } };
       };
       if (!doc.versions && doc.time?.unpublished) {
+        const at = doc.time.unpublished.time;
+        // npm's unpublish policy: after every version is unpublished, the name is blocked for 24 hours.
+        const until = Date.parse(at) + 24 * 60 * 60 * 1000;
+        // An unreadable time never reads as free: it fails below and the check reports unknown.
+        if (!((ctx.now?.() ?? Date.now()) >= until)) {
+          return {
+            status: "unavailable",
+            url,
+            note: `unpublished on ${at.slice(0, 10)}; npm blocks the name until ${new Date(until).toISOString().slice(0, 16).replace("T", " ")} UTC`,
+          };
+        }
         return {
           status: "reclaimable",
           url,
-          note: `unpublished on ${doc.time.unpublished.time.slice(0, 10)}; anyone can publish it again`,
+          note: `unpublished on ${at.slice(0, 10)}; anyone can publish it again`,
         };
       }
       return {

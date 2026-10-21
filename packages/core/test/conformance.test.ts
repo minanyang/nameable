@@ -115,7 +115,7 @@ describe.each(FIXTURES.map((f) => [f.channel.id, f] as const))("%s", (_id, fixtu
               }
             : {
                 ...fixture.free,
-                http: (u) => (u === request ? (reply() as Reply) : fixture.free.http(u)),
+                http: (u, h) => (u === request ? (reply() as Reply) : fixture.free.http(u, h)),
               };
           const { result } = await runOn(channel, INPUTS.typical, faulted);
           expectWellFormed(result, channel);
@@ -151,9 +151,9 @@ describe.each(FIXTURES.map((f) => [f.channel.id, f] as const))("%s", (_id, fixtu
             return assigned.get(key)!;
           };
           const service: Service = {
-            http: (u) => {
+            http: (u, h) => {
               const r = replyFor(u);
-              if (r === 404 || (Array.isArray(r) && r[0] === 200)) return fixture.free.http(u);
+              if (r === 404 || (Array.isArray(r) && r[0] === 200)) return fixture.free.http(u, h);
               failed = true;
               return r;
             },

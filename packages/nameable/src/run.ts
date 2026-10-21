@@ -12,7 +12,7 @@ import {
   type Report,
   type Whois,
 } from "@nameable/core";
-import { createRenderer, type Output } from "./render.js";
+import { createRenderer, printable, type Output } from "./render.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
@@ -133,7 +133,7 @@ export async function run(argv: string[], io: Io): Promise<number> {
   const render = createRenderer(io.stdout, io.color);
   const single = names.length === 1;
   if (!json) {
-    const what = single ? `"${names[0]}"` : `${names.length} names`;
+    const what = single ? `"${printable(names[0]!)}"` : `${names.length} names`;
     io.stdout.write(`\nChecking ${what} on ${channels.length} channels\n\n`);
   }
   const reports = await checkMany(names, channels, {

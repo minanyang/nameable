@@ -1,5 +1,5 @@
 import { selectChannels, type Channel, type Status } from "../src/index.js";
-import type { Reply } from "./fake-fetch.js";
+import { rangeReply, zipArchive, type Headers, type Reply } from "./fake-fetch.js";
 
 /**
  * The standard inputs every channel is checked against. Adding a channel means deciding, for each one,
@@ -26,6 +26,8 @@ export const INPUTS = {
   space: "name able",
   scoped: "@scope/name",
   scopedUnderscore: "@scope/_name",
+  // A label typed already in punycode (café).
+  punycode: "xn--caf-dma",
   empty: "",
 } as const;
 
@@ -33,7 +35,7 @@ export type InputClass = keyof typeof INPUTS;
 
 /** A whole fake service: what every HTTP request and whois query gets. */
 export type Service = {
-  http: (url: string) => Reply;
+  http: (url: string, headers: Headers) => Reply;
   whois: (server: string, query: string) => string | Error;
 };
 
@@ -70,10 +72,39 @@ const bootstrap: Reply = [200, { services: [[["dev"], ["https://rdap.example/"]]
 
 const PYPI_INDEX = "https://pypi.org/simple/";
 // Real lists are never empty, and an empty one is treated as broken, so the fakes always hold something.
-const pypiFree = (projects: string[] = ["requests"]): Service => ({
-  http: (u) => (u === PYPI_INDEX ? [200, { projects: projects.map((name) => ({ name })) }] : 404),
+// `detail` is what the simple page of a single project answers; free names get 404.
+const pypiFree = (projects: string[] = ["requests"], detail: Reply = 404): Service => ({
+  http: (u) =>
+    u === PYPI_INDEX
+      ? [200, { projects: projects.map((name) => ({ name })) }]
+      : u.startsWith(PYPI_INDEX)
+        ? detail
+        : 404,
   whois: noWhois,
 });
+
+export const CRATES_DUMP = "https://static.crates.io/db-dump.zip";
+/**
+ * crates.io's database dump, served by byte range, with its reserved and deleted tables. A deleted row
+ * pairs a name with its `available_at`; its message holds the commas, quotes and newlines real ones do.
+ */
+export function cratesDump(
+  reserved: string[] = ["std"],
+  deleted: [string, string][] = [["gone", "2020-01-01 00:00:00.5+00"]],
+): (headers: Headers) => Response {
+  const row = ([name, at]: [string, string]) =>
+    `${at},${at},${at},1,1,"squatting, ""see"" the\nreport",${name}`;
+  const zip = zipArchive({
+    "2026-10-21-020000/README.md": "The crates.io database dump.",
+    "2026-10-21-020000/data/reserved_crate_names.csv": `name\n${reserved.join("\n")}\n`,
+    "2026-10-21-020000/data/deleted_crates.csv": `available_at,created_at,deleted_at,deleted_by,id,message,name\n${deleted.map(row).join("\n")}\n`,
+  });
+  return (headers) => rangeReply(zip, headers);
+}
+const cratesFree = (...args: Parameters<typeof cratesDump>): Service => {
+  const dump = cratesDump(...args);
+  return { http: (u, h) => (u === CRATES_DUMP ? dump(h) : 404), whois: noWhois };
+};
 
 const BREW = "https://formulae.brew.sh/api";
 const brewFree = (
@@ -81,9 +112,9 @@ const brewFree = (
 ): Service => ({
   http: (u) =>
     u === `${BREW}/formula.json`
-      ? [200, formulae]
+      ? [200, formulae.map((f) => ({ aliases: [], oldnames: [], ...f }))]
       : u === `${BREW}/cask.json`
-        ? [200, [{ token: "firefox" }]]
+        ? [200, [{ token: "firefox", old_tokens: [] }]]
         : 404,
   whois: noWhois,
 });
@@ -123,6 +154,7 @@ export const FIXTURES: Fixture[] = [
       single: true,
       scoped: true,
       scopedUnderscore: true,
+      punycode: true,
     },
     maxLength: 214,
     refused: [
@@ -160,6 +192,7 @@ export const FIXTURES: Fixture[] = [
       underscore: true,
       dot: true,
       single: true,
+      punycode: true,
     },
     refused: [
       { name: "tomllib", why: "standard library module", expect: "unavailable" },
@@ -172,16 +205,25 @@ export const FIXTURES: Fixture[] = [
       },
       {
         name: "ghost",
-        why: "a project with no releases: the JSON API 404s but the index lists it",
+        why: "a project with no releases: the JSON API 404s but its simple page exists",
         expect: "taken",
-        service: pypiFree(["Ghost"]),
+        service: pypiFree(["requests"], [200, { name: "ghost" }]),
+      },
+      {
+        name: "quarantined",
+        why: "a quarantined project: left out of the JSON API and the full index",
+        expect: "taken",
+        service: pypiFree(
+          ["requests"],
+          [200, { name: "quarantined", "project-status": { status: "quarantined" } }],
+        ),
       },
     ],
   },
   {
     channel: only("crates"),
     freeCertainty: "confirmed",
-    free: { http: () => 404, whois: noWhois },
+    free: cratesFree(),
     taken: { http: () => [200, { crate: { name: "held" } }], whois: noWhois },
     // Cargo package names, crates.io's 64-character limit.
     accepts: {
@@ -195,6 +237,7 @@ export const FIXTURES: Fixture[] = [
       underscore: true,
       trailingHyphen: true,
       single: true,
+      punycode: true,
     },
     maxLength: 64,
     refused: [
@@ -202,6 +245,18 @@ export const FIXTURES: Fixture[] = [
       { name: "Rustdoc", why: "reserved, compared case-insensitively", expect: "unavailable" },
       { name: "proc-macro", why: "reserved, - and _ the same", expect: "unavailable" },
       { name: "con", why: "Windows device name", expect: "unavailable" },
+      {
+        name: "Rust",
+        why: "reserved by admins after the migrations; only the dump lists it",
+        expect: "unavailable",
+        service: cratesFree(["std", "rust"]),
+      },
+      {
+        name: "gh",
+        why: "recently deleted; blocked until available_at",
+        expect: "unavailable",
+        service: cratesFree(["std"], [["gh", "2099-01-01 00:00:00+00"]]),
+      },
     ],
   },
   {
@@ -212,12 +267,11 @@ export const FIXTURES: Fixture[] = [
       http: (u) => (u.includes("/formula/") ? [200, { desc: "held" }] : 404),
       whois: noWhois,
     },
-    // FormulaNameCaskTokenAuditor.
+    // FormulaNameCaskTokenAuditor, and Formulary.class_s for the class name a formula loads as.
     accepts: {
       ...reject,
       typical: true,
       digits: true,
-      leadingDigit: true,
       hyphen: true,
       underscore: true,
       dot: true,
@@ -226,6 +280,8 @@ export const FIXTURES: Fixture[] = [
     refused: [
       { name: "pip", why: "disallowed in homebrew/core", expect: "unavailable" },
       { name: "liblzma5", why: "disallowed (unanchored lzma pattern)", expect: "unavailable" },
+      { name: "name@beta", why: "@ not before a version: no Ruby class", expect: "unavailable" },
+      { name: "a._b", why: "a dot before _ survives into the class name", expect: "unavailable" },
       {
         name: "golang",
         why: "alias of go",
@@ -295,11 +351,14 @@ export const FIXTURES: Fixture[] = [
       doubleHyphen: true,
       single: true,
       unicode: true,
+      punycode: true,
     },
     maxLength: 63,
     refused: [
       { name: "☃", why: "symbol, not allowed by IDNA2008", expect: "unavailable" },
       { name: "①", why: "circled digit, not allowed by IDNA2008", expect: "unavailable" },
+      { name: "xn--ls8h", why: "an emoji typed as punycode", expect: "unavailable" },
+      { name: "xn--n3h", why: "a symbol typed as punycode", expect: "unavailable" },
     ],
   })),
 ];

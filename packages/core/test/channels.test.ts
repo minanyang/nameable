@@ -8,7 +8,8 @@ import {
   type CheckResult,
 } from "../src/index.js";
 import { Gate } from "../src/gate.js";
-import { fakeFetch, fakeWhois, seq, type Reply } from "./fake-fetch.js";
+import { fakeFetch, fakeWhois, seq, zipArchive, rangeReply, type Reply } from "./fake-fetch.js";
+import { CRATES_DUMP, cratesDump } from "./fixtures.js";
 
 const NPM = "https://registry.npmjs.org";
 const searchUrl = (name: string) => `${NPM}/-/v1/search?text=${name}&size=50`;
@@ -24,11 +25,13 @@ async function one(
   name: string,
   routes: Parameters<typeof fakeFetch>[0],
   whois: Parameters<typeof fakeWhois>[0] = {},
+  now?: number,
 ): Promise<CheckResult> {
   const [result] = await check(name, selectChannels({ only: [channel] }), {
     fetch: fakeFetch(routes),
     whois: fakeWhois(whois),
     backoffMs: 0,
+    now: now === undefined ? undefined : () => now,
   });
   return result!;
 }
@@ -91,6 +94,22 @@ describe("npm", () => {
     expect(r.note).toContain('"firstone"');
   });
 
+  it("is unavailable for 24 hours after every version was unpublished", async () => {
+    const doc = { name: "gone", time: { unpublished: { time: "2026-10-21T12:00:00.000Z" } } };
+    const at = (iso: string) =>
+      one("npm", "gone", { [`${NPM}/gone`]: [200, doc] }, {}, Date.parse(iso));
+    expect(await at("2026-10-22T11:59:00Z")).toMatchObject({
+      status: "unavailable",
+      note: "unpublished on 2026-10-21; npm blocks the name until 2026-10-22 12:00 UTC",
+    });
+    expect((await at("2026-10-22T12:00:00Z")).status).toBe("reclaimable");
+  });
+
+  it("is unknown, never reclaimable, when the unpublish time cannot be read", async () => {
+    const doc = { name: "gone", time: { unpublished: { time: "yesterday" } } };
+    expect((await one("npm", "gone", { [`${NPM}/gone`]: [200, doc] })).status).toBe("unknown");
+  });
+
   it("is reclaimable when every version was unpublished", async () => {
     const doc = {
       name: "gone",
@@ -151,8 +170,20 @@ describe("pypi", () => {
   });
 
   it("queries the normalized name", async () => {
-    const r = await one("pypi", "Foo_Bar", { "https://pypi.org/pypi/foo-bar/json": 404 });
+    const r = await one("pypi", "Foo_Bar", {
+      "https://pypi.org/pypi/foo-bar/json": 404,
+      "https://pypi.org/simple/foo-bar/": 404,
+      "https://pypi.org/simple/": [200, { projects: [{ name: "requests" }] }],
+    });
     expect(r.status).toBe("available");
+  });
+
+  it("is unknown when the project's simple page fails, never available", async () => {
+    const r = await one("pypi", "zz", {
+      "https://pypi.org/pypi/zz/json": 404,
+      "https://pypi.org/simple/zz/": 503,
+    });
+    expect(r.status).toBe("unknown");
   });
 
   it("is taken with the project's summary", async () => {
@@ -162,8 +193,74 @@ describe("pypi", () => {
   });
 });
 
+describe("crates", () => {
+  const free = (dump: Reply | ((h: Record<string, string>) => Reply)) => ({
+    "https://crates.io/api/v1/crates/zz": 404,
+    [CRATES_DUMP]: dump,
+  });
+
+  it("frees a deleted name once its available_at has passed", async () => {
+    const dump = cratesDump(["std"], [["zz", "2026-10-22 12:00:00+00"]]);
+    const before = await one("crates", "zz", free(dump), {}, Date.parse("2026-10-22T11:00:00Z"));
+    expect(before).toMatchObject({
+      status: "unavailable",
+      note: "recently deleted; crates.io frees the name after 2026-10-22 12:00 UTC",
+    });
+    const after = await one("crates", "zz", free(dump), {}, Date.parse("2026-10-22T13:00:00Z"));
+    expect(after).toMatchObject({ status: "available", certainty: "confirmed" });
+  });
+
+  it.each([
+    ["a server that ignores ranges", () => rangeReply(zipArchive({}), {})],
+    [
+      "something that is not a zip",
+      (h: Record<string, string>) => rangeReply(Buffer.from("nope"), h),
+    ],
+    [
+      "a dump without the deleted table",
+      (h: Record<string, string>) =>
+        rangeReply(zipArchive({ "data/reserved_crate_names.csv": "name\nstd\n" }), h),
+    ],
+    [
+      "a deleted table in another shape",
+      (h: Record<string, string>) =>
+        rangeReply(
+          zipArchive({
+            "data/reserved_crate_names.csv": "name\nstd\n",
+            "data/deleted_crates.csv": "name,until\nzz,soon\n",
+          }),
+          h,
+        ),
+    ],
+  ])("is only probable with %s", async (_, dump) => {
+    const r = await one("crates", "zz", free(dump));
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+    expect(r.note).toContain("database dump");
+  });
+});
+
 describe("homebrew", () => {
   const api = "https://formulae.brew.sh/api";
+  it("accepts versioned and + names, which become valid class names", async () => {
+    for (const name of ["python@3.12", "c++"]) {
+      const r = await one("homebrew", name, {
+        [`${api}/formula/${name}.json`]: [200, { desc: "x" }],
+        [`${api}/cask/${name}.json`]: 404,
+      });
+      expect(r.status).toBe("taken");
+    }
+  });
+
+  it("is only probable when formula.json entries lack the alias arrays", async () => {
+    const r = await one("homebrew", "thing", {
+      [`${api}/formula/thing.json`]: 404,
+      [`${api}/cask/thing.json`]: 404,
+      [`${api}/formula.json`]: [200, [{ name: "go" }]],
+      [`${api}/cask.json`]: [200, [{ token: "firefox", old_tokens: [] }]],
+    });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
+
   it("is taken by a cask", async () => {
     const r = await one("homebrew", "thing", {
       [`${api}/formula/thing.json`]: 404,

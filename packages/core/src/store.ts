@@ -1,7 +1,8 @@
-import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, rmdir, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, posix, win32 } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
+import { LIST_KEYS } from "./lists.js";
 
 /** Where downloaded name lists are kept between runs. */
 export type Store = {
@@ -16,11 +17,19 @@ export function defaultCacheDir(
   home: string = homedir(),
 ): string {
   if (env.NAMEABLE_CACHE_DIR) return env.NAMEABLE_CACHE_DIR;
-  if (platform === "darwin") return join(home, "Library", "Caches", "nameable");
+  const path = platform === "win32" ? win32 : posix;
+  // An empty or relative base is ignored, as the XDG spec requires; it would put the cache in the
+  // current directory.
+  const base = (value: string | undefined) => (value && path.isAbsolute(value) ? value : undefined);
+  if (platform === "darwin") return path.join(home, "Library", "Caches", "nameable");
   if (platform === "win32") {
-    return join(env.LOCALAPPDATA ?? join(home, "AppData", "Local"), "nameable", "Cache");
+    return path.join(
+      base(env.LOCALAPPDATA) ?? path.join(home, "AppData", "Local"),
+      "nameable",
+      "Cache",
+    );
   }
-  return join(env.XDG_CACHE_HOME ?? join(home, ".cache"), "nameable");
+  return path.join(base(env.XDG_CACHE_HOME) ?? path.join(home, ".cache"), "nameable");
 }
 
 /** Gzipped files in `dir`, one per key; a file's modification time is when it was saved. */
@@ -37,11 +46,16 @@ export function fileStore(dir: string): Store {
     },
     async write(key, text) {
       await mkdir(dir, { recursive: true });
-      await writeFile(path(key), gzipSync(text));
+      // Written whole and then renamed, so another run never reads a half-written file.
+      const partial = `${path(key)}.${process.pid}.partial`;
+      await writeFile(partial, gzipSync(text));
+      await rename(partial, path(key));
     },
   };
 }
 
+/** Deletes the lists this tool saves in `dir`, and `dir` itself only when nothing else is left in it. */
 export async function clearStore(dir: string): Promise<void> {
-  await rm(dir, { recursive: true, force: true });
+  await Promise.all(LIST_KEYS.map((key) => rm(join(dir, `${key}.gz`), { force: true })));
+  await rmdir(dir).catch(() => undefined);
 }

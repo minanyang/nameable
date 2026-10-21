@@ -26,11 +26,17 @@ const graphemes = (text: string) => Array.from(segmenter.segment(text), (s) => s
 const graphemeWidth = (g: string) => (WIDE.test(g) ? 2 : /^\p{M}+$/u.test(g) ? 0 : 1);
 export const displayWidth = (text: string): number =>
   graphemes(text).reduce((sum, g) => sum + graphemeWidth(g), 0);
+/**
+ * Text from registries (descriptions, names) with control characters replaced by spaces, so it cannot
+ * move the cursor, rewrite a row or break the in-place redraw with a newline.
+ */
+export const printable = (text: string): string =>
+  // oxlint-disable-next-line no-control-regex
+  text.replace(/[\u0000-\u001f\u007f-\u009f]+/g, " ");
 const pad = (text: string, width: number) =>
   text + " ".repeat(Math.max(0, width - displayWidth(text)));
 
 const labelWidth = (channels: Channel[]) => Math.max(...channels.map((c) => displayWidth(c.label)));
-const cellWidth = (names: string[]) => Math.max(...names.map(displayWidth), 4) + 2;
 
 function clip(text: string, max: number): string {
   if (max <= 0) return "";
@@ -49,6 +55,12 @@ export function createRenderer(out: Output, color: boolean) {
   const paint = (style: Style, text: string) =>
     color ? styleText(style, text, { validateStream: false }) : text;
   const columns = () => out.columns || 80;
+  // A grid column fits its longest name, but never so wide that one column overflows the terminal.
+  const cellWidth = (channels: Channel[], names: string[]) =>
+    Math.max(
+      4,
+      Math.min(Math.max(...names.map(displayWidth)), columns() - labelWidth(channels) - 6),
+    ) + 2;
 
   /** Prints `rows` once and returns a function that rewrites the whole block in place. Rows must never wrap. */
   function block(rows: string[]) {
@@ -65,7 +77,7 @@ export function createRenderer(out: Output, color: boolean) {
     const look = LOOK[result.status];
     const status = probable(result) ? "probably available" : result.status;
     // Links are listed in full under the table (see `evidence`), so the row keeps its room for the note.
-    const detail = result.note ?? "";
+    const detail = printable(result.note ?? "");
     const used = 2 + 1 + 1 + width + 1 + STATUS_WIDTH + 1;
     return `  ${paint(look.style, look.mark)} ${pad(result.label, width)} ${paint(look.style, status.padEnd(STATUS_WIDTH))} ${paint("dim", clip(detail, columns() - used - 1))}`;
   }
@@ -85,20 +97,23 @@ export function createRenderer(out: Output, color: boolean) {
 
   /** How many names fit across the terminal in the grid. */
   function gridFits(channels: Channel[], names: string[]): number {
-    return Math.max(1, Math.floor((columns() - labelWidth(channels) - 4) / cellWidth(names)));
+    return Math.max(
+      1,
+      Math.floor((columns() - labelWidth(channels) - 4) / cellWidth(channels, names)),
+    );
   }
 
   /** Several names: channels down, names across, one mark per cell. */
   function liveGrid(channels: Channel[], names: string[]) {
     const width = labelWidth(channels);
-    const cell = cellWidth(names);
+    const cell = cellWidth(channels, names);
     const shown = names.slice(0, gridFits(channels, names));
     // `plain` is the visible width, since color codes take no space on screen.
     const cells = channels.map(() => shown.map(() => ({ text: paint("dim", "·"), plain: 1 })));
     const row = (i: number) =>
       `  ${pad(channels[i]!.label, width)}  ${cells[i]!.map((c) => c.text + " ".repeat(cell - c.plain)).join("")}`;
     const rows = [
-      `  ${" ".repeat(width)}  ${shown.map((n) => pad(n, cell)).join("")}`,
+      `  ${" ".repeat(width)}  ${shown.map((n) => pad(clip(printable(n), cell - 2), cell)).join("")}`,
       ...channels.map((_, i) => row(i)),
     ];
     const redraw = block(rows);
@@ -117,7 +132,7 @@ export function createRenderer(out: Output, color: boolean) {
   function gridFooter(reports: Report[], channels: Channel[]): string {
     const names = reports.map((r) => r.name);
     const shown = gridFits(channels, names);
-    const cell = cellWidth(names);
+    const cell = cellWidth(channels, names);
     const counts = reports
       .slice(0, shown)
       .map((r) => `${r.results.filter(free).length}/${r.results.length}`.padEnd(cell))
@@ -138,7 +153,7 @@ export function createRenderer(out: Output, color: boolean) {
     const linked = results.filter((r) => !free(r) && r.url);
     if (!linked.length) return "";
     const width = Math.max(...linked.map((r) => displayWidth(r.label)));
-    return `\n${linked.map((r) => `  ${pad(r.label, width)}  ${paint("dim", r.url!)}`).join("\n")}\n`;
+    return `\n${linked.map((r) => `  ${pad(r.label, width)}  ${paint("dim", printable(r.url!))}`).join("\n")}\n`;
   }
 
   function summary(results: CheckResult[]): string {

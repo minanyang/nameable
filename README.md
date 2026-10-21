@@ -19,23 +19,27 @@ Channels: `npm`, `pypi`, `crates`, `homebrew`, `github` (user or org), and `doma
 
 ### What the answers mean
 
-| Status        | Meaning                                                                                       |
-| ------------- | --------------------------------------------------------------------------------------------- |
-| `available`   | Nobody holds it and it passes the channel's naming rules                                      |
-| `reclaimable` | It was held but released (an unpublished npm package); anyone can take it again               |
-| `taken`       | Someone holds it                                                                              |
-| `unavailable` | Nobody holds it exactly, but the channel would refuse it (invalid, or too similar on npm)     |
-| `unknown`     | No trustworthy answer (network error, rate limit, unrecognized reply). Never reported as free |
+| Status        | Meaning                                                                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `available`   | Nobody holds it and it passes the channel's naming rules                                                                       |
+| `reclaimable` | It was held but released (an unpublished npm package); anyone can take it again                                                |
+| `taken`       | Someone holds it                                                                                                               |
+| `unavailable` | Nobody holds it exactly, but the channel would refuse it (invalid, reserved, too similar, or blocked for now after a deletion) |
+| `unknown`     | No trustworthy answer (network error, rate limit, unrecognized reply). Never reported as free                                  |
 
-`"certainty": "confirmed"` means every publicly documented rule of that registry was checked: its naming rules,
-reserved and prohibited names, aliases and similar-name rules. `"probable"` (`*` in the grid) means a rule could not
-be fully checked, and `note` says which: GitHub hides suspended and reserved accounts, npm's similar-name rule cannot
-be checked for every spelling and a scope belongs to its owner, and registries can refuse premium or reserved domains.
+`"certainty": "confirmed"` means every rule of that registry that can be checked from public data was checked: its
+naming rules, reserved names, recently deleted names, aliases and similar-name rules. Two PyPI rules rest on data PyPI
+does not publish, so even a confirmed PyPI answer cannot cover them: names its admins prohibited, and names similar to a
+quarantined project. `"probable"` (`*` in the grid) means a rule could not be fully checked, and `note` says which: GitHub
+hides suspended and reserved accounts, npm's similar-name rule cannot be checked for every spelling and a scope belongs to
+its owner, registries can refuse premium or reserved domains, and a registry list could not be downloaded.
 
-PyPI and Homebrew checks compare against each registry's full name list (PyPI's similar-name rule, Homebrew aliases and
-old names). The lists are downloaded at most once a day, about 10 MB and 7 MB, and kept compressed (about 8.5 MB) in the
-OS cache directory (`~/Library/Caches/nameable` on macOS, `$XDG_CACHE_HOME/nameable` on Linux, `%LOCALAPPDATA%\nameable\Cache`
-on Windows, or `NAMEABLE_CACHE_DIR`). `--refresh` downloads them again; `--clear-cache` deletes them.
+PyPI, Homebrew and crates.io checks compare against registry-wide lists: every PyPI project (its similar-name rule),
+every Homebrew alias and old name, and the reserved and recently deleted crate names in crates.io's daily database dump
+(read by byte range, under 1 MB of a 2 GB archive). The lists are downloaded at most once a day and kept compressed
+(about 8.5 MB) in the OS cache directory (`~/Library/Caches/nameable` on macOS, `$XDG_CACHE_HOME/nameable` on Linux,
+`%LOCALAPPDATA%\nameable\Cache` on Windows, or `NAMEABLE_CACHE_DIR`). `--refresh` downloads them again;
+`--clear-cache` deletes them and nothing else.
 
 ### JSON
 

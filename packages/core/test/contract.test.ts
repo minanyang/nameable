@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 import { tcpWhois } from "../src/tcp-whois.js";
+import { remoteZipFiles } from "../src/zip.js";
 
 // Each assumption the channels and their fixtures make about a real service, checked against that
 // service. When one of these fails, the fake in fixtures.ts no longer describes reality.
@@ -34,6 +35,11 @@ live(
       expect(await search("a".repeat(64))).toBe(200);
       expect(await search("a".repeat(65))).toBe(400);
     });
+    it("keeps a document without versions, with time.unpublished, for an unpublished package", async () => {
+      const doc = await json("https://registry.npmjs.org/test-unpublish");
+      expect(doc.versions).toBeUndefined();
+      expect(Date.parse(doc.time.unpublished.time)).toBeGreaterThan(0);
+    });
     it("lists search hits under objects[].package.name", async () => {
       const body = await json("https://registry.npmjs.org/-/v1/search?text=firstone&size=5");
       expect(body.objects.map((o: any) => o.package.name)).toContain("firstone");
@@ -53,6 +59,13 @@ live("PyPI", () => {
     expect(body.projects.length).toBeGreaterThan(500_000);
     expect(body.projects.some((p: { name: string }) => p.name === "Flask")).toBe(true);
   }, 180_000);
+  it("answers a single project's simple page with 404 when missing, 200 and its status otherwise", async () => {
+    const accept = { accept: "application/vnd.pypi.simple.v1+json" };
+    expect(await status(`https://pypi.org/simple/${fresh}/`, accept)).toBe(404);
+    const body = await json("https://pypi.org/simple/requests/", accept);
+    expect(body.name).toBe("requests");
+    expect(body["project-status"].status).toBe("active");
+  });
   it("accepts the PEP 503 normalized name", async () => {
     const body = await json("https://pypi.org/pypi/zope-interface/json");
     expect(body.info.name).toBe("zope.interface");
@@ -63,6 +76,21 @@ live("crates.io", () => {
   it("answers 404 for a missing crate", async () => {
     expect(await status(`https://crates.io/api/v1/crates/${fresh}`)).toBe(404);
   });
+  it("publishes reserved and deleted names in its database dump, readable by range", async () => {
+    const ctx = { fetch, whois: tcpWhois, cache: new Map(), gates: new Map() };
+    const files = await remoteZipFiles(ctx, "https://static.crates.io/db-dump.zip", [
+      "reserved_crate_names.csv",
+      "deleted_crates.csv",
+    ]);
+    const reserved = files.get("reserved_crate_names.csv")!.toString("utf8").split("\n");
+    expect(reserved[0]).toBe("name");
+    expect(reserved).toEqual(expect.arrayContaining(["std", "rust", "nightly"]));
+    const deleted = files.get("deleted_crates.csv")!.toString("utf8");
+    expect(deleted.slice(0, deleted.indexOf("\n")).split(",")).toEqual(
+      expect.arrayContaining(["available_at", "name"]),
+    );
+    expect(deleted).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?\+00,/m);
+  }, 60_000);
   it("resolves - and _ to the same crate", async () => {
     expect((await json("https://crates.io/api/v1/crates/serde-json")).crate.name).toBe(
       "serde_json",
@@ -81,6 +109,7 @@ live("Homebrew API", () => {
       aliases: string[];
       oldnames: string[];
     }[];
+    expect(formulae.every((f) => Array.isArray(f.aliases) && Array.isArray(f.oldnames))).toBe(true);
     expect(formulae.find((f) => f.name === "go")?.aliases).toContain("golang");
     expect(formulae.find((f) => f.oldnames.includes("atk"))?.name).toBe("at-spi2-core");
   });
@@ -90,7 +119,16 @@ live("Homebrew API", () => {
       old_tokens?: string[];
     }[];
     expect(casks.length).toBeGreaterThan(1000);
-    expect(casks.some((c) => (c.old_tokens ?? []).length > 0)).toBe(true);
+    expect(casks.every((c) => Array.isArray(c.old_tokens))).toBe(true);
+    expect(casks.some((c) => c.old_tokens!.length > 0)).toBe(true);
+  });
+  it("spells out a leading digit in formula names, keeping the digits as an alias", async () => {
+    const formulae = (await json("https://formulae.brew.sh/api/formula.json")) as unknown as {
+      name: string;
+      aliases: string[];
+    }[];
+    expect(formulae.some((f) => /^\d/.test(f.name))).toBe(false);
+    expect(formulae.find((f) => f.name === "twoping")?.aliases).toContain("2ping");
   });
   it("has formulae whose names use @ and +", async () => {
     expect(await status("https://formulae.brew.sh/api/formula/openssl@3.json")).toBe(200);
