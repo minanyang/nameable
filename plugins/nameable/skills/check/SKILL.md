@@ -1,5 +1,5 @@
 ---
-name: nameable
+name: check
 description: Check whether a project, package, CLI or brand name is free everywhere it matters, find who already uses it or built the same thing, and recommend which candidates to keep. Use when naming or renaming a project, package, CLI, library, app, plugin or product, when brainstorming names, or when asked whether a name is taken or available.
 ---
 
@@ -86,7 +86,8 @@ Per candidate:
 - Same category but dormant for years: **caution**. The name may still confuse users; registries have dispute
   processes (npm's dispute policy, PyPI's PEP 541) but they are slow and not guaranteed.
 - Unrelated use, or dormant: **acceptable**, with the soft-constraint workaround it needs.
-- Confusable with a well-known brand, or a registered mark in the same field: **drop**.
+- Confusable with a well-known brand, or a registered mark in the same field: **drop**. Call it a trademark risk
+  only when you found the registration; otherwise call it brand confusion.
 - Meaning: does the word fit what the product does, or work against it?
 
 ## 5. Report
