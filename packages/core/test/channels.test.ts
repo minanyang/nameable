@@ -120,6 +120,13 @@ describe("npm", () => {
     expect(r.note).toContain("2023-07-05");
   });
 
+  it("leaves out an empty description", async () => {
+    const doc = { versions: { "1.0.0": {} }, description: null };
+    const r = await one("npm", "thing", { [`${NPM}/thing`]: [200, doc] });
+    expect(r.status).toBe("taken");
+    expect("note" in r).toBe(false);
+  });
+
   it("is taken when the package has versions", async () => {
     const doc = {
       versions: { "1.0.0": {} },
@@ -267,6 +274,15 @@ describe("homebrew", () => {
       [`${api}/cask/thing.json`]: [200, { desc: "App" }],
     });
     expect(r).toMatchObject({ status: "taken", meta: { kind: "cask" } });
+  });
+
+  it("leaves out a description the registry sends as null", async () => {
+    const r = await one("homebrew", "backlog", {
+      [`${api}/formula/backlog.json`]: 404,
+      [`${api}/cask/backlog.json`]: [200, { token: "backlog", desc: null }],
+    });
+    expect(r.status).toBe("taken");
+    expect("note" in r).toBe(false);
   });
 
   it("is unknown when one side fails", async () => {

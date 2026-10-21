@@ -64,12 +64,14 @@ export function createMcpServer(deps: McpDeps): McpServer {
           .describe("Candidate names, checked on every selected channel"),
         channels: z
           .array(z.string())
+          .min(1)
           .optional()
           .describe(
             `Channels to check (default: all). One of: ${channelIds().join(", ")}. "domain" means every TLD in tlds.`,
           ),
         tlds: z
           .array(z.string())
+          .min(1)
           .optional()
           .describe(`TLDs for "domain" (default: ${DEFAULT_TLDS.join(", ")})`),
         refresh: z
@@ -91,7 +93,9 @@ export function createMcpServer(deps: McpDeps): McpServer {
       const reports = await checkMany([...new Set(names)], channels, {
         fetch: deps.fetch,
         whois: deps.whois,
-        githubToken: await deps.githubToken?.(),
+        githubToken: channels.some((c) => c.id === "github")
+          ? await deps.githubToken?.()
+          : undefined,
         store: deps.cacheDir ? fileStore(deps.cacheDir) : undefined,
         refresh,
       });

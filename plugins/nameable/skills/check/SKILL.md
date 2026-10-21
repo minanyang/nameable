@@ -48,13 +48,15 @@ the CLI instead: `npx -y nameable <names...> --only <channels> --tlds <tlds> --j
 
 Read each result exactly:
 
-- `available` + `confirmed`: free; every rule public data allows was checked.
+- `available` + `confirmed`: free; every rule public data allows was checked. PyPI does not publish the names its
+  admins prohibited or its quarantined projects, so a confirmed PyPI answer cannot rule those out.
 - `available` + `probable`: likely free, but `note` names what could not be checked (GitHub hides suspended
   accounts, npm's similar-name rule, premium domains). Say so; never present it as certain.
 - `reclaimable`: released and can be taken again.
 - `taken`: held. Open `url` or read `note` to see by whom and whether it is active.
 - `unavailable`: nobody holds it exactly, but the registry refuses it; `note` says why (reserved, too similar to an
-  existing name, blocked after a recent deletion). Treat it like taken.
+  existing name, blocked after a recent deletion). Treat it like taken, unless `note` gives a date when the block
+  ends (npm after an unpublish, crates.io after a deletion); then say when it frees.
 - `unknown`: the check failed. It is not free. Retry once, then report it as not checked.
 
 These channels are not checked by the tool yet: app stores, editor and agent plugin directories, MCP registries,

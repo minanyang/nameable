@@ -32,7 +32,7 @@ Options
   --only <ids>    Comma-separated channels: ${channelIds().join(", ")}
   --tlds <list>   Domains to check (default: ${DEFAULT_TLDS.join(",")})
   --json          Print JSON (default when stdout is not a terminal)
-  --refresh       Download the PyPI and Homebrew name lists even if the cached copy is fresh
+  --refresh       Download the registry name lists even if the cached copy is fresh
   --clear-cache   Delete the cached name lists and exit
   -h, --help      Show this help
   -v, --version   Show the version
@@ -116,6 +116,10 @@ export async function run(argv: string[], io: Io): Promise<number> {
     if (values.help) return (io.stdout.write(HELP), 0);
     if (values.version) return (io.stdout.write(`${version}\n`), 0);
     if (mcp) {
+      // The agent picks channels and TLDs per call, so options here would silently do nothing.
+      if (Object.values(values).some((v) => v !== undefined)) {
+        throw new UsageError("`mcp` takes no options; the agent chooses them in each call");
+      }
       // Loaded only here, so checking names from the terminal does not pay for the MCP SDK.
       const { serveMcp } = await import("./mcp.js");
       const { githubToken, fetch, whois, cacheDir, mcpTransport } = io;
@@ -154,7 +158,8 @@ export async function run(argv: string[], io: Io): Promise<number> {
   const reports = await checkMany(names, channels, {
     fetch: io.fetch,
     whois: io.whois,
-    githubToken: await io.githubToken?.(),
+    // Asking `gh` for a token can take a moment, so only when GitHub is checked.
+    githubToken: channels.some((c) => c.id === "github") ? await io.githubToken?.() : undefined,
     store: io.cacheDir ? fileStore(io.cacheDir) : undefined,
     refresh: values.refresh,
     onResult: json

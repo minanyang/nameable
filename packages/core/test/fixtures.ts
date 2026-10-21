@@ -23,6 +23,8 @@ export const INPUTS = {
   single: "n",
   unicode: "café",
   emoji: "😀",
+  // Not valid Unicode text; only JSON input (MCP) can carry it.
+  loneSurrogate: "\ud800",
   space: "name able",
   scoped: "@scope/name",
   scopedUnderscore: "@scope/_name",

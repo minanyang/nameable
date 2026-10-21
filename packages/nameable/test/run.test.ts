@@ -57,6 +57,7 @@ describe("usage", () => {
     [["foo", "--tlds", " , "], "--tlds needs at least one value"],
     [["foo", "--only", "nope"], 'unknown channel "nope"'],
     [["foo", "--bogus"], "Unknown option"],
+    [["mcp", "--only", "npm"], "`mcp` takes no options"],
   ])("exits 64 for %j", async (argv, message) => {
     const r = await cli(argv);
     expect(r.code).toBe(64);

@@ -61,6 +61,20 @@ describe("nameable mcp", () => {
     expect(JSON.parse(text!.text)).toEqual(r.structuredContent);
   });
 
+  it("keeps the output schema when a registry sends a null description", async () => {
+    const api = "https://formulae.brew.sh/api";
+    const { client } = await connect({
+      [`${api}/formula/backlog.json`]: 404,
+      [`${api}/cask/backlog.json`]: [200, { token: "backlog", desc: null }],
+    });
+    const r = await client.callTool({
+      name: "check_names",
+      arguments: { names: ["backlog"], channels: ["homebrew"] },
+    });
+    expect(r.isError).toBeFalsy();
+    expect(r.structuredContent).toMatchObject({ reports: [{ results: [{ status: "taken" }] }] });
+  });
+
   it("refuses a name by the channel's rules without a request", async () => {
     const { client, fetch } = await connect();
     const r = await client.callTool({
@@ -78,6 +92,9 @@ describe("nameable mcp", () => {
     [{ names: ["zz"], channels: ["domain"], tlds: ["co.uk"] }, "several labels"],
     [{ names: [] }, "names"],
     [{ names: [" "] }, "names cannot be empty"],
+    // An empty list would check nothing, which an agent could read as "nothing is taken".
+    [{ names: ["zz"], channels: [] }, "channels"],
+    [{ names: ["zz"], channels: ["domain"], tlds: [] }, "tlds"],
   ])("reports %j as a tool error the agent can read", async (args, message) => {
     const { client } = await connect();
     const r = await client.callTool({ name: "check_names", arguments: args });

@@ -21,6 +21,10 @@ function expectWellFormed(result: CheckResult, channel: Channel) {
   if (result.status === "taken" || result.status === "reclaimable") expect(result.url).toBeTruthy();
   if (result.status === "unknown" || result.status === "unavailable")
     expect(result.note).toBeTruthy();
+  // The JSON contract: `url` and `note` are text whenever they are present.
+  for (const key of ["url", "note"] as const) {
+    if (key in result) expect(typeof result[key] === "string" && result[key]!.trim()).toBeTruthy();
+  }
 }
 
 const confirmedFree = (r: CheckResult) => r.status === "available" && r.certainty === "confirmed";

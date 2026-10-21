@@ -27,9 +27,20 @@ export function defineChannel(spec: ChannelSpec): Channel {
     category: spec.category,
     async check(name, ctx): Promise<CheckResult> {
       const base = { channel: spec.id, label: spec.label };
+      // A lone surrogate is not text any registry accepts, and it breaks URL encoding.
+      if (/\p{Surrogate}/u.test(name)) {
+        return { ...base, status: "unavailable", note: "names must be valid Unicode text" };
+      }
       const problem = spec.rules(name);
       if (problem) return { ...base, status: "unavailable", note: problem };
-      return { ...base, ...(await spec.lookup(name, ctx)) };
+      const result: CheckResult = { ...base, ...(await spec.lookup(name, ctx)) };
+      // Registry text such as a package description can be null or empty; the result keeps its
+      // documented shape, in which `url` and `note` are present only as text.
+      for (const key of ["url", "note"] as const) {
+        const value: unknown = result[key];
+        if (typeof value !== "string" || !value.trim()) delete result[key];
+      }
+      return result;
     },
   };
 }
