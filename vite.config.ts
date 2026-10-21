@@ -1,9 +1,10 @@
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
-  // Workspace packages resolve to their TypeScript sources (the "source" export condition) in tests.
+  // Workspace packages resolve to their TypeScript sources (the "@nameable/source" export condition) in
+  // tests. The name is scoped because dependencies publish a plain "source" condition too (eventsource).
   // Vitest's node environment resolves through Vite's SSR settings, so the condition goes there.
-  ssr: { resolve: { conditions: ["source"] } },
+  ssr: { resolve: { conditions: ["@nameable/source"] } },
   test: {
     include: ["packages/*/test/**/*.test.ts"],
     coverage: {

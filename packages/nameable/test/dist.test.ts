@@ -1,3 +1,5 @@
+import { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { execFile } from "node:child_process";
 import { accessSync, constants, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -50,5 +52,27 @@ dist("packed CLI", () => {
     const r = await run("café", "--only", "npm");
     expect(r.code).toBe(1);
     expect(JSON.parse(r.stdout).reports[0].results[0].status).toBe("unavailable");
+  });
+
+  it("serves MCP over stdio with `mcp`", async () => {
+    const transport = new StdioClientTransport({
+      command: cli,
+      args: ["mcp"],
+      env: { ...process.env, GITHUB_TOKEN: "" } as Record<string, string>,
+    });
+    const client = new Client({ name: "dist-test", version: "1.0.0" });
+    await client.connect(transport);
+    try {
+      expect((await client.listTools()).tools.map((t) => t.name)).toEqual(["check_names"]);
+      const r = await client.callTool({
+        name: "check_names",
+        arguments: { names: ["café"], channels: ["npm"] },
+      });
+      expect(r.structuredContent).toMatchObject({
+        reports: [{ name: "café", results: [{ status: "unavailable" }] }],
+      });
+    } finally {
+      await client.close();
+    }
   });
 });

@@ -19,6 +19,8 @@
     "build": "vp pack"
   },
   "dependencies": {
-    "@nameable/core": "workspace:*"
+    "@modelcontextprotocol/server": "2.3.1",
+    "@nameable/core": "workspace:*",
+    "zod": "4.6.5"
   }
 }

@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import { parseArgs } from "node:util";
+import type { Transport } from "@modelcontextprotocol/server";
 import {
   channelIds,
   checkMany,
@@ -22,8 +23,10 @@ Find out if a name is free everywhere it matters for your project.
 Usage
   nameable <name>... [options]
   nameable check <name>... [options]
+  nameable mcp
 
   One name shows each channel with its evidence; several names show a comparison grid.
+  \`mcp\` serves the same checks to AI agents as an MCP server over stdio.
 
 Options
   --only <ids>    Comma-separated channels: ${channelIds().join(", ")}
@@ -41,8 +44,8 @@ Exit codes
   64 usage error
 
 GitHub checks use GITHUB_TOKEN, GH_TOKEN or \`gh auth token\` when available.
-PyPI and Homebrew checks download each registry's name list (about 10 MB and 7 MB) at most once a
-day and keep it in the cache directory (NAMEABLE_CACHE_DIR to change it).
+PyPI, Homebrew and crates.io checks download registry-wide name lists (about 10 MB in all) at most
+once a day and keep them in the cache directory (NAMEABLE_CACHE_DIR to change it).
 `;
 
 export type Io = {
@@ -56,6 +59,8 @@ export type Io = {
   whois?: Whois;
   /** Where name lists are cached; without one they are downloaded on every run. */
   cacheDir?: string;
+  /** Where `nameable mcp` talks MCP; the process's stdin and stdout by default. */
+  mcpTransport?: Transport;
 };
 
 class UsageError extends Error {}
@@ -96,17 +101,27 @@ function parse(argv: string[]) {
   // `check` is the subcommand only when names follow it; `nameable check` checks the name "check".
   const names =
     positionals[0] === "check" && positionals.length > 1 ? positionals.slice(1) : positionals;
-  return { values, names: [...new Set(names)] };
+  // `mcp` alone starts the server; with names after it, as with `check`, it is a name to check.
+  const mcp = positionals.length === 1 && positionals[0] === "mcp";
+  return { values, names: [...new Set(names)], mcp };
 }
 
 export async function run(argv: string[], io: Io): Promise<number> {
   let values;
   let names: string[];
+  let mcp: boolean;
   let channels: Channel[];
   try {
-    ({ values, names } = parse(argv));
+    ({ values, names, mcp } = parse(argv));
     if (values.help) return (io.stdout.write(HELP), 0);
     if (values.version) return (io.stdout.write(`${version}\n`), 0);
+    if (mcp) {
+      // Loaded only here, so checking names from the terminal does not pay for the MCP SDK.
+      const { serveMcp } = await import("./mcp.js");
+      const { githubToken, fetch, whois, cacheDir, mcpTransport } = io;
+      serveMcp({ version, githubToken, fetch, whois, cacheDir }, mcpTransport);
+      return 0;
+    }
     if (values["clear-cache"]) {
       if (io.cacheDir) await clearStore(io.cacheDir);
       return (io.stdout.write(`Cleared ${io.cacheDir ?? "nothing (no cache directory)"}\n`), 0);

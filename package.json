@@ -7,11 +7,12 @@
     "check": "vp check",
     "test": "vp test run --coverage",
     "test:live": "NAMEABLE_LIVE=1 vp test run",
-    "nameable": "node --conditions=source --import tsx packages/nameable/src/cli.ts",
+    "nameable": "node --conditions=@nameable/source --import tsx packages/nameable/src/cli.ts",
     "test:dist": "vp run -r build && NAMEABLE_DIST=1 vp test run packages/nameable/test/dist.test.ts",
     "verify": "vp check && vp test run --coverage && pnpm test:dist"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
     "@types/node": "^24",
     "@vitest/coverage-v8": "5.0.5",
     "fast-check": "4.10.2",

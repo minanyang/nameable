@@ -77,6 +77,15 @@ every Homebrew alias and old name, and the reserved and recently deleted crate n
 
 GitHub checks use `GITHUB_TOKEN`, `GH_TOKEN` or `gh auth token` when available, for a higher rate limit.
 
+### MCP
+
+`nameable mcp` runs the same checks as an MCP server over stdio, with one read-only tool, `check_names`
+(`names`, and optionally `channels`, `tlds` and `refresh`). It returns the JSON above as structured content.
+
+```sh
+claude mcp add nameable -- npx -y nameable mcp
+```
+
 ## Development
 
 Built with [Vite+](https://viteplus.dev) (`vp`): Oxfmt, Oxlint with type checks, Vitest and tsdown.
