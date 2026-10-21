@@ -18,6 +18,15 @@ describe("release versions", () => {
     expect(server).toEqual({ command: "npx", args: ["-y", `nameable@${version}`, "mcp"] });
   });
 
+  it("has release notes for it, in English and Traditional Chinese", () => {
+    const notes = readFileSync(
+      new URL(`${root}docs/releases/v${version}.md`, import.meta.url),
+      "utf8",
+    );
+    expect(notes).toContain("## Install");
+    expect(notes).toContain("## 繁體中文");
+  });
+
   it("has a changelog entry for it", () => {
     const changelog = readFileSync(new URL(`${root}CHANGELOG.md`, import.meta.url), "utf8");
     expect(changelog).toMatch(new RegExp(`^## ${version.replaceAll(".", "\\.")} `, "m"));
