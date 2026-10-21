@@ -17,12 +17,32 @@ const STATUS_WIDTH = 18;
 
 const probable = (r: CheckResult) => r.status === "available" && r.certainty === "probable";
 const free = (r: CheckResult) => r.status === "available" || r.status === "reclaimable";
-const labelWidth = (channels: Channel[]) => Math.max(...channels.map((c) => c.label.length));
-const cellWidth = (names: string[]) => Math.max(...names.map((n) => n.length), 4) + 2;
+// Terminal columns, not string length: East Asian wide characters and emoji take two columns,
+// combining marks none. Close to wcwidth for the text this tool prints (names, labels, notes).
+const WIDE =
+  /[\u1100-\u115f\u2e80-\u303e\u3041-\u33ff\u3400-\u4dbf\u4e00-\u9fff\ua000-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe4f\uff00-\uff60\uffe0-\uffe6\u{20000}-\u{3fffd}]|\p{Extended_Pictographic}/u;
+const segmenter = new Intl.Segmenter();
+const graphemes = (text: string) => Array.from(segmenter.segment(text), (s) => s.segment);
+const graphemeWidth = (g: string) => (WIDE.test(g) ? 2 : /^\p{M}+$/u.test(g) ? 0 : 1);
+export const displayWidth = (text: string): number =>
+  graphemes(text).reduce((sum, g) => sum + graphemeWidth(g), 0);
+const pad = (text: string, width: number) =>
+  text + " ".repeat(Math.max(0, width - displayWidth(text)));
+
+const labelWidth = (channels: Channel[]) => Math.max(...channels.map((c) => displayWidth(c.label)));
+const cellWidth = (names: string[]) => Math.max(...names.map(displayWidth), 4) + 2;
 
 function clip(text: string, max: number): string {
   if (max <= 0) return "";
-  return text.length <= max ? text : `${text.slice(0, Math.max(0, max - 1))}…`;
+  if (displayWidth(text) <= max) return text;
+  let out = "";
+  let used = 0;
+  for (const g of graphemes(text)) {
+    if (used + graphemeWidth(g) > max - 1) break;
+    out += g;
+    used += graphemeWidth(g);
+  }
+  return `${out}…`;
 }
 
 export function createRenderer(out: Output, color: boolean) {
@@ -47,14 +67,14 @@ export function createRenderer(out: Output, color: boolean) {
     // Links are listed in full under the table (see `evidence`), so the row keeps its room for the note.
     const detail = result.note ?? "";
     const used = 2 + 1 + 1 + width + 1 + STATUS_WIDTH + 1;
-    return `  ${paint(look.style, look.mark)} ${result.label.padEnd(width)} ${paint(look.style, status.padEnd(STATUS_WIDTH))} ${paint("dim", clip(detail, columns() - used - 1))}`;
+    return `  ${paint(look.style, look.mark)} ${pad(result.label, width)} ${paint(look.style, status.padEnd(STATUS_WIDTH))} ${paint("dim", clip(detail, columns() - used - 1))}`;
   }
 
   /** One name: a row per channel with its status and evidence, in a stable order. */
   function liveTable(channels: Channel[]) {
     const width = labelWidth(channels);
     const rows = channels.map(
-      (c) => `  ${paint("dim", "·")} ${c.label.padEnd(width)} ${paint("dim", "checking…")}`,
+      (c) => `  ${paint("dim", "·")} ${pad(c.label, width)} ${paint("dim", "checking…")}`,
     );
     const redraw = block(rows);
     return (_name: string, result: CheckResult) => {
@@ -76,9 +96,9 @@ export function createRenderer(out: Output, color: boolean) {
     // `plain` is the visible width, since color codes take no space on screen.
     const cells = channels.map(() => shown.map(() => ({ text: paint("dim", "·"), plain: 1 })));
     const row = (i: number) =>
-      `  ${channels[i]!.label.padEnd(width)}  ${cells[i]!.map((c) => c.text + " ".repeat(cell - c.plain)).join("")}`;
+      `  ${pad(channels[i]!.label, width)}  ${cells[i]!.map((c) => c.text + " ".repeat(cell - c.plain)).join("")}`;
     const rows = [
-      `  ${" ".repeat(width)}  ${shown.map((n) => n.padEnd(cell)).join("")}`,
+      `  ${" ".repeat(width)}  ${shown.map((n) => pad(n, cell)).join("")}`,
       ...channels.map((_, i) => row(i)),
     ];
     const redraw = block(rows);
@@ -117,8 +137,8 @@ export function createRenderer(out: Output, color: boolean) {
   function evidence(results: CheckResult[]): string {
     const linked = results.filter((r) => !free(r) && r.url);
     if (!linked.length) return "";
-    const width = Math.max(...linked.map((r) => r.label.length));
-    return `\n${linked.map((r) => `  ${r.label.padEnd(width)}  ${paint("dim", r.url!)}`).join("\n")}\n`;
+    const width = Math.max(...linked.map((r) => displayWidth(r.label)));
+    return `\n${linked.map((r) => `  ${pad(r.label, width)}  ${paint("dim", r.url!)}`).join("\n")}\n`;
   }
 
   function summary(results: CheckResult[]): string {

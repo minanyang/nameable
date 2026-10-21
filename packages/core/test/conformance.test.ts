@@ -71,6 +71,23 @@ describe.each(FIXTURES.map((f) => [f.channel.id, f] as const))("%s", (_id, fixtu
     }
   });
 
+  // The cases that a "404 means free" fake would never exercise.
+  for (const refused of fixture.refused) {
+    it(`refuses ${JSON.stringify(refused.name)} (${refused.why})`, async () => {
+      const { result } = await runOn(channel, refused.name, refused.service ?? fixture.free);
+      expectWellFormed(result, channel);
+      expect(result.status, JSON.stringify(result)).toBe(refused.expect);
+    });
+  }
+
+  it(`reaches ${fixture.freeCertainty} certainty for a free name when every request succeeds`, async () => {
+    const { result } = await runOn(channel, INPUTS.typical, fixture.free);
+    expect(result, JSON.stringify(result)).toMatchObject({
+      status: "available",
+      certainty: fixture.freeCertainty,
+    });
+  });
+
   it("reports a held name as taken, with a link", async () => {
     const { result } = await runOn(channel, INPUTS.typical, fixture.taken);
     expectWellFormed(result, channel);

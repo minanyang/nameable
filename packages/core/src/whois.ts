@@ -13,7 +13,8 @@ export function whoisQuery(ctx: Context, server: string, query: string): Promise
 export function whoisServer(ctx: Context, tld: string): Promise<string | undefined> {
   return memo(ctx, `whois-server:${tld}`, async () => {
     const text = await whoisQuery(ctx, IANA, tld);
-    return /^whois:\s*(\S+)/im.exec(text)?.[1];
+    // [ \t]* rather than \s*, so an empty "whois:" line cannot capture the next line.
+    return /^whois:[ \t]*(\S+)/im.exec(text)?.[1];
   });
 }
 
@@ -28,6 +29,8 @@ const FREE = [
   /^no entries found/im,
   /^the queried object does not exist/im,
   /^status:\s*free\s*$/im,
+  // .eu, .be, .it; the whole value, because .be writes "NOT AVAILABLE" for a registered name.
+  /^status:\s*available\s*$/im,
 ];
 const REGISTERED = [/^domain name:\s*\S/im, /^domain:\s*\S/im, /^\[domain name\]\s*\S/im];
 const NOTICE = /^\s*(%|#|>>>|\[ |NOTICE|TERMS)/;

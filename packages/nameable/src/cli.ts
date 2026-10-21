@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { defaultCacheDir } from "@nameable/core";
 import { run } from "./run.js";
 
 /** Token for the GitHub API's higher rate limit; checks still run without one. */
@@ -28,4 +29,5 @@ process.exitCode = await run(process.argv.slice(2), {
   // hasColors() honors NO_COLOR and FORCE_COLOR.
   color: process.stdout.isTTY === true && process.stdout.hasColors(),
   githubToken,
+  cacheDir: defaultCacheDir(),
 });

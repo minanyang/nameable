@@ -38,6 +38,11 @@ Rules for `lookup`:
 
 - Use `get()` for HTTP and `whoisQuery()` for whois. They apply timeouts, retries and per-host limits.
 - Map only responses you have seen. Anything else returns `unexpected()`, never `available`.
+- Validate the shape of any list you download; a list in an unexpected shape must fail the check,
+  never read as "nothing matches".
+- Rules come from the registry's own source (its validator, auditor or database migrations), cited
+  next to the code. Do not rely on secondhand descriptions, including reviews: verify each claim
+  with a contract test.
 - `available` always carries `certainty`. Use `probable` when the service cannot prove it (hidden
   accounts, reserved names, a sub-check that could not run), and say why in `note`.
 - `taken` and `reclaimable` always carry a `url` a person can open.
@@ -50,11 +55,17 @@ In `packages/core/test/fixtures.ts`, add a `Fixture`:
 - `accepts`: for **every** standard input class (uppercase, unicode, hyphens, dots, one character,
   empty, …) whether the channel accepts it. There is no default; decide each one from the official rule.
 - `maxLength`, when the channel has a limit.
+- `freeCertainty`: the certainty a free name reaches when every request succeeds.
+- `refused`: names the registry would refuse although it answers 404 for them or they pass the basic
+  syntax — reserved names, aliases, similar names. This is the case a "404 means free" fake never
+  exercises, so every rule the channel enforces needs at least one entry here.
 
 `conformance.test.ts` then runs the channel through, with no extra code:
 
 - each input class, expecting `available` or `unavailable` (and no request for a rejected name);
 - the length limit, at and one over;
+- every `refused` name, expecting its status;
+- the certainty of a free name, so a change that quietly downgrades every answer fails;
 - the taken path;
 - every request on the free path faulted in turn (network error, timeout, 500, 503, 429, 403, an
   unreadable body; for whois a dropped connection, a timeout, an unrecognized answer), which must never

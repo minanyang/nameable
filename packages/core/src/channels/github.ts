@@ -38,6 +38,12 @@ export const github: Channel = defineChannel({
         note: "suspended, deleted or reserved accounts also look free; confirm on GitHub's sign-up page",
       };
     }
+    if (res.status === 401) {
+      return {
+        status: "unknown",
+        note: "GitHub rejected the token (HTTP 401); check GITHUB_TOKEN",
+      };
+    }
     if (res.status === 403 || res.status === 429) {
       return {
         status: "unknown",

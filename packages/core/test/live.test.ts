@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vite-plus/test";
-import { check, selectChannels } from "../src/index.js";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { check, fileStore, selectChannels } from "../src/index.js";
 
 // Hits the real services. Run with `pnpm test:live`; a service outage fails here on purpose.
 const live = describe.runIf(process.env.NAMEABLE_LIVE === "1");
 
 // Fresh every run, so nobody can have registered it.
 const fresh = `zq${Date.now().toString(36)}x`;
+// One store for the run, so the PyPI and Homebrew name lists are downloaded once, not per test.
+const store = fileStore(mkdtempSync(join(tmpdir(), "nameable-live-")));
+const opts = { githubToken: process.env.GITHUB_TOKEN, store };
 
 const cases: [channel: string, taken: string][] = [
   ["npm", "react"],
@@ -21,17 +27,39 @@ const cases: [channel: string, taken: string][] = [
   ["domain:co", "google"],
   ["domain:de", "google"],
   ["domain:jp", "google"],
+  // Their whois says "Status: AVAILABLE" for a free name.
+  ["domain:eu", "google"],
+  ["domain:it", "google"],
+  ["domain:be", "google"],
 ];
 
 live("live channels", () => {
   for (const [channel, taken] of cases) {
     it(`${channel}: "${taken}" is taken and a fresh name is available`, async () => {
       const channels = selectChannels({ only: [channel] });
-      const [held] = await check(taken, channels, { githubToken: process.env.GITHUB_TOKEN });
-      const [free] = await check(fresh, channels, { githubToken: process.env.GITHUB_TOKEN });
+      const [held] = await check(taken, channels, opts);
+      const [free] = await check(fresh, channels, opts);
       expect(held, JSON.stringify(held)).toMatchObject({ status: "taken" });
       expect(free, JSON.stringify(free)).toMatchObject({ status: "available" });
-    }, 30_000);
+    }, 180_000);
+  }
+
+  // Names the registry answers 404 for, or that look valid, but that it would refuse.
+  const refused: [channel: string, name: string, status: string, note: string][] = [
+    ["pypi", "tomllib", "unavailable", "standard library"],
+    ["pypi", "f1ask", "unavailable", "Flask"],
+    ["crates", "std", "unavailable", "reserves"],
+    ["homebrew", "golang", "taken", "alias of go"],
+    ["homebrew", "pip", "unavailable", "does not allow"],
+    ["npm", "fs", "unavailable", "core module"],
+    ["npm", "@babel/zq-not-a-real-pkg", "available", "@babel is an npm organization"],
+  ];
+  for (const [channel, name, status, note] of refused) {
+    it(`${channel}: "${name}" is ${status} (${note})`, async () => {
+      const [r] = await check(name, selectChannels({ only: [channel] }), opts);
+      expect(r, JSON.stringify(r)).toMatchObject({ status, note: expect.stringContaining(note) });
+      expect(r!.certainty).not.toBe("confirmed");
+    }, 180_000);
   }
 
   for (const [name, clash] of [

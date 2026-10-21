@@ -1,4 +1,5 @@
 import type { Channel, CheckResult, Context, Fetch, Report, Whois } from "./types.js";
+import type { Store } from "./store.js";
 import { tcpWhois } from "./tcp-whois.js";
 
 export type CheckOptions = {
@@ -6,6 +7,11 @@ export type CheckOptions = {
   whois?: Whois;
   githubToken?: string;
   backoffMs?: number;
+  /** Keeps downloaded name lists between runs. */
+  store?: Store;
+  /** Download name lists even when the stored copy is fresh. */
+  refresh?: boolean;
+  now?: () => number;
   /** Called as each channel finishes for a name, so a UI can stream results. */
   onResult?: (name: string, result: CheckResult) => void;
 };
@@ -18,6 +24,9 @@ function createContext(opts: CheckOptions): Context {
     cache: new Map(),
     gates: new Map(),
     backoffMs: opts.backoffMs,
+    store: opts.store,
+    refresh: opts.refresh,
+    now: opts.now,
   };
 }
 

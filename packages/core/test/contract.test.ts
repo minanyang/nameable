@@ -18,6 +18,10 @@ live(
     it("answers 404 for a missing package", async () => {
       expect(await status(`https://registry.npmjs.org/${fresh}`)).toBe(404);
     });
+    it("answers the org endpoint with 200 for an org and 404 otherwise", async () => {
+      expect(await status("https://registry.npmjs.org/-/org/babel/package")).toBe(200);
+      expect(await status(`https://registry.npmjs.org/-/org/${fresh}/package`)).toBe(404);
+    });
     it("serves the abbreviated document the similar-name probes ask for", async () => {
       const accept = { accept: "application/vnd.npm.install-v1+json" };
       expect(await status("https://registry.npmjs.org/lodash-es", accept)).toBe(200);
@@ -42,6 +46,13 @@ live("PyPI", () => {
   it("answers 404 for a missing project", async () => {
     expect(await status(`https://pypi.org/pypi/${fresh}/json`)).toBe(404);
   });
+  it("lists every project in the JSON simple index", async () => {
+    const body = await json("https://pypi.org/simple/", {
+      accept: "application/vnd.pypi.simple.v1+json",
+    });
+    expect(body.projects.length).toBeGreaterThan(500_000);
+    expect(body.projects.some((p: { name: string }) => p.name === "Flask")).toBe(true);
+  }, 180_000);
   it("accepts the PEP 503 normalized name", async () => {
     const body = await json("https://pypi.org/pypi/zope-interface/json");
     expect(body.info.name).toBe("zope.interface");
@@ -63,6 +74,23 @@ live("Homebrew API", () => {
   it("answers 404 for a missing formula and cask", async () => {
     expect(await status(`https://formulae.brew.sh/api/formula/${fresh}.json`)).toBe(404);
     expect(await status(`https://formulae.brew.sh/api/cask/${fresh}.json`)).toBe(404);
+  });
+  it("lists aliases and old names (renames) on each formula in formula.json", async () => {
+    const formulae = (await json("https://formulae.brew.sh/api/formula.json")) as unknown as {
+      name: string;
+      aliases: string[];
+      oldnames: string[];
+    }[];
+    expect(formulae.find((f) => f.name === "go")?.aliases).toContain("golang");
+    expect(formulae.find((f) => f.oldnames.includes("atk"))?.name).toBe("at-spi2-core");
+  });
+  it("serves casks with old_tokens in cask.json", async () => {
+    const casks = (await json("https://formulae.brew.sh/api/cask.json")) as unknown as {
+      token: string;
+      old_tokens?: string[];
+    }[];
+    expect(casks.length).toBeGreaterThan(1000);
+    expect(casks.some((c) => (c.old_tokens ?? []).length > 0)).toBe(true);
   });
   it("has formulae whose names use @ and +", async () => {
     expect(await status("https://formulae.brew.sh/api/formula/openssl@3.json")).toBe(200);

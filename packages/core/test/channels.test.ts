@@ -43,13 +43,30 @@ const hyphenProbes = (name: string, override: Record<string, Reply> = {}) =>
   );
 
 describe("npm", () => {
-  it("is available when the registry has no such package and no similar name", async () => {
+  // npm's similar-name rule cannot be checked for every spelling (babel-preset-env vs babelpresetenv),
+  // so a free unscoped name is never more than probable.
+  it("is probably available when no checked spelling exists", async () => {
     const r = await one("npm", "zzname", {
       [`${NPM}/zzname`]: 404,
       [searchUrl("zzname")]: searchHits("zz-other"),
       ...hyphenProbes("zzname"),
     });
-    expect(r).toMatchObject({ status: "available", certainty: "confirmed" });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+    expect(r.note).toContain("not every spelling can be checked");
+  });
+
+  it("says who can publish under a scope", async () => {
+    const org = await one("npm", "@babel/zz", {
+      [`${NPM}/@babel%2fzz`]: 404,
+      [`${NPM}/-/org/babel/package`]: [200, {}],
+    });
+    expect(org).toMatchObject({ status: "available", certainty: "probable" });
+    expect(org.note).toContain("@babel is an npm organization");
+    const user = await one("npm", "@zq/zz", {
+      [`${NPM}/@zq%2fzz`]: 404,
+      [`${NPM}/-/org/zq/package`]: 404,
+    });
+    expect(user.note).toContain('only the npm user or organization "zq"');
   });
 
   it("is unavailable when a hyphenated spelling exists that search does not surface", async () => {
@@ -108,16 +125,17 @@ describe("npm", () => {
   });
 
   // npm search rejects text outside 2–64 characters with HTTP 400.
-  it("confirms a one-letter name without searching, since it has no other spelling", async () => {
+  // Only the routes given exist; any other request fails, which would show as "could not check".
+  it("does not search a one-letter name, since npm search rejects it", async () => {
     const r = await one("npm", "q", { [`${NPM}/q`]: 404 });
-    expect(r).toMatchObject({ status: "available", certainty: "confirmed" });
+    expect(r.note).not.toContain("could not check");
   });
 
   it("searches but does not probe hyphen spellings of a long name", async () => {
     const name = "a".repeat(50);
     const r = await one("npm", name, { [`${NPM}/${name}`]: 404, [searchUrl(name)]: searchHits() });
     expect(r).toMatchObject({ status: "available", certainty: "probable" });
-    expect(r.note).toContain("too long");
+    expect(r.note).not.toContain("could not check");
   });
 
   it("does not search a name longer than npm search accepts", async () => {
@@ -169,6 +187,14 @@ describe("github", () => {
     expect(await one("github", "someone", { [url]: 404 })).toMatchObject({
       status: "available",
       certainty: "probable",
+    });
+  });
+
+  it("says the token was rejected on a 401", async () => {
+    const r = await one("github", "someone", { [url]: 401 });
+    expect(r).toMatchObject({
+      status: "unknown",
+      note: expect.stringContaining("rejected the token"),
     });
   });
 
@@ -425,6 +451,26 @@ describe("selectChannels", () => {
       "domain:com",
       "domain:dev",
     ]);
+  });
+
+  it("normalizes and dedupes TLDs", () => {
+    expect(
+      selectChannels({ tlds: [".COM", "com", "Dev"] })
+        .map((c) => c.id)
+        .slice(-2),
+    ).toEqual(["domain:com", "domain:dev"]);
+  });
+
+  it("converts an internationalized TLD to punycode but shows it as typed", () => {
+    const [c] = selectChannels({ only: ["domain:рф"] });
+    expect(c).toMatchObject({ id: "domain:xn--p1ai", label: ".рф" });
+  });
+
+  it.each([
+    [["domain:"], "needs a TLD"],
+    [["domain:co.uk"], "several labels"],
+  ])("rejects %j", (only, message) => {
+    expect(() => selectChannels({ only })).toThrow(message);
   });
 
   it("rejects unknown channel ids", () => {

@@ -4,24 +4,34 @@ import { defineChannel, unexpected } from "../define.js";
 import type { Channel, Context } from "../types.js";
 
 const REGISTRY = "https://registry.npmjs.org";
-const RESERVED = new Set(["node_modules", "favicon.ico"]);
+const EXCLUDED = new Set(["node_modules", "favicon.ico"]);
+const SCOPED = /^(?:@([^/]+?)[/])?([^/]+?)$/;
 
-// https://github.com/npm/validate-npm-package-name (rules for new packages).
+/**
+ * validate-npm-package-name's `validForNewPackages` (lib/index.js, v7): a new package must have no
+ * errors and no warnings. Returns the first reason, in the validator's order.
+ */
 function problem(name: string): string | undefined {
-  const scoped = /^@([^/]+)\/([^/]+)$/.exec(name);
-  const bare = scoped ? scoped[2]! : name;
-  if (!bare) return "npm names cannot be empty";
+  // Errors.
+  if (!name.length) return "npm names cannot be empty";
+  if (name.startsWith(".")) return "npm names cannot start with a period";
+  if (name.startsWith("-")) return "npm names cannot start with a hyphen";
+  if (name.startsWith("_")) return "npm names cannot start with an underscore";
+  if (name.trim() !== name) return "npm names cannot have leading or trailing spaces";
+  if (EXCLUDED.has(name.toLowerCase())) return `${name} is not a valid npm name`;
+  // Warnings, which also rule out new packages.
+  if (builtinModules.includes(name.toLowerCase())) return "npm reserves Node.js core module names";
   if (name.length > 214) return "npm names are at most 214 characters";
-  if (name !== name.toLowerCase()) return "npm names must be lowercase";
-  if (/^[._]/.test(bare)) return "npm names cannot start with . or _";
-  if (
-    encodeURIComponent(bare) !== bare ||
-    (scoped && encodeURIComponent(scoped[1]!) !== scoped[1])
-  ) {
-    return "npm names may only contain URL-safe characters";
+  if (name.toLowerCase() !== name) return "npm names must be lowercase";
+  if (/[~'!()*]/.test(name.split("/").at(-1)!)) return "npm names cannot contain ~ ' ! ( ) *";
+  if (encodeURIComponent(name) !== name) {
+    const match = SCOPED.exec(name);
+    const [user, pkg] = [match?.[1], match?.[2]];
+    if (match && pkg?.startsWith(".")) return "npm names cannot start with a period";
+    const urlSafe = (s?: string) => s !== undefined && encodeURIComponent(s) === s;
+    if (!(match && urlSafe(user) && urlSafe(pkg)))
+      return "npm names may only contain URL-safe characters";
   }
-  if (!scoped && (RESERVED.has(name) || builtinModules.includes(name)))
-    return "npm reserves this name";
   return undefined;
 }
 
@@ -29,22 +39,19 @@ const squash = (s: string) => s.replace(/[-_.]/g, "");
 
 /**
  * npm refuses an unscoped name that equals an existing package once punctuation is removed
- * (`first-one` vs `firstone`). The registry has no lookup for that, so search and compare.
- * Searching `first-one` does not surface `firstone`, so both spellings are searched. Search never surfaces
- * `lodash-es` for `lodashes`, so a name without punctuation also probes every single-hyphen spelling directly;
- * spellings with `_`, `.` or several separators are not probed.
- *
- * `complete` is false when part of the check had to be skipped: npm search only takes 2–64 characters,
- * and probing every hyphen position of a very long name would flood the registry.
+ * (`first-one` vs `firstone`, `babelpresetenv` vs `babel-preset-env`). The registry has no lookup for
+ * that, so this catches the common cases: it searches both spellings (search does not surface
+ * `firstone` for `first-one`) and, for a name without punctuation, probes every single-hyphen
+ * spelling (search never surfaces `lodash-es` for `lodashes`). Spellings with several separators
+ * cannot all be probed, so a name that passes is only probably free.
  */
 const SEARCH_LENGTH = { min: 2, max: 64 };
 const MAX_PROBED_LENGTH = 40;
 
-async function similar(ctx: Context, name: string): Promise<{ clash?: string; complete: boolean }> {
+async function similar(ctx: Context, name: string): Promise<string | undefined> {
   const queries = [...new Set([name, squash(name)])].filter(
     (q) => q.length >= SEARCH_LENGTH.min && q.length <= SEARCH_LENGTH.max,
   );
-  let complete = queries.length > 0;
   const pages = await Promise.all(
     queries.map(async (q) => {
       const res = await get(ctx, `${REGISTRY}/-/v1/search?text=${encodeURIComponent(q)}&size=50`);
@@ -56,9 +63,7 @@ async function similar(ctx: Context, name: string): Promise<{ clash?: string; co
     .flat()
     .map((o) => o.package.name)
     .find((n) => !n.startsWith("@") && n !== name && squash(n) === squash(name));
-  if (found) return { clash: found, complete: true };
-  if (name !== squash(name)) return { complete };
-  if (name.length > MAX_PROBED_LENGTH) return { complete: false };
+  if (found || name !== squash(name) || name.length > MAX_PROBED_LENGTH) return found;
 
   const hyphenated = Array.from(
     { length: name.length - 1 },
@@ -74,10 +79,17 @@ async function similar(ctx: Context, name: string): Promise<{ clash?: string; co
       return res.status === 200 ? variant : undefined;
     }),
   );
-  const clash = probes.find(Boolean);
-  // A one-letter name cannot be searched, but it has no hyphen spellings either, so nothing is missing.
-  if (name.length < SEARCH_LENGTH.min) complete = true;
-  return { clash, complete };
+  return probes.find(Boolean);
+}
+
+/** Only the npm user or organization named after a scope can publish under it. */
+async function scopeNote(ctx: Context, scope: string): Promise<string> {
+  const res = await get(ctx, `${REGISTRY}/-/org/${encodeURIComponent(scope)}/package`).catch(
+    () => undefined,
+  );
+  if (res?.status === 200)
+    return `@${scope} is an npm organization; only its members can publish under it`;
+  return `only the npm user or organization "${scope}" can publish under @${scope}`;
 }
 
 export const npm: Channel = defineChannel({
@@ -111,21 +123,21 @@ export const npm: Channel = defineChannel({
     }
     if (res.status !== 404) return unexpected("npm registry", res);
 
-    if (name.startsWith("@")) return { status: "available", certainty: "confirmed" };
+    // A missing scoped package may also be a private one, invisible without its owner's login.
+    const scope = SCOPED.exec(name)?.[1];
+    if (scope)
+      return { status: "available", certainty: "probable", note: await scopeNote(ctx, scope) };
     try {
-      const { clash, complete } = await similar(ctx, name);
-      if (clash)
+      const clash = await similar(ctx, name);
+      if (clash) {
         return { status: "unavailable", note: `npm rejects names too similar to "${clash}"` };
-      if (!complete) {
-        return {
-          status: "available",
-          certainty: "probable",
-          note: "too long to fully check npm's similar-name rule",
-        };
       }
-      return { status: "available", certainty: "confirmed" };
+      return {
+        status: "available",
+        certainty: "probable",
+        note: "npm also refuses names equal to an existing one without punctuation; not every spelling can be checked",
+      };
     } catch {
-      // The exact name is free; only the similar-name check failed, so this is not proof.
       return {
         status: "available",
         certainty: "probable",

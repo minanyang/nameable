@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vite-plus/test";
 import { fakeFetch } from "../../core/test/fake-fetch.js";
+import { existsSync } from "node:fs";
+import { mkdtemp, readdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { displayWidth } from "../src/render.js";
 import { run, type Io } from "../src/run.js";
 
 const PYPI = (name: string) => `https://pypi.org/pypi/${name}/json`;
 const CRATES = (name: string) => `https://crates.io/api/v1/crates/${name}`;
+// PyPI checks a free name against its full project index; every test gets a small one.
+const PYPI_INDEX: Parameters<typeof fakeFetch>[0] = {
+  "https://pypi.org/simple/": [200, { projects: [{ name: "requests" }] }],
+};
 
 async function cli(
   argv: string[],
@@ -18,7 +27,7 @@ async function cli(
     stderr: { write: (s: string) => (stderr += s) },
     interactive: false,
     color: false,
-    fetch: fakeFetch(routes),
+    fetch: fakeFetch({ ...PYPI_INDEX, ...routes }),
     ...io,
   });
   return { code, stdout, stderr };
@@ -39,6 +48,8 @@ describe("usage", () => {
   it.each([
     [[], "missing <name>"],
     [["foo", "--only", ""], "--only needs at least one value"],
+    [["foo", " "], "names cannot be empty"],
+    [["foo", "--tlds", "co.uk"], "several labels"],
     [["foo", "--tlds", " , "], "--tlds needs at least one value"],
     [["foo", "--only", "nope"], 'unknown channel "nope"'],
     [["foo", "--bogus"], "Unknown option"],
@@ -47,6 +58,41 @@ describe("usage", () => {
     expect(r.code).toBe(64);
     expect(r.stderr).toContain(message);
     expect(r.stdout).toBe("");
+  });
+});
+
+describe("cache", () => {
+  it("clears the cache directory with --clear-cache", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "nameable-"));
+    await writeFile(join(dir, "pypi-projects.gz"), "x");
+    const r = await cli(["--clear-cache"], {}, { cacheDir: dir });
+    expect(r).toMatchObject({ code: 0, stdout: `Cleared ${dir}\n` });
+    expect(existsSync(dir)).toBe(false);
+  });
+
+  it("saves the PyPI list in the cache directory and reuses it", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "nameable-"));
+    const first = await cli(["zz", "--only", "pypi"], { [PYPI("zz")]: 404 }, { cacheDir: dir });
+    expect(first.code).toBe(0);
+    expect(await readdir(dir)).toEqual(["pypi-projects.gz"]);
+    // The index route is gone: a second run must answer from the saved copy.
+    const second = await cli(
+      ["zz", "--only", "pypi"],
+      { [PYPI("zz")]: 404, "https://pypi.org/simple/": 503 },
+      { cacheDir: dir },
+    );
+    expect(JSON.parse(second.stdout).reports[0].results[0]).toMatchObject({
+      certainty: "confirmed",
+    });
+    // --refresh downloads again, so the broken index now shows.
+    const refreshed = await cli(
+      ["zz", "--only", "pypi", "--refresh"],
+      { [PYPI("zz")]: 404, "https://pypi.org/simple/": 503 },
+      { cacheDir: dir },
+    );
+    expect(JSON.parse(refreshed.stdout).reports[0].results[0]).toMatchObject({
+      certainty: "probable",
+    });
   });
 });
 
@@ -90,6 +136,11 @@ describe("JSON output", () => {
       [CRATES("bb")]: 404,
     });
     expect(JSON.parse(r.stdout).reports.map((x: { name: string }) => x.name)).toEqual(["bb", "aa"]);
+  });
+
+  it('checks the name "check" when nothing follows it', async () => {
+    const r = await cli(["check", "--only", "crates"], { [CRATES("check")]: 404 });
+    expect(JSON.parse(r.stdout).reports[0].name).toBe("check");
   });
 
   it("accepts the check subcommand", async () => {
@@ -160,6 +211,22 @@ describe("terminal output", () => {
     const lines = text.split("\n");
     const grid = lines.slice(0, lines.findIndex((l) => l.startsWith("  free")) + 1);
     expect(Math.max(...grid.map((l) => l.length))).toBeLessThanOrEqual(40);
+  });
+
+  it("measures wide characters by the columns they take", async () => {
+    const note = "名".repeat(60);
+    const r = await cli(
+      ["zz", "--only", "crates"],
+      { [CRATES("zz")]: [200, { crate: { name: "zz", description: note } }] },
+      { interactive: true },
+      80,
+    );
+    // The output holds every redraw; the last table row for crates.io is the final one.
+    const row = screen(r.stdout)
+      .split("\n")
+      .findLast((l) => l.includes("crates.io") && l.includes("taken"))!;
+    expect(displayWidth(row)).toBeLessThanOrEqual(80);
+    expect(row).toContain("名");
   });
 
   it("colors marks only when color is on", async () => {

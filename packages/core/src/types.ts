@@ -1,4 +1,5 @@
 import type { Gate } from "./gate.js";
+import type { Store } from "./store.js";
 
 /**
  * - available: nobody holds the name and it passes the channel's naming rules
@@ -42,6 +43,12 @@ export type Context = {
   gates: Map<string, Gate>;
   /** Base delay for retry backoff; tests set it to 0. */
   backoffMs?: number;
+  /** Keeps downloaded name lists between runs; without one they are downloaded on every run. */
+  store?: Store;
+  /** Download name lists even when the stored copy is fresh. */
+  refresh?: boolean;
+  /** Clock for list freshness; tests fix it. */
+  now?: () => number;
 };
 
 export type Channel = {

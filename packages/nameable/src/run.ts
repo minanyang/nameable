@@ -3,7 +3,9 @@ import { parseArgs } from "node:util";
 import {
   channelIds,
   checkMany,
+  clearStore,
   DEFAULT_TLDS,
+  fileStore,
   selectChannels,
   type Channel,
   type Fetch,
@@ -27,6 +29,8 @@ Options
   --only <ids>    Comma-separated channels: ${channelIds().join(", ")}
   --tlds <list>   Domains to check (default: ${DEFAULT_TLDS.join(",")})
   --json          Print JSON (default when stdout is not a terminal)
+  --refresh       Download the PyPI and Homebrew name lists even if the cached copy is fresh
+  --clear-cache   Delete the cached name lists and exit
   -h, --help      Show this help
   -v, --version   Show the version
 
@@ -37,6 +41,8 @@ Exit codes
   64 usage error
 
 GitHub checks use GITHUB_TOKEN, GH_TOKEN or \`gh auth token\` when available.
+PyPI and Homebrew checks download each registry's name list (about 10 MB and 7 MB) at most once a
+day and keep it in the cache directory (NAMEABLE_CACHE_DIR to change it).
 `;
 
 export type Io = {
@@ -48,6 +54,8 @@ export type Io = {
   githubToken?: () => Promise<string | undefined>;
   fetch?: Fetch;
   whois?: Whois;
+  /** Where name lists are cached; without one they are downloaded on every run. */
+  cacheDir?: string;
 };
 
 class UsageError extends Error {}
@@ -75,6 +83,8 @@ function parse(argv: string[]) {
         only: { type: "string" },
         tlds: { type: "string" },
         json: { type: "boolean" },
+        refresh: { type: "boolean" },
+        "clear-cache": { type: "boolean" },
         help: { type: "boolean", short: "h" },
         version: { type: "boolean", short: "v" },
       },
@@ -83,7 +93,9 @@ function parse(argv: string[]) {
     throw new UsageError((err as Error).message);
   }
   const { values, positionals } = parsed;
-  const names = positionals[0] === "check" ? positionals.slice(1) : positionals;
+  // `check` is the subcommand only when names follow it; `nameable check` checks the name "check".
+  const names =
+    positionals[0] === "check" && positionals.length > 1 ? positionals.slice(1) : positionals;
   return { values, names: [...new Set(names)] };
 }
 
@@ -95,7 +107,12 @@ export async function run(argv: string[], io: Io): Promise<number> {
     ({ values, names } = parse(argv));
     if (values.help) return (io.stdout.write(HELP), 0);
     if (values.version) return (io.stdout.write(`${version}\n`), 0);
+    if (values["clear-cache"]) {
+      if (io.cacheDir) await clearStore(io.cacheDir);
+      return (io.stdout.write(`Cleared ${io.cacheDir ?? "nothing (no cache directory)"}\n`), 0);
+    }
     if (!names.length) throw new UsageError("missing <name>");
+    if (names.some((n) => !n.trim())) throw new UsageError("names cannot be empty");
     for (const flag of ["only", "tlds"] as const) {
       if (values[flag] !== undefined && !split(values[flag])?.length) {
         throw new UsageError(`--${flag} needs at least one value`);
@@ -123,6 +140,8 @@ export async function run(argv: string[], io: Io): Promise<number> {
     fetch: io.fetch,
     whois: io.whois,
     githubToken: await io.githubToken?.(),
+    store: io.cacheDir ? fileStore(io.cacheDir) : undefined,
+    refresh: values.refresh,
     onResult: json
       ? undefined
       : single

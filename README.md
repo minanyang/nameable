@@ -27,8 +27,15 @@ Channels: `npm`, `pypi`, `crates`, `homebrew`, `github` (user or org), and `doma
 | `unavailable` | Nobody holds it exactly, but the channel would refuse it (invalid, or too similar on npm)     |
 | `unknown`     | No trustworthy answer (network error, rate limit, unrecognized reply). Never reported as free |
 
-An `available` with `"certainty": "probable"` (`*` in the grid) is one the channel cannot fully prove: GitHub hides
-suspended and reserved accounts, and registries can refuse premium or reserved domains.
+`"certainty": "confirmed"` means every publicly documented rule of that registry was checked: its naming rules,
+reserved and prohibited names, aliases and similar-name rules. `"probable"` (`*` in the grid) means a rule could not
+be fully checked, and `note` says which: GitHub hides suspended and reserved accounts, npm's similar-name rule cannot
+be checked for every spelling and a scope belongs to its owner, and registries can refuse premium or reserved domains.
+
+PyPI and Homebrew checks compare against each registry's full name list (PyPI's similar-name rule, Homebrew aliases and
+old names). The lists are downloaded at most once a day, about 10 MB and 7 MB, and kept compressed (about 8.5 MB) in the
+OS cache directory (`~/Library/Caches/nameable` on macOS, `$XDG_CACHE_HOME/nameable` on Linux, `%LOCALAPPDATA%\nameable\Cache`
+on Windows, or `NAMEABLE_CACHE_DIR`). `--refresh` downloads them again; `--clear-cache` deletes them.
 
 ### JSON
 

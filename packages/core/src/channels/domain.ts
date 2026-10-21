@@ -33,7 +33,7 @@ async function viaWhois(ctx: Context, fqdn: string, tld: string, url: string): P
       ...base,
       status: "available",
       certainty: "probable",
-      note: "not registered (whois); premium or reserved names can still be refused, confirm at a registrar",
+      note: freeNote(tld, " (whois)"),
     };
   }
   if (answer === "registered") {
@@ -50,13 +50,25 @@ async function viaWhois(ctx: Context, fqdn: string, tld: string, url: string): P
   return { ...base, status: "unknown", note: `unrecognized whois answer from ${server}` };
 }
 
-export function domain(tld: string): Channel {
+/** Why a free answer is still only probable. IDN TLDs (`xn--…`) also limit which scripts they take. */
+const freeNote = (tld: string, via: string) =>
+  `not registered${via}; premium or reserved names can still be refused` +
+  (tld.startsWith("xn--") ? ", and this TLD accepts only some scripts" : "") +
+  ", confirm at a registrar";
+
+/** `tld` is in its ASCII (punycode) form; `display` is how to show it. */
+export function domain(tld: string, display: string = tld): Channel {
   return defineChannel({
     id: `domain:${tld}`,
-    label: `.${tld}`,
+    label: `.${display}`,
     category: "domain",
     // Internationalized names are registered in punycode (café → xn--caf-dma); this also lowercases.
     rules: (name) => {
+      // IDNA2008 (RFC 5892) allows letters, marks and digits; Node's UTS-46 conversion would also turn
+      // emoji and symbols into punycode that registries refuse. This approximates the PVALID table.
+      if (/\P{ASCII}/u.test(name) && /[^\p{L}\p{M}\p{N}-]/u.test(name)) {
+        return "internationalized domain labels may only use letters, marks and digits (no emoji or symbols)";
+      }
       const ascii = domainToASCII(name);
       if (!LABEL.test(ascii)) return "domain labels are letters, digits and inner hyphens (max 63)";
       // RFC 5891: "--" in the 3rd and 4th position is reserved for punycode ("xn--").
@@ -79,7 +91,7 @@ export function domain(tld: string): Channel {
           status: "available",
           certainty: "probable",
           url,
-          note: "not registered; premium or reserved names can still be refused, confirm at a registrar",
+          note: freeNote(tld, ""),
         };
       }
       if (res.status !== 200) return { ...unexpected("RDAP", res), url };
