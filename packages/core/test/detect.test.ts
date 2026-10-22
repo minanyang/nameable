@@ -66,6 +66,33 @@ describe("detectProject", () => {
     ],
     [{ "X.csproj": "<IsPackable>false</IsPackable>" }, ["github", "domain"]],
     [{ "X.csproj": "<IsTestProject>true</IsTestProject>" }, ["github", "domain"]],
+    [{ "X.csproj": '<Project Sdk="Microsoft.NET.Sdk.Worker">' }, ["github", "domain"]],
+    [{ "X.csproj": '<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">' }, ["github", "domain"]],
+    [{ "X.csproj": '<IsPackable Condition="x">false</IsPackable>' }, ["github", "domain"]],
+    [
+      { "X.csproj": "<Project />", "Directory.Build.props": "<OutputType>Exe</OutputType>" },
+      ["github", "domain"],
+    ],
+    // A library's tests take no side; a solution whose only project is missing publishes nothing.
+    [
+      {
+        "X.sln":
+          'Project("{G}") = "Lib", "src\\Lib\\Lib.csproj", "{H}"\nProject("{G}") = "T", "tests\\T\\T.csproj", "{I}"',
+        "src/Lib/Lib.csproj": "<PackageLicenseExpression>MIT</PackageLicenseExpression>",
+        "tests/T/T.csproj": "<IsPackable>false</IsPackable><IsTestProject>true</IsTestProject>",
+      },
+      ["nuget", "github", "domain"],
+    ],
+    [{ "X.sln": 'Project("{G}") = "App", "App\\App.csproj", "{H}"' }, ["github", "domain"]],
+    // pnpm 10 keeps settings in pnpm-workspace.yaml without making the repository a workspace.
+    [
+      {
+        "package.json": '{"name":"app","private":true}',
+        "pnpm-workspace.yaml": "onlyBuiltDependencies:\n  - esbuild\n",
+        Dockerfile: "",
+      },
+      ["github", "domain"],
+    ],
     [{ Pipfile: "[packages]" }, ["github", "domain"]],
     // A server or site: it starts or deploys itself and says nothing of what it would publish.
     [{ "package.json": '{"name":"api","scripts":{"start":"node app.js"}}' }, ["github", "domain"]],
@@ -88,7 +115,7 @@ describe("detectProject", () => {
       ["npm", "github", "domain"],
     ],
     [
-      { "package.json": '{"private":true}', "pnpm-workspace.yaml": "" },
+      { "package.json": '{"private":true}', "pnpm-workspace.yaml": "packages:\n  - packages/*\n" },
       ["npm", "github", "domain"],
     ],
     // Python files that configure tools or apps, not packages.
@@ -234,6 +261,77 @@ describe("detectProject", () => {
         join("tools", "cli", "package.json"),
       ],
     });
+  });
+
+  it.each([
+    ["a flow list", "packages: ['apps/*', \"packages/*\"]\n"],
+    ["an unindented list", "packages:\n- 'packages/*'\n"],
+    ["a commented key", "packages: # members\n  - packages/*\nonlyBuiltDependencies:\n  - x\n"],
+    ["CRLF line endings", "packages:\r\n  - packages/*\r\n"],
+  ])("reads pnpm workspace members from %s", async (_, yaml) => {
+    const dir = project({
+      "package.json": '{"private":true}',
+      "pnpm-workspace.yaml": yaml,
+      "packages/cli/package.json": '{"name":"cli","bin":"x.js"}',
+    });
+    expect((await detectProject(dir))?.only).toEqual(["npm", "homebrew", "github", "domain"]);
+  });
+
+  it("finds members at any depth under **, and the root listed as a member only once", async () => {
+    const dir = project({
+      "package.json": '{"name":"root","private":true}',
+      "pnpm-workspace.yaml": "packages:\n  - '.'\n  - 'packages/**'\n",
+      "packages/group/deep/package.json": '{"name":"deep","bin":"x.js"}',
+    });
+    expect(await detectProject(dir)).toEqual({
+      only: ["npm", "homebrew", "github", "domain"],
+      from: ["package.json", join("packages", "group", "deep", "package.json")],
+    });
+  });
+
+  it("reads a member that is itself a workspace", async () => {
+    const dir = project({
+      "package.json": '{"private":true,"workspaces":["apps/*"]}',
+      "apps/tools/package.json": '{"private":true,"workspaces":["cli"]}',
+      "apps/tools/cli/package.json": '{"name":"cli","bin":"x.js"}',
+    });
+    expect((await detectProject(dir))?.only).toEqual(["npm", "homebrew", "github", "domain"]);
+  });
+
+  it("reads Lerna's default packages and Cargo's members past comments and exclusions", async () => {
+    const lerna = project({
+      "package.json": '{"private":true}',
+      "lerna.json": "{}",
+      "packages/a/package.json": '{"name":"a","bin":"x.js"}',
+    });
+    expect((await detectProject(lerna))?.only).toEqual(["npm", "homebrew", "github", "domain"]);
+    const cargo = project({
+      "Cargo.toml":
+        '[workspace]\nmembers = [\n  "crates/*", # the "main" ones ]\n  "tools/cli",\n]\nexclude = ["crates/x"]',
+      "crates/lib/Cargo.toml": "[package]",
+      "crates/x/Cargo.toml": "[package]",
+      "crates/x/src/main.rs": "",
+      "tools/cli/Cargo.toml": "[package]\npublish = false",
+      "tools/cli/src/main.rs": "",
+    });
+    expect(await detectProject(cargo)).toEqual({
+      only: ["crates", "homebrew", "github", "domain"],
+      from: ["Cargo.toml", join("crates", "lib", "Cargo.toml"), join("tools", "cli", "Cargo.toml")],
+    });
+  });
+
+  it("reads large manifests in linear time", async () => {
+    const padding = " ".repeat(50_000);
+    const dir = project({
+      "package.json": '{"private":true}',
+      "pnpm-workspace.yaml": `packages:\n  - x${padding}y\n`,
+      "Cargo.toml": `[workspace]${"\n".repeat(50_000)}members = []`,
+      "X.csproj": `<OutputType>x${padding}`,
+      "pyproject.toml": `[project]\ndependencies = [${padding}`,
+    });
+    const started = Date.now();
+    await detectProject(dir);
+    expect(Date.now() - started).toBeLessThan(500);
   });
 
   it("reads npm and Cargo workspace members", async () => {

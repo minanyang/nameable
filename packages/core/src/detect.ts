@@ -62,36 +62,37 @@ function pythonPackage(file: string, py: string): boolean {
   if (file === "setup.py") return /\bsetup\s*\(/.test(py);
   if (file === "setup.cfg") return /^\[metadata\]/m.test(py);
   // uv and Poetry both mark applications that are never built as packages.
-  if (/^\s*package\s*=\s*false/m.test(table(py, "tool.uv"))) return false;
-  if (/^\s*package-mode\s*=\s*false/m.test(py)) return false;
+  if (/^[ \t]*package[ \t]*=[ \t]*false/m.test(table(py, "tool.uv"))) return false;
+  if (/^[ \t]*package-mode[ \t]*=[ \t]*false/m.test(py)) return false;
   if (/^\[tool\.poetry\]/m.test(py)) return true;
   // A [project] with no build backend is an application (what `uv init` writes): nothing to upload.
   return /^\[project\]/m.test(py) && /^\[build-system\]/m.test(py);
 }
 
-type DotnetProject = "package" | "library" | "app";
+type DotnetProject = "package" | "library" | "app" | "none";
 
 /**
- * What a .NET project builds. An app: a web project, an executable that is not a `dotnet tool`, a
- * test project, or one marked not packable. A package: one that declares package metadata. A plain
- * library is packable by default, so NuGet takes it unless something says otherwise.
+ * What a .NET project builds, its own properties first and then those of the Directory.Build.props
+ * beside it. An app: a web, worker or Blazor WebAssembly project, or an executable that is not a
+ * `dotnet tool`. None: a test project, or one marked not packable. A package: one that declares
+ * package metadata. A plain library is packable by default, so NuGet takes it unless something says
+ * otherwise.
  */
 function dotnetProject(xml: string): DotnetProject {
   const prop = (name: string) =>
-    new RegExp(`<${name}>\\s*([^<]*?)\\s*</${name}>`, "i").exec(xml)?.[1]?.toLowerCase();
+    new RegExp(`<${name}(?:\\s[^>]*)?>([^<]*)</${name}>`, "i").exec(xml)?.[1]?.trim().toLowerCase();
   if (prop("PackAsTool") === "true") return "package";
   if (
-    /Sdk\s*=\s*"Microsoft\.NET\.Sdk\.Web"/i.test(xml) ||
-    prop("IsPackable") === "false" ||
-    prop("IsTestProject") === "true" ||
+    /Sdk\s*=\s*"Microsoft\.NET\.Sdk\.(?:Web|Worker|BlazorWebAssembly)"/i.test(xml) ||
     /^(?:winexe|exe)$/.test(prop("OutputType") ?? "")
   ) {
     return "app";
   }
+  if (prop("IsPackable") === "false" || prop("IsTestProject") === "true") return "none";
   if (
     prop("IsPackable") === "true" ||
-    prop("PackageId") ||
-    prop("GeneratePackageOnBuild") === "true"
+    prop("GeneratePackageOnBuild") === "true" ||
+    /<Package(?:Id|LicenseExpression|LicenseFile|Tags|ProjectUrl|ReadmeFile|Icon)\b/i.test(xml)
   ) {
     return "package";
   }
@@ -100,44 +101,130 @@ function dotnetProject(xml: string): DotnetProject {
 
 /**
  * Whether a .NET project or solution is published to NuGet. A solution that holds an application
- * keeps its plain libraries to itself; only projects that declare package metadata count there.
+ * keeps its plain libraries to itself; only projects that declare package metadata count there. Test
+ * projects take no side, and projects the solution lists but that are missing are skipped.
  */
 async function nugetPackage(dir: string, file: string, xml: string): Promise<boolean> {
-  if (!/\.slnx?$/.test(file)) return dotnetProject(xml) !== "app";
+  const props = async (sub: string) => (await text(join(dir, sub), "Directory.Build.props")) ?? "";
+  if (!/\.slnx?$/.test(file)) {
+    const kind = dotnetProject(xml + (await props(".")));
+    return kind === "package" || kind === "library";
+  }
   const paths = [...xml.matchAll(/"([^"]+\.(?:cs|fs|vb)proj)"/g)].map((m) =>
     m[1]!.replaceAll("\\", "/"),
   );
   const kinds = await Promise.all(
-    paths.map(async (path) => dotnetProject((await text(dir, path)) ?? "")),
+    paths.map(async (path) => {
+      const project = await text(dir, path);
+      if (project === undefined) return "none";
+      return dotnetProject(project + (await props(dirname(path))) + (await props(".")));
+    }),
   );
   return kinds.includes("package") || (kinds.includes("library") && !kinds.includes("app"));
 }
 
-/** The directories a workspace pattern such as `packages/*` names; `**` is read as one level. */
+/** Subdirectories that can hold workspace members: not hidden, not installed dependencies. */
+async function subdirs(dir: string): Promise<string[]> {
+  const found: string[] = [];
+  for (const e of await list(dir)) {
+    if (e.startsWith(".") || e === "node_modules") continue;
+    if (
+      await stat(join(dir, e)).then(
+        (st) => st.isDirectory(),
+        () => false,
+      )
+    )
+      found.push(e);
+  }
+  return found;
+}
+
+/** How deep `**` looks for members, which keeps a large tree from being walked whole. */
+const MAX_GLOBSTAR_DEPTH = 4;
+
+/** The directories a workspace pattern such as `packages/*` or `components/**` names. */
 async function expand(dir: string, pattern: string): Promise<string[]> {
   let found = [""];
   for (const segment of pattern.replace(/^\.\//, "").split("/").filter(Boolean)) {
-    if (!segment.includes("*")) {
-      found = found.map((f) => join(f, segment));
-      continue;
-    }
-    const match = new RegExp(
-      `^${segment.replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll(/\*+/g, "[^/]*")}$`,
-    );
-    const next: string[] = [];
-    for (const f of found) {
-      for (const e of await list(join(dir, f))) {
-        if (e.startsWith(".") || e === "node_modules" || !match.test(e)) continue;
-        const isDir = await stat(join(dir, f, e)).then(
-          (st) => st.isDirectory(),
-          () => false,
-        );
-        if (isDir) next.push(join(f, e));
+    if (segment === "**") {
+      // Zero or more levels.
+      const all = [...found];
+      let level = found;
+      for (let depth = 0; depth < MAX_GLOBSTAR_DEPTH && level.length; depth++) {
+        const next: string[] = [];
+        for (const f of level) for (const e of await subdirs(join(dir, f))) next.push(join(f, e));
+        all.push(...next);
+        level = next;
       }
+      found = all;
+    } else if (segment.includes("*")) {
+      const match = new RegExp(
+        `^${segment.replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll(/\*+/g, "[^/]*")}$`,
+      );
+      const next: string[] = [];
+      for (const f of found) {
+        for (const e of await subdirs(join(dir, f))) if (match.test(e)) next.push(join(f, e));
+      }
+      found = next;
+    } else {
+      found = found.map((f) => join(f, segment));
     }
-    found = next;
   }
-  return found.filter((f) => f !== "");
+  // "." is the root itself, not a member.
+  return found.map((f) => join(f)).filter((f) => f !== "." && f !== "");
+}
+
+/**
+ * The quoted strings of a TOML array such as `members = [...]`, read past comments and line breaks.
+ * A `]` or `"` inside a comment does not end it.
+ */
+function tomlStrings(toml: string, key: string): string[] {
+  const start = new RegExp(`^[ \\t]*${key}[ \\t]*=[ \\t]*\\[`, "m").exec(toml);
+  if (!start) return [];
+  const found: string[] = [];
+  for (let i = start.index + start[0].length; i < toml.length; i++) {
+    const c = toml[i]!;
+    if (c === "]") break;
+    if (c === "#") {
+      const end = toml.indexOf("\n", i);
+      i = end < 0 ? toml.length : end;
+    } else if (c === '"' || c === "'") {
+      const end = toml.indexOf(c, i + 1);
+      if (end < 0) break;
+      found.push(toml.slice(i + 1, end));
+      i = end;
+    }
+  }
+  return found;
+}
+
+/**
+ * The `packages` globs of a pnpm-workspace.yaml, as a block list (`- "glob"` per line, indented or
+ * not) or a flow list (`[a, b]`). Undefined when the file has no `packages` key: pnpm 10 keeps its
+ * settings there in single-package repositories too.
+ */
+function pnpmPackages(yaml: string): string[] | undefined {
+  const lines = yaml.split(/\r?\n/);
+  const at = lines.findIndex((l) => /^packages[ \t]*:/.test(l));
+  if (at < 0) return undefined;
+  const unquote = (item: string) => item.trim().replace(/^(["'])(.*)\1$/, "$2");
+  const rest = lines[at]!.replace(/^packages[ \t]*:/, "")
+    .replace(/#.*$/, "")
+    .trim();
+  if (rest.startsWith("[")) {
+    const flow = [rest, ...lines.slice(at + 1)].join("\n");
+    const body = flow.slice(1, flow.includes("]") ? flow.indexOf("]") : undefined);
+    return body.split(",").map(unquote).filter(Boolean);
+  }
+  const found: string[] = [];
+  for (const line of lines.slice(at + 1)) {
+    const content = line.replace(/(^|\s)#.*$/, "").trimEnd();
+    if (!content.trim()) continue;
+    const item = /^[ \t]*-[ \t]*(.*)$/.exec(content);
+    if (!item) break;
+    found.push(unquote(item[1]!));
+  }
+  return found.filter(Boolean);
 }
 
 /** The member directories a JavaScript or Cargo workspace root lists, or undefined when it is none. */
@@ -152,22 +239,22 @@ async function workspaceMembers(
   };
   const { workspaces } = manifest ?? {};
   add(Array.isArray(workspaces) ? workspaces : (workspaces as { packages?: unknown })?.packages);
-  const pnpm = await text(dir, "pnpm-workspace.yaml");
-  // The `packages:` list, one `- "glob"` per line.
-  const block =
-    /^packages:\s*\n((?:[ \t]+-.*\n?|[ \t]*#.*\n?|[ \t]*\n)*)/m.exec(pnpm ?? "")?.[1] ?? "";
-  for (const m of block.matchAll(/^[ \t]+-\s*["']?([^"'#\n]+?)["']?\s*(?:#.*)?$/gm))
-    patterns.push(m[1]!);
-  add((await json(dir, "lerna.json"))?.packages);
-  const members = /^\s*members\s*=\s*\[([^\]]*)\]/m.exec(table(cargo ?? "", "workspace"))?.[1];
-  for (const m of members?.matchAll(/["']([^"']+)["']/g) ?? []) patterns.push(m[1]!);
-  if (!patterns.length && pnpm === undefined && !/^\[workspace\]/m.test(cargo ?? "")) {
-    return manifest?.workspaces || (await text(dir, "lerna.json")) !== undefined ? [] : undefined;
-  }
-  const found = await Promise.all(
-    patterns.filter((p) => !p.startsWith("!")).map((p) => expand(dir, p)),
-  );
-  return [...new Set(found.flat())];
+  const pnpm = pnpmPackages((await text(dir, "pnpm-workspace.yaml")) ?? "");
+  add(pnpm);
+  const lerna = await json(dir, "lerna.json");
+  // Lerna's default when lerna.json names no packages.
+  add(lerna && (Array.isArray(lerna.packages) ? lerna.packages : ["packages/*"]));
+  const cargoWorkspace = cargo !== undefined && /^\[workspace\]/m.test(cargo);
+  const excluded = cargoWorkspace ? tomlStrings(table(cargo, "workspace"), "exclude") : [];
+  if (cargoWorkspace) patterns.push(...tomlStrings(table(cargo, "workspace"), "members"));
+  if (!workspaces && !pnpm && !lerna && !cargoWorkspace) return undefined;
+  const expanded = async (globs: string[]) =>
+    (await Promise.all(globs.filter((p) => !p.startsWith("!")).map((p) => expand(dir, p)))).flat();
+  const skip = new Set([
+    ...(await expanded(excluded)),
+    ...(await expanded(patterns.filter((p) => p.startsWith("!")).map((p) => p.slice(1)))),
+  ]);
+  return [...new Set(await expanded(patterns))].filter((m) => !skip.has(m));
 }
 
 /** Whether a Python manifest depends on an MCP SDK. */
@@ -176,7 +263,7 @@ function pythonMcp(py: string): boolean {
   const poetry = /^\[tool\.poetry\.dependencies\]([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(py)?.[1] ?? "";
   return (
     lists.some((l) => MCP_REQUIREMENT.test(l)) ||
-    /^\s*(?:mcp|fastmcp)\s*=/m.test(poetry) ||
+    /^[ \t]*(?:mcp|fastmcp)[ \t]*=/m.test(poetry) ||
     MCP_REQUIREMENT.test(/install_requires\s*=\s*\[([\s\S]*?)\]/.exec(py)?.[1] ?? "")
   );
 }
@@ -185,7 +272,14 @@ function pythonMcp(py: string): boolean {
  * Reads the manifests in `dir` (not its subdirectories) and picks the channels the project would be
  * published on. GitHub and domains always apply. Returns undefined when no manifest is found.
  */
-export async function detectProject(dir: string, members = true): Promise<Detection | undefined> {
+export function detectProject(dir: string): Promise<Detection | undefined> {
+  return detect(dir, 0);
+}
+
+/** How deep workspaces nest: a root, and a member that is itself a workspace of packages. */
+const MAX_WORKSPACE_DEPTH = 2;
+
+async function detect(dir: string, depth: number): Promise<Detection | undefined> {
   let entries: string[];
   try {
     entries = await readdir(dir);
@@ -212,7 +306,8 @@ export async function detectProject(dir: string, members = true): Promise<Detect
     : undefined;
   const cargo = has("Cargo.toml") ? await text(dir, "Cargo.toml") : undefined;
   // A workspace root publishes through its members, read as projects of their own.
-  const workspace = members ? await workspaceMembers(dir, manifest, cargo) : undefined;
+  const workspace =
+    depth < MAX_WORKSPACE_DEPTH ? await workspaceMembers(dir, manifest, cargo) : undefined;
   // A private app keeps its images to itself, as it keeps its package off npm.
   let privateApp = false;
 
@@ -241,8 +336,6 @@ export async function detectProject(dir: string, members = true): Promise<Detect
     // A VS Code extension is published to both extension marketplaces, not to npm.
     if (manifest.engines?.vscode) pick("package.json", "vscode", "open-vsx");
     else if (named && manifest.private !== true && !runs) pick("package.json", "npm");
-    // A workspace whose members cannot be listed still publishes something.
-    else if (workspace?.length === 0) pick("package.json", "npm");
     if (manifest.bin && named) pick("package.json", "homebrew");
     if (MCP_PACKAGES.test(pkg)) pick("package.json", "mcp-registry", "smithery");
   }
@@ -267,7 +360,8 @@ export async function detectProject(dir: string, members = true): Promise<Detect
     // `publish = false` and `publish = []` (no registry) both keep a crate off crates.io, and a
     // workspace root without a [package] is no crate at all.
     const crate = /^\[package\]/m.test(cargo) || !/^\[workspace\]/m.test(cargo);
-    if (crate && !/^\s*publish\s*=\s*(?:false|\[\s*\])/m.test(cargo)) pick("Cargo.toml", "crates");
+    if (crate && !/^[ \t]*publish[ \t]*=[ \t]*(?:false|\[\s*\])/m.test(cargo))
+      pick("Cargo.toml", "crates");
     const binaries =
       /^\[\[bin\]\]/m.test(cargo) ||
       (await text(dir, "src/main.rs")) !== undefined ||
@@ -309,7 +403,8 @@ export async function detectProject(dir: string, members = true): Promise<Detect
     pick("pubspec.yaml");
     if (!/^publish_to:\s*["']?none/m.test(pubspec)) pick("pubspec.yaml", "pub");
     // A Flutter app (not a package) ships to the app stores.
-    else if (/^\s+sdk:\s*flutter/m.test(pubspec)) pick("pubspec.yaml", "app-store", "google-play");
+    else if (/^[ \t]+sdk:[ \t]*flutter/m.test(pubspec))
+      pick("pubspec.yaml", "app-store", "google-play");
   }
 
   const dotnet = entries.find((e) => /\.(?:(?:cs|fs|vb)proj|slnx?)$/.test(e));
@@ -360,14 +455,20 @@ export async function detectProject(dir: string, members = true): Promise<Detect
     pick(expoConfig, "app-store", "google-play");
   }
 
+  let projects = 0;
   for (const member of workspace ?? []) {
-    const found = await detectProject(join(dir, member), false);
+    const found = await detect(join(dir, member), depth + 1);
+    if (found) projects++;
     const ids = found?.only.filter((id) => id !== "github" && id !== "domain") ?? [];
     // Only members that ship somewhere are named, not every internal package.
     if (!ids.length) continue;
     for (const id of ids) only.add(id);
-    for (const file of found!.from) from.push(join(member, file));
+    for (const file of found!.from) {
+      if (!from.includes(join(member, file))) from.push(join(member, file));
+    }
   }
+  // A workspace whose members cannot be found still publishes something.
+  if (workspace && !projects && manifest && !manifest.engines?.vscode) pick("package.json", "npm");
 
   if (!from.length) return undefined;
   return { only: [...only, "github", "domain"], from };
