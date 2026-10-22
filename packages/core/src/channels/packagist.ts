@@ -7,7 +7,7 @@ const SITE = "https://packagist.org";
 
 // Package::PACKAGE_NAME_REGEX for one part of `vendor/package`; ValidPackageRepositoryValidator also
 // refuses uppercase. The vendor column holds 191 characters.
-const VALID = /^[a-z0-9]+(?:[_.-]?[a-z0-9]+)*$/;
+const VALID = /^[a-z0-9]+(?:[_.-]?[a-z0-9]+)*$/i;
 const MAX = 191;
 
 // ValidPackageRepositoryValidator and NotReservedWordValidator::RESERVED_WORDS.
@@ -40,12 +40,17 @@ export const packagist: Channel = defineChannel({
   id: "packagist",
   label: "Packagist",
   category: "package",
-  rules: (name) => {
-    if (!VALID.test(name) || name.length > MAX) {
-      return "Packagist vendors are lowercase letters and digits, with single . _ or - between them";
-    }
+  rules: (name) =>
+    VALID.test(name) && name.length <= MAX
+      ? undefined
+      : "Packagist vendors are letters and digits, with single . _ or - between them",
+  // Vendors that already hold packages keep them; these apply to new ones.
+  refuses: (name) => {
+    if (name !== name.toLowerCase()) return "Packagist names must be lowercase";
     if (RESERVED_VENDORS.has(name) || DEVICE_NAMES.test(name))
       return "Packagist reserves this vendor name";
+    if (BRANDS.test(name))
+      return "Packagist blocks new vendors containing symfony, packagist or composer";
     if (name.endsWith(".json")) return "Packagist names cannot end in .json";
     return undefined;
   },
@@ -57,19 +62,22 @@ export const packagist: Channel = defineChannel({
       return {
         status: "taken",
         url: `${SITE}/packages/${name}/`,
-        note: `vendor of ${owned.length} ${owned.length === 1 ? "package" : "packages"}, such as ${owned[0]}`,
+        note:
+          owned.length === 1
+            ? `vendor of ${owned[0]}`
+            : `vendor of ${owned.length} packages, such as ${owned[0]}`,
         meta: { packages: owned.length },
       };
     }
 
-    if (BRANDS.test(name)) {
-      return {
-        status: "unavailable",
-        note: "Packagist blocks new vendors containing symfony, packagist or composer",
-      };
-    }
-
-    const twins = await packageNames(ctx, `filter=*/${name}`);
+    // The validator matches `name LIKE '%/<package>'`, where `_` stands for any one character; the
+    // list filter is a glob, so it asks with `*` and the results are narrowed here.
+    const like = new RegExp(
+      `^[^/]+/${name.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&").replaceAll("_", ".")}$`,
+      "i",
+    );
+    const listed = await packageNames(ctx, `filter=*/${name.replaceAll("_", "*")}`);
+    const twins = Array.isArray(listed) ? listed.filter((n) => like.test(n)) : listed;
     if (!Array.isArray(twins)) {
       return {
         status: "available",

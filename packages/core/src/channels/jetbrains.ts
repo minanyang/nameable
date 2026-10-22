@@ -28,6 +28,10 @@ export const jetbrains: Channel = defineChannel({
     if (!NAME_CHARS.test(name.trim())) {
       return "JetBrains plugin names are letters, digits, spaces and . , + _ - / : ( ) # ' & [ ] |, at most 64";
     }
+    return undefined;
+  },
+  // Plugins published before these checks keep their names (PluginBeanValidator flags only new plugins).
+  refuses: (name) => {
     const word = RESTRICTED.exec(name)?.[0];
     if (word) return `JetBrains refuses new plugin names containing "${word}"`;
     if (TEMPLATE_NAMES.has(name.trim().toLowerCase()))
@@ -35,16 +39,18 @@ export const jetbrains: Channel = defineChannel({
     return undefined;
   },
   async lookup(name, ctx) {
-    const byId = await get(ctx, `${API}/plugins/intellij/${encodeURIComponent(name)}`);
-    if (byId.status === 200) {
+    // Only a name that could be a plugin ID is looked up as one; the API answers 400 for `/`, `.` and `..`.
+    const asId = /^[A-Za-z0-9._-]+$/.test(name) && !/^\.+$/.test(name);
+    const byId = asId ? await get(ctx, `${API}/plugins/intellij/${name}`) : undefined;
+    if (byId?.status === 200) {
       const plugin = (await byId.json()) as Plugin | null;
       return {
         status: "taken",
         url: `https://plugins.jetbrains.com${typeof plugin?.link === "string" ? plugin.link : ""}`,
-        note: `the plugin ID of ${String(plugin?.name)}`,
+        note: typeof plugin?.name === "string" ? `the plugin ID of ${plugin.name}` : "a plugin ID",
       };
     }
-    if (byId.status !== 404) return unexpected("JetBrains Marketplace", byId);
+    if (byId && byId.status !== 404) return unexpected("JetBrains Marketplace", byId);
 
     const query = new URLSearchParams({ search: name, max: "20" });
     const res = await get(ctx, `${API}/searchPlugins?${query}`);

@@ -13,6 +13,11 @@ export type ChannelSpec = {
    */
   rules(name: string): string | undefined;
   /**
+   * Rules the registry applies only to new names (reserved words, names kept for its owners), checked
+   * after `lookup` finds nobody holding the name, so a name published before the rule still shows as taken.
+   */
+  refuses?(name: string): string | undefined;
+  /**
    * Looks up a name that passed `rules`. Map only responses you understand; return `unexpected()` for
    * anything else. A thrown error becomes `unknown` in the runner, never `available`.
    */
@@ -34,11 +39,20 @@ export function defineChannel(spec: ChannelSpec): Channel {
       const problem = spec.rules(name);
       if (problem) return { ...base, status: "unavailable", note: problem };
       const result: CheckResult = { ...base, ...(await spec.lookup(name, ctx)) };
+      const refused = result.status === "available" ? spec.refuses?.(name) : undefined;
+      if (refused) return { ...base, status: "unavailable", note: refused };
       // Registry text such as a package description can be null or empty; the result keeps its
       // documented shape, in which `url` and `note` are present only as text.
       for (const key of ["url", "note"] as const) {
         const value: unknown = result[key];
         if (typeof value !== "string" || !value.trim()) delete result[key];
+      }
+      // Descriptions arrive with line breaks, indentation and stray control characters.
+      if (result.note) {
+        result.note = result.note
+          .replace(/\p{Cc}/gu, " ")
+          .replace(/\s+/g, " ")
+          .trim();
       }
       return result;
     },

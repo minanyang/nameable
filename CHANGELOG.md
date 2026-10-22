@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- Without `--only`, the channels are picked from the project files in the current directory (`package.json`, `pyproject.toml`, `Cargo.toml`, a `.gemspec`, `composer.json`, `pubspec.yaml`, a `.csproj`, a `Dockerfile`, `.claude-plugin/`); outside a project, a general set is checked. `--all` checks every channel.
+- Without `--only`, the channels are picked from the project files in the current directory: npm, PyPI, crates.io, RubyGems, Packagist, pub.dev and NuGet manifests (skipping private apps and unpublished packages), Dockerfiles, Claude Code, Cursor, Gemini CLI, VS Code and JetBrains plugins, MCP SDK dependencies, and Xcode, Android, Expo and Flutter apps. Outside a project, a general set is checked. `--all` checks every channel; `--tlds` without a domain channel is a usage error.
+- A rule a registry applies only to new names (reserved words, names kept for its owners, newer formats) no longer hides a name published before it: such a name shows as taken, with its link.
+- RubyGems free answers are now probable: a yanked gem spelled with other capitals still holds the name and cannot be seen.
+- A table taller than the terminal is printed once instead of redrawn.
 - New package registry channels: `rubygems` (case-insensitive uniqueness, reserved names, yanked gems held for 100 days, the typo rule against popular or recent gems), `packagist` (the name as a vendor, reserved vendors, the typo rule against well-downloaded packages), `pub` (Dart reserved words, names kept for the Dart and Flutter teams, pub.dev's similar-name rule), `nuget` (unlisted packages, IDs NuGet deleted but still holds) and `docker` (Docker Hub users and organizations, including accounts only a redirect reveals, and official images).
 - `mcp-registry`: servers in the official MCP Registry whose name part matches, read from a daily community mirror (rosmur/official-mcp-registry-database), because the registry's own search takes 30 seconds or more. Needs Node.js 22.13 or later; older versions report it as unknown.
 - Editor extension channels: `vscode` (extension name, display name and publisher, all unique in the VS Code Marketplace), `open-vsx` (the name as a namespace, with Open VSX's similar-namespace rule) and `jetbrains` (plugin ID and name, with the words JetBrains refuses in new plugin names).

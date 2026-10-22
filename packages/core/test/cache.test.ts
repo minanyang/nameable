@@ -100,6 +100,12 @@ describe("cached name lists", () => {
     expect(downloaded).toBe(true);
   });
 
+  // File times have sub-millisecond precision; a copy written a moment ago can read just after `now`.
+  it("uses a copy written a fraction of a millisecond 'after' now", async () => {
+    const { downloaded } = await pypi("zz", storeWith(index("requests"), -0.5), freshIndex);
+    expect(downloaded).toBe(false);
+  });
+
   it("is only probable with no copy and a failed download", async () => {
     const { result } = await pypi("zz", undefined, () => 503);
     expect(result).toMatchObject({ status: "available", certainty: "probable" });
@@ -147,8 +153,11 @@ describe("clearStore", () => {
     await mkdir(join(dir, "sub"));
     await writeFile(join(dir, "sub", "notes.txt"), "keep");
     await writeFile(join(dir, "other.gz"), "keep");
+    // Left by an interrupted write.
+    await writeFile(join(dir, "pypi-projects.gz.4242.partial"), "x");
+    await writeFile(join(dir, "other.gz.4242.partial"), "keep");
     await clearStore(dir);
-    expect((await readdir(dir)).sort()).toEqual(["other.gz", "sub"]);
+    expect((await readdir(dir)).sort()).toEqual(["other.gz", "other.gz.4242.partial", "sub"]);
   });
 
   it("does nothing to a directory that does not exist", async () => {

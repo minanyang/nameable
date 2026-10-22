@@ -9,7 +9,7 @@ import {
 } from "../src/index.js";
 import { Gate } from "../src/gate.js";
 import { fakeFetch, fakeWhois, seq, zipArchive, rangeReply, type Reply } from "./fake-fetch.js";
-import { CRATES_DUMP, cratesDump } from "./fixtures.js";
+import { CRATES_DUMP, cratesDump, mcpDatabase } from "./fixtures.js";
 
 const NPM = "https://registry.npmjs.org";
 const searchUrl = (name: string) => `${NPM}/-/v1/search?text=${name}&size=50`;
@@ -341,7 +341,7 @@ describe("rubygems", () => {
       {},
       Date.parse("2026-10-22"),
     );
-    expect(r).toMatchObject({ status: "available", certainty: "confirmed" });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
   });
 
   it("is blocked by a similar gem released in the last five years", async () => {
@@ -667,6 +667,85 @@ describe("readWhois", () => {
   it("ignores 'not found' inside notices of a registered domain", () => {
     const text = "% If the domain is not found, contact the registrar\nDomain Name: google.io";
     expect(readWhois(text)).toBe("registered");
+  });
+});
+
+describe("mcp-registry", () => {
+  const MIRROR =
+    "https://raw.githubusercontent.com/rosmur/official-mcp-registry-database/main/official_mcp_registry.db";
+  it("puts the original emitWarning back, even with checks running at once", async () => {
+    // oxlint-disable-next-line typescript/unbound-method -- compared by identity, never called
+    const original = process.emitWarning;
+    const db = mcpDatabase(["io.github.a/thing"]);
+    const run = (name: string) =>
+      check(name, selectChannels({ only: ["mcp-registry"] }), {
+        fetch: fakeFetch({ [MIRROR]: () => new Response(new Uint8Array(db)) }),
+        whois: fakeWhois(),
+        backoffMs: 0,
+      });
+    await Promise.all([run("thing"), run("other")]);
+    // oxlint-disable-next-line typescript/unbound-method -- compared by identity, never called
+    expect(process.emitWarning).toBe(original);
+  });
+
+  it("leads with an active server and counts the rest", async () => {
+    const db = mcpDatabase(["ai.old/check", "ai.new/check", "ai.third/check"]);
+    const [r] = await check("check", selectChannels({ only: ["mcp-registry"] }), {
+      fetch: fakeFetch({ [MIRROR]: () => new Response(new Uint8Array(db)) }),
+      whois: fakeWhois(),
+      backoffMs: 0,
+    });
+    expect(r!.note).toMatch(/^ai\.old\/check and 2 more use this name/);
+    expect(r!.meta).toMatchObject({ servers: 3 });
+  });
+});
+
+describe("open-vsx", () => {
+  it("does not read the server's /api/version route as a namespace called version", async () => {
+    const r = await one("open-vsx", "version", {
+      "https://open-vsx.org/api/version": [200, { version: "v1.2.0", maxExtensionSize: 1 }],
+      "https://open-vsx.org/api/-/search?query=version&size=100": [200, { extensions: [] }],
+    });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
+});
+
+describe("jetbrains", () => {
+  it("does not look up a name with a slash as a plugin ID, which the API refuses", async () => {
+    const r = await one("jetbrains", "CI/CD", {
+      "https://plugins.jetbrains.com/api/searchPlugins?search=CI%2FCD&max=20": [
+        200,
+        { plugins: [] },
+      ],
+    });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
+});
+
+describe("defineChannel", () => {
+  it("flattens registry text into one line without control characters", async () => {
+    const r = await one("crates", "zz", {
+      "https://crates.io/api/v1/crates/zz": [
+        200,
+        { crate: { name: "zz", description: "First line.\n\n      Second\u0085 line.\t" } },
+      ],
+    });
+    expect(r.note).toBe("First line. Second line.");
+  });
+});
+
+describe("packagist typo rule", () => {
+  it("reads _ as one character, as SQL LIKE does, and nothing wider", async () => {
+    const P = "https://packagist.org/packages";
+    const r = await one("packagist", "php_amqplib", {
+      [`${P}/list.json?vendor=php_amqplib`]: [200, { packageNames: [] }],
+      // The list filter is a glob, so it also returns names the LIKE pattern would not match.
+      [`${P}/list.json?filter=*/php*amqplib`]: [
+        200,
+        { packageNames: ["php-amqplibs/php-x-amqplib"] },
+      ],
+    });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
   });
 });
 

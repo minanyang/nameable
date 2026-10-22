@@ -25,16 +25,17 @@ async function extensionList(ctx: Context): Promise<string> {
   return `\n${lines.join("\n")}\n`;
 }
 
-// Extension names are the `name` in gemini-extension.json. The docs ask for lowercase letters, digits and
-// dashes but nothing enforces it, and nothing makes them unique: any tagged repository is listed.
+// Extension names are the `name` in gemini-extension.json: Gemini CLI loads only letters, digits and dashes
+// (validateName in packages/cli/src/config/extension-manager.ts). Nothing makes them unique: any tagged
+// repository is listed.
 export const gemini: Channel = defineChannel({
   id: "gemini",
   label: "Gemini extensions",
   category: "agent",
   rules: (name) =>
-    /^[^\s/\\]+$/.test(name)
+    /^[a-zA-Z0-9-]+$/.test(name)
       ? undefined
-      : "Gemini CLI extension names cannot contain spaces or slashes",
+      : "Gemini CLI extension names are letters, digits and dashes",
   async lookup(name, ctx) {
     const list = await cachedList(ctx, "gemini-extensions", () => extensionList(ctx));
     const repos = linesFor(list.text, name.toLowerCase()).map(([url]) => url!);
@@ -44,7 +45,7 @@ export const gemini: Channel = defineChannel({
         url: repos[0],
         note:
           repos.length === 1
-            ? "an extension in the gallery; names are not unique, but users install by name"
+            ? "an extension in the gallery; names are not unique, but two installed extensions cannot share one"
             : `${repos.length} extensions in the gallery use this name`,
         meta: { repositories: repos },
       };

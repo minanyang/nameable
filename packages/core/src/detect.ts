@@ -8,7 +8,8 @@ export type Detection = { only: string[]; from: string[] };
 export const GENERAL_CHANNELS: string[] = ["npm", "pypi", "crates", "homebrew", "github", "domain"];
 
 const MCP_PACKAGES = /"(?:@modelcontextprotocol\/(?:sdk|server)|fastmcp|mcp-framework)"\s*:/;
-const MCP_PYTHON = /["'\s](?:mcp|fastmcp)(?:\[[^\]]*\])?\s*(?:[<>=~!]|["'])/;
+// A requirement such as "mcp[cli]>=1.2" or "fastmcp", inside a dependency list (not keywords).
+const MCP_REQUIREMENT = /["'](?:mcp|fastmcp)(?:\[[^\]]*\])?\s*(?:[<>=~!;]|["'])/;
 
 async function text(dir: string, file: string): Promise<string | undefined> {
   try {
@@ -16,6 +17,47 @@ async function text(dir: string, file: string): Promise<string | undefined> {
   } catch {
     return undefined;
   }
+}
+
+async function json(dir: string, file: string): Promise<Record<string, unknown> | undefined> {
+  const raw = await text(dir, file);
+  if (raw === undefined) return undefined;
+  try {
+    const value: unknown = JSON.parse(raw);
+    return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  } catch {
+    // A broken manifest still says what kind of project this is.
+    return {};
+  }
+}
+
+async function list(dir: string): Promise<string[]> {
+  try {
+    return await readdir(dir);
+  } catch {
+    return [];
+  }
+}
+
+/** Whether a Python manifest describes a package to publish, not an app or a tool's settings. */
+function pythonPackage(file: string, py: string): boolean {
+  if (file === "setup.py") return /\bsetup\s*\(/.test(py);
+  if (file === "setup.cfg") return /^\[metadata\]/m.test(py);
+  // uv and Poetry both mark applications that are never built as packages.
+  if (/^\[tool\.uv\][^[]*^\s*package\s*=\s*false/m.test(py)) return false;
+  if (/^\s*package-mode\s*=\s*false/m.test(py)) return false;
+  return /^\[(?:project|tool\.poetry)\]/m.test(py);
+}
+
+/** Whether a Python manifest depends on an MCP SDK. */
+function pythonMcp(py: string): boolean {
+  const lists = [...py.matchAll(/dependencies\s*=\s*\[([\s\S]*?)\]\s*$/gm)].map((m) => m[1]!);
+  const poetry = /^\[tool\.poetry\.dependencies\]([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(py)?.[1] ?? "";
+  return (
+    lists.some((l) => MCP_REQUIREMENT.test(l)) ||
+    /^\s*(?:mcp|fastmcp)\s*=/m.test(poetry) ||
+    MCP_REQUIREMENT.test(/install_requires\s*=\s*\[([\s\S]*?)\]/.exec(py)?.[1] ?? "")
+  );
 }
 
 /**
@@ -39,17 +81,20 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
 
   const pkg = await text(dir, "package.json");
   if (pkg !== undefined) {
-    let manifest: { private?: unknown; bin?: unknown; engines?: { vscode?: unknown } } = {};
-    try {
-      manifest = (JSON.parse(pkg) ?? {}) as typeof manifest;
-    } catch {
-      // A broken package.json still says the project is JavaScript.
-    }
-    // A private package (an app, a monorepo root) is not published, but still says what the project is.
+    const manifest = ((await json(dir, "package.json")) ?? {}) as {
+      private?: unknown;
+      bin?: unknown;
+      workspaces?: unknown;
+      engines?: { vscode?: unknown };
+    };
+    // A private package (an app) is not published, but still says what the project is. A private
+    // workspace root is the exception: its packages are what gets published.
+    const workspaceRoot =
+      Boolean(manifest.workspaces) || has("pnpm-workspace.yaml") || has("lerna.json");
     pick("package.json");
     // A VS Code extension is published to both extension marketplaces, not to npm.
     if (manifest.engines?.vscode) pick("package.json", "vscode", "open-vsx");
-    else if (manifest.private !== true) pick("package.json", "npm");
+    else if (manifest.private !== true || workspaceRoot) pick("package.json", "npm");
     if (manifest.bin) pick("package.json", "homebrew");
     if (MCP_PACKAGES.test(pkg)) pick("package.json", "mcp-registry", "smithery");
   }
@@ -57,32 +102,50 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
   for (const file of ["pyproject.toml", "setup.py", "setup.cfg"]) {
     const py = has(file) ? await text(dir, file) : undefined;
     if (py === undefined) continue;
+    // Settings for tools (ruff, flake8) or an application: Python, but nothing to publish on PyPI.
+    pick(file);
+    if (!pythonPackage(file, py)) continue;
     pick(file, "pypi");
-    if (/^\[(?:project\.scripts|tool\.poetry\.scripts)\]|entry_points|console_scripts/m.test(py)) {
+    if (/^\[(?:project\.scripts|tool\.poetry\.scripts)\]|console_scripts/m.test(py)) {
       pick(file, "homebrew");
     }
-    if (MCP_PYTHON.test(py)) pick(file, "mcp-registry", "smithery");
+    if (pythonMcp(py)) pick(file, "mcp-registry", "smithery");
   }
 
   const cargo = has("Cargo.toml") ? await text(dir, "Cargo.toml") : undefined;
   if (cargo !== undefined) {
-    pick("Cargo.toml", "crates");
-    if (/^\[\[bin\]\]/m.test(cargo) || (await text(dir, "src/main.rs")) !== undefined) {
-      pick("Cargo.toml", "homebrew");
-    }
+    pick("Cargo.toml");
+    if (!/^\s*publish\s*=\s*false/m.test(cargo)) pick("Cargo.toml", "crates");
+    const binaries =
+      /^\[\[bin\]\]/m.test(cargo) ||
+      (await text(dir, "src/main.rs")) !== undefined ||
+      (await list(join(dir, "src/bin"))).length > 0;
+    if (binaries) pick("Cargo.toml", "homebrew");
   }
 
   const gemspec = entries.find((e) => e.endsWith(".gemspec"));
   if (gemspec) {
     pick(gemspec, "rubygems");
     if (has("exe")) pick(gemspec, "homebrew");
+  } else if (has("Gemfile")) {
+    // A Gemfile without a gemspec is an application (Rails, Jekyll), not a gem.
+    pick("Gemfile");
   }
 
-  const composer = has("composer.json") ? await text(dir, "composer.json") : undefined;
+  if (has("go.mod")) {
+    pick("go.mod");
+    // A command, as opposed to a library: a main package at the root or under cmd/.
+    const main = await text(dir, "main.go");
+    if ((main !== undefined && /^package main\b/m.test(main)) || has("cmd"))
+      pick("go.mod", "homebrew");
+  }
+  if (has("Package.swift")) pick("Package.swift");
+
+  const composer = await json(dir, "composer.json");
   // An application (type "project", publish_to: none) is not published, as with a private package.json.
   if (composer !== undefined) {
     pick("composer.json");
-    if (!/"type"\s*:\s*"project"/.test(composer)) pick("composer.json", "packagist");
+    if (composer.type !== "project") pick("composer.json", "packagist");
   }
 
   const pubspec = has("pubspec.yaml") ? await text(dir, "pubspec.yaml") : undefined;
@@ -93,13 +156,16 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     else if (/^\s+sdk:\s*flutter/m.test(pubspec)) pick("pubspec.yaml", "app-store", "google-play");
   }
 
-  const dotnet = entries.find((e) => /\.(?:cs|fs|vb)proj$/.test(e));
+  const dotnet = entries.find((e) => /\.(?:(?:cs|fs|vb)proj|slnx?)$/.test(e));
   if (dotnet) pick(dotnet, "nuget");
 
+  // An image is built from a Dockerfile; a compose file alone usually runs other people's images.
   const container = entries.find((e) =>
-    /^(?:Dockerfile|Containerfile|(?:docker-)?compose\.ya?ml)$/.test(e),
+    /^(?:Dockerfile|Containerfile)(?:\..+)?$|\.Dockerfile$/.test(e),
   );
   if (container) pick(container, "docker");
+  const compose = entries.find((e) => /^(?:docker-)?compose\.ya?ml$/.test(e));
+  if (compose) pick(compose);
 
   if (has(".claude-plugin")) pick(".claude-plugin", "claude-plugins");
   if (has(".cursor-plugin")) pick(".cursor-plugin", "cursor");
@@ -112,17 +178,26 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
   }
   if (has("gemini-extension.json")) pick("gemini-extension.json", "gemini");
 
-  // Mobile apps: an Xcode project, an Android app module, or an Expo app (app.json with "expo").
-  const xcode = entries.find((e) => e.endsWith(".xcodeproj") || e.endsWith(".xcworkspace"));
+  // Mobile apps: an Xcode project, an Android app module (also under ios/ and android/, as React Native
+  // lays them out), or an Expo app.
+  const xcodeIn = async (sub: string) =>
+    (await list(join(dir, sub))).find((e) => /\.(?:xcodeproj|xcworkspace)$/.test(e));
+  const xcode = (await xcodeIn(".")) ?? (await xcodeIn("ios"));
   if (xcode) pick(xcode, "app-store");
-  if (
-    has("AndroidManifest.xml") ||
-    (await text(dir, "app/src/main/AndroidManifest.xml")) !== undefined
-  ) {
-    pick("AndroidManifest.xml", "google-play");
+  for (const manifest of [
+    "AndroidManifest.xml",
+    "app/src/main/AndroidManifest.xml",
+    "android/app/src/main/AndroidManifest.xml",
+  ]) {
+    if ((await text(dir, manifest)) !== undefined) {
+      pick(manifest, "google-play");
+      break;
+    }
   }
-  const expo = has("app.json") ? await text(dir, "app.json") : undefined;
-  if (expo !== undefined && /"expo"\s*:/.test(expo)) pick("app.json", "app-store", "google-play");
+  const expo = await json(dir, "app.json");
+  if (expo?.expo) pick("app.json", "app-store", "google-play");
+  const expoConfig = entries.find((e) => /^app\.config\.(?:js|ts|mjs|cjs)$/.test(e));
+  if (expoConfig) pick(expoConfig, "app-store", "google-play");
 
   if (!from.length) return undefined;
   return { only: [...only, "github", "domain"], from };

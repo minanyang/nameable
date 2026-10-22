@@ -7,7 +7,11 @@ const norm = (s: string) =>
     .normalize("NFKC")
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, "");
-const head = (title: string) => title.split(/:| [-–—|] /)[0]!;
+// Store titles add a subtitle ("Todoist: To Do List") or the maker ("Claude by Anthropic").
+const head = (title: string) => title.split(/:| [-–—|] | by /)[0]!;
+
+/** Whether a name has letters or digits to compare at all ("🚀" and "!!" do not). */
+export const comparable = (name: string): boolean => norm(name) !== "";
 
 export function sameAppName(title: string, name: string): boolean {
   const wanted = norm(name);

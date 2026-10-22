@@ -35,7 +35,7 @@ type Gem = { name: string; info?: string; downloads?: number; version_created_at
 const fetchGem = (ctx: Context, name: string) => get(ctx, `${SITE}/api/v1/gems/${name}.json`);
 
 /** What the gem page says about a name the API does not list: reserved, held after a yank, or free. */
-async function gemPage(ctx: Context, name: string): Promise<Finding | undefined> {
+async function gemPage(ctx: Context, name: string, asked: string): Promise<Finding | undefined> {
   const url = `${SITE}/gems/${name}`;
   const res = await get(ctx, url);
   if (res.status === 404) return undefined;
@@ -56,6 +56,8 @@ async function gemPage(ctx: Context, name: string): Promise<Finding | undefined>
   if (html.includes("not currently hosted on RubyGems.org")) {
     return { status: "reclaimable", url, note: "every version was yanked; anyone can push it" };
   }
+  // A hosted gem's page: expected for another spelling of the name, not for the one the API denied.
+  if (name !== asked) return { status: "taken", url, note: `held as "${name}"` };
   return { status: "unknown", note: "the RubyGems page for this name could not be read" };
 }
 
@@ -66,6 +68,10 @@ export const rubygems: Channel = defineChannel({
   category: "package",
   rules: (name) => {
     if (!VALID.test(name)) return "gem names are letters, digits, . - and _ (max 255)";
+    return undefined;
+  },
+  // Gems pushed before these rules (`_amon`, `cat_`) keep their names.
+  refuses: (name) => {
     if (!/[a-zA-Z]/.test(name)) return "gem names must include a letter";
     if (EDGE.test(name)) return "gem names cannot begin or end with . - or _";
     if (EXTENSION.test(name)) return "gem names cannot end with a file extension such as .gem";
@@ -81,9 +87,12 @@ export const rubygems: Channel = defineChannel({
     }
     if (res.status !== 404) return unexpected("RubyGems", res);
 
-    // The API answers 404 for yanked and reserved names too; the gem page tells them apart.
-    const page = await gemPage(ctx, name);
-    if (page) return page;
+    // The API answers 404 for yanked and reserved names too; the gem page tells them apart. Pushes
+    // match names ignoring case, but the page does not, so the lowercase spelling is asked as well.
+    for (const spelling of new Set([name, name.toLowerCase()])) {
+      const page = await gemPage(ctx, spelling, name);
+      if (page) return page;
+    }
 
     let list;
     try {
@@ -125,6 +134,10 @@ export const rubygems: Channel = defineChannel({
           certainty: "probable",
           note: `checked against RubyGems' names from ${asOf(list)}`,
         }
-      : { status: "available", certainty: "confirmed" };
+      : {
+          status: "available",
+          certainty: "probable",
+          note: "a yanked gem spelled with other capitals is not visible and would still hold the name",
+        };
   },
 });

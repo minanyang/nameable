@@ -54,11 +54,15 @@ describe.each(FIXTURES.map((f) => [f.channel.id, f] as const))("%s", (_id, fixtu
       it(`${accepted ? "accepts" : "rejects"} ${klass} ${JSON.stringify(name)}`, async () => {
         const { result, requests } = await runOn(channel, name, fixture.free);
         expectWellFormed(result, channel);
-        if (accepted) {
+        if (fixture.unchecked?.includes(klass)) {
+          expect(result.status, JSON.stringify(result)).toBe("unknown");
+        } else if (accepted) {
           expect(result.status, JSON.stringify(result)).toBe("available");
         } else {
           expect(result.status, JSON.stringify(result)).toBe("unavailable");
-          expect(requests, "a rejected name must not reach the network").toEqual([]);
+          if (!fixture.refusedAfterLookup?.includes(klass)) {
+            expect(requests, "a rejected name must not reach the network").toEqual([]);
+          }
         }
       });
     }
@@ -170,7 +174,10 @@ describe.each(FIXTURES.map((f) => [f.channel.id, f] as const))("%s", (_id, fixtu
           };
           const { result, requests } = await runOn(channel, n, service);
           expectWellFormed(result, channel);
-          if (result.status === "unavailable") expect(requests).toEqual([]);
+          // Without `refusedAfterLookup`, nothing is refused after a request.
+          if (result.status === "unavailable" && !fixture.refusedAfterLookup) {
+            expect(requests).toEqual([]);
+          }
           if (failed) expect(confirmedFree(result), JSON.stringify(result)).toBe(false);
         },
       ),

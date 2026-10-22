@@ -38,13 +38,22 @@ be checked, the answer says "probably" and why, instead of "available". A failed
 
 ## Use it from the terminal
 
-Requires Node.js 22 or later (22.13 for the MCP Registry check). Run it in your project and it checks the channels the project ships on, picked from its
-files: `package.json` for npm (and Homebrew when it has a `bin`), `pyproject.toml` for PyPI, `Cargo.toml` for
-crates.io, a `.gemspec` for RubyGems, `composer.json` for Packagist, `pubspec.yaml` for pub.dev, a `.csproj` for NuGet,
-a `Dockerfile` for Docker Hub, `.claude-plugin/`, `.cursor-plugin/` and `gemini-extension.json` for those directories, `engines.vscode` for VS Code
-Marketplace and Open VSX, a `plugin.xml` or IntelliJ Gradle plugin for JetBrains Marketplace, an
-MCP SDK dependency for Smithery, an Xcode, Android, Expo or Flutter app for the app stores, and always
-GitHub and domains. Outside a project it checks a general set: npm, PyPI, crates.io, Homebrew, GitHub and domains.
+Requires Node.js 22 or later (22.13 for the MCP Registry check). Run it in your project and it checks the channels the
+project ships on, picked from its files:
+
+- `package.json` for npm (unless it is private and not a workspace root), Homebrew when it has a `bin`, VS Code
+  Marketplace and Open VSX when it has `engines.vscode`
+- `pyproject.toml`, `setup.py` or `setup.cfg` that describe a package for PyPI, Homebrew when they declare scripts
+- `Cargo.toml` for crates.io (unless `publish = false`), Homebrew when it builds a binary
+- a `.gemspec` for RubyGems, `composer.json` for Packagist (unless it is a project), `pubspec.yaml` for pub.dev
+  (unless `publish_to: none`), a `.csproj` or `.sln` for NuGet, a `Dockerfile` for Docker Hub
+- `.claude-plugin/`, `.cursor-plugin/` and `gemini-extension.json` for those directories, a `plugin.xml` or the
+  IntelliJ Gradle plugin for JetBrains Marketplace, an MCP SDK dependency for the MCP Registry and Smithery
+- an Xcode, Android, Expo or Flutter app for the App Store and Google Play
+
+GitHub and domains are always checked; a project that ships on none of these, such as a Rails app or a Go library,
+gets only those (and Homebrew for a Go command). Outside a project it checks a general set: npm, PyPI, crates.io,
+Homebrew, GitHub and domains.
 
 ```sh
 npx nameable nameable --all --tlds com,dev,sh

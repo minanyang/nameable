@@ -62,7 +62,11 @@ function conflictForms(name: string): Set<string> {
  */
 async function nameList(ctx: Context): Promise<string> {
   const names: unknown[] = [];
+  const seen = new Set<string>();
   for (let url: string | null = "https://pub.dev/api/package-names"; url;) {
+    // A page that points back to one already read would otherwise never end.
+    if (seen.has(url)) throw new Error("pub.dev package-names pages loop");
+    seen.add(url);
     const res = await get(ctx, url, { timeoutMs: 120_000 });
     if (!res.ok) throw new Error(`pub.dev package-names returned HTTP ${res.status}`);
     const page = (await res.json()) as { packages?: unknown; nextUrl?: string | null };
@@ -89,6 +93,10 @@ export const pub: Channel = defineChannel({
     if (!VALID.test(name)) {
       return "pub.dev names are letters, digits and _, start with a letter or _, at most 64 characters";
     }
+    return undefined;
+  },
+  // Packages published before these rules (Pong, google_maps_flutter) keep their names.
+  refuses: (name) => {
     if (name !== name.toLowerCase()) return "pub.dev names must be lowercase";
     if (RESERVED_WORDS.has(reduce(name))) return "pub.dev refuses Dart reserved words";
     if (MIXED_CASE_TWINS.has(name))

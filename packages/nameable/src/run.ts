@@ -29,9 +29,9 @@ Usage
 
   One name shows each channel with its evidence; several names show a comparison grid.
   Channels are picked from the project files in the current directory (package.json, pyproject.toml,
-  Cargo.toml, a .gemspec, composer.json, pubspec.yaml, a .csproj, a Dockerfile, .claude-plugin,
-  .cursor-plugin, gemini-extension.json, a VS Code or JetBrains extension, an Xcode or Android project,
-  an Expo app.json); without any, a general set is checked.
+  Cargo.toml, a .gemspec, composer.json, pubspec.yaml, a .csproj or .sln, a Dockerfile, .claude-plugin,
+  .cursor-plugin, gemini-extension.json, a VS Code or JetBrains extension, an Xcode, Android or Expo
+  app); private apps and unpublished packages skip their registry. Without any, a general set is checked.
   \`mcp\` serves the same checks to AI agents as an MCP server over stdio.
 
 Options
@@ -163,6 +163,9 @@ export async function run(argv: string[], io: Io): Promise<number> {
       channels = selectChannels({ only, tlds: split(values.tlds) });
     } catch (err) {
       throw new UsageError((err as Error).message);
+    }
+    if (values.tlds !== undefined && !channels.some((c) => c.category === "domain")) {
+      throw new UsageError("--tlds applies to domains; add domain to --only");
     }
   } catch (err) {
     if (!(err instanceof UsageError)) throw err;

@@ -1,7 +1,7 @@
 import { defineChannel, unexpected, type Finding } from "../define.js";
 import { get } from "../http.js";
 import type { Channel } from "../types.js";
-import { sameAppName, titleLength } from "./app-names.js";
+import { comparable, sameAppName, titleLength } from "./app-names.js";
 
 type App = { id: string; title: string; developer: unknown };
 
@@ -46,6 +46,12 @@ export const googlePlay: Channel = defineChannel({
       ? "Google Play titles are 1 to 30 characters"
       : undefined,
   async lookup(name, ctx): Promise<Finding> {
+    if (!comparable(name)) {
+      return {
+        status: "unknown",
+        note: "a name without letters or digits cannot be matched to app titles",
+      };
+    }
     const query = new URLSearchParams({ q: name, c: "apps", hl: "en", gl: "US" });
     const res = await get(ctx, `https://play.google.com/store/search?${query}`);
     if (res.status !== 200) return unexpected("Google Play", res);
@@ -59,7 +65,7 @@ export const googlePlay: Channel = defineChannel({
       return {
         status: "taken",
         url: `https://play.google.com/store/apps/details?id=${hit.id}`,
-        note: `${hit.title} by ${String(hit.developer)}; Play titles are not unique, so the name can still be used`,
+        note: `"${hit.title}"${typeof hit.developer === "string" ? ` by ${hit.developer}` : ""} uses this title; Play titles are not unique, so this is a clash, not a block`,
       };
     }
     return {

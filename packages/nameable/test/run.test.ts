@@ -59,6 +59,7 @@ describe("usage", () => {
     [["foo", "--bogus"], "Unknown option"],
     [["mcp", "--only", "npm"], "`mcp` takes no options"],
     [["foo", "--only", "npm", "--all"], "--only and --all cannot be combined"],
+    [["foo", "--only", "npm", "--tlds", "io"], "--tlds applies to domains"],
   ])("exits 64 for %j", async (argv, message) => {
     const r = await cli(argv);
     expect(r.code).toBe(64);
@@ -237,6 +238,21 @@ describe("terminal output", () => {
     expect(text).toMatch(/aa\s+bb/);
     expect(text).toMatch(/crates\.io\s+✓\s+✗/);
     expect(text).toMatch(/free\s+1\/1\s+0\/1/);
+  });
+
+  it("prints a table taller than the terminal once, since it cannot be redrawn in place", async () => {
+    let stdout = "";
+    await run(["zz", "--only", "pypi,crates"], {
+      stdout: { write: (s: string) => (stdout += s), columns: 100, rows: 2 },
+      stderr: { write: () => undefined },
+      interactive: true,
+      color: false,
+      fetch: fakeFetch({ ...LISTS, [PYPI("zz")]: 404, [CRATES("zz")]: 404 }),
+    });
+    // oxlint-disable-next-line no-control-regex
+    expect(stdout).not.toMatch(/\x1b\[\d+A/);
+    expect(stdout.match(/PyPI/g)).toHaveLength(1);
+    expect(stdout).not.toContain("checking…");
   });
 
   it("never prints a row wider than the terminal, so redraws stay aligned", async () => {

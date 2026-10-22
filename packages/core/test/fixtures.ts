@@ -52,6 +52,13 @@ export type Fixture = {
   /** A service under which every name is held. */
   taken: Service;
   accepts: Record<InputClass, boolean>;
+  /**
+   * Classes the channel refuses only after looking the name up, because names published before a rule
+   * keep it (`refuses` in define.ts). Every other rejected class must be refused without a request.
+   */
+  refusedAfterLookup?: InputClass[];
+  /** Classes the channel cannot check at all, answered `unknown`: neither free nor refused. */
+  unchecked?: InputClass[];
   /** The longest name the channel accepts, when it has a limit. */
   maxLength?: number;
   /**
@@ -495,7 +502,9 @@ export const FIXTURES: Fixture[] = [
   },
   {
     channel: only("rubygems"),
-    freeCertainty: "confirmed",
+    freeCertainty: "probable",
+    // Gems pushed before the edge rule, such as `_amon`, still exist.
+    refusedAfterLookup: ["leadingHyphen", "trailingHyphen"],
     free: rubyFree(),
     taken: rubyFree({ gems: { nameable: [200, { name: "nameable", info: "held" }] } }),
     // lib/name_format_validator.rb: letters, digits, . - _, a letter, no . - _ at either end.
@@ -538,6 +547,26 @@ export const FIXTURES: Fixture[] = [
         service: rubyFree({
           pages: { "web3-eth-utils": "This gem is not currently hosted on RubyGems.org." },
         }),
+      },
+      {
+        name: "Inbio",
+        why: "a case variant of a yanked gem still held; the page is case-sensitive",
+        expect: "unavailable",
+        service: rubyFree({
+          pages: { inbio: "The RubyGems.org team has reserved this gem name for 91 more days." },
+        }),
+      },
+      {
+        name: "_amon",
+        why: "a gem pushed before the edge rule is taken, not refused",
+        expect: "taken",
+        service: rubyFree({ gems: { _amon: [200, { name: "_amon" }] } }),
+      },
+      {
+        name: "Sinatra",
+        why: "a case variant whose lowercase page is a hosted gem",
+        expect: "taken",
+        service: rubyFree({ pages: { sinatra: "<h1>sinatra</h1> Classy web-development" } }),
       },
       {
         name: "Rails",
@@ -595,6 +624,8 @@ export const FIXTURES: Fixture[] = [
   {
     channel: only("packagist"),
     freeCertainty: "probable",
+    // Lookups ignore case, so an existing vendor typed in capitals is still found.
+    refusedAfterLookup: ["uppercase"],
     free: packagistFree(),
     taken: packagistFree({ vendor: ["nameable/held"] }),
     // Package::PACKAGE_NAME_REGEX for the vendor part, lowercase only.
@@ -615,6 +646,18 @@ export const FIXTURES: Fixture[] = [
       { name: "my-symfony", why: "contains symfony", expect: "unavailable" },
       { name: "name.json", why: "ends in .json", expect: "unavailable" },
       {
+        name: "php_amqplib",
+        why: "`_` is a LIKE wildcard in the typo rule, so php-amqplib/php-amqplib matches",
+        expect: "unavailable",
+        service: packagistFree({ twins: ["php-amqplib/php-amqplib"], downloads: 142_000_000 }),
+      },
+      {
+        name: "composer",
+        why: "a reserved vendor that already holds packages is taken, not refused",
+        expect: "taken",
+        service: packagistFree({ vendor: ["composer/composer"] }),
+      },
+      {
         name: "illuminat",
         why: "one edit from the vendor of a package with the same name and a million downloads",
         expect: "unavailable",
@@ -625,6 +668,8 @@ export const FIXTURES: Fixture[] = [
   {
     channel: only("pub"),
     freeCertainty: "probable",
+    // Mixed-case packages such as Pong predate the lowercase rule.
+    refusedAfterLookup: ["uppercase"],
     free: pubFree(),
     taken: {
       http: (u) =>
@@ -638,6 +683,15 @@ export const FIXTURES: Fixture[] = [
     maxLength: 64,
     refused: [
       { name: "class", why: "a Dart reserved word", expect: "unavailable" },
+      {
+        name: "Pong",
+        why: "a mixed-case package from before the lowercase rule is taken, not refused",
+        expect: "taken",
+        service: {
+          http: (u) => (u.endsWith("/api/packages/Pong") ? [200, {}] : 404),
+          whois: noWhois,
+        },
+      },
       { name: "c_lass", why: "a reserved word once _ is dropped", expect: "unavailable" },
       { name: "pong", why: "lowercase twin of the older Pong", expect: "unavailable" },
       { name: "flutter_test", why: "part of the Flutter SDK", expect: "unavailable" },
@@ -749,7 +803,7 @@ export const FIXTURES: Fixture[] = [
     freeCertainty: "confirmed",
     free: claudeFree(),
     taken: claudeFree(["nameable"]),
-    // plugins-reference: no spaces, @, :, path separators, control or bidirectional characters.
+    // `claude plugin validate`: a marketplace installs only names of letters, digits, . _ and -.
     accepts: {
       ...reject,
       typical: true,
@@ -763,14 +817,19 @@ export const FIXTURES: Fixture[] = [
       dot: true,
       leadingHyphen: true,
       trailingHyphen: true,
-      specialChars: true,
       single: true,
-      unicode: true,
-      emoji: true,
       punycode: true,
     },
     refused: [
       { name: "claude-tools", why: "starts with claude-", expect: "unavailable" },
+      { name: "claudecode", why: "claude code without a separator", expect: "unavailable" },
+      { name: "claude+tools", why: "+ separates words too", expect: "unavailable" },
+      {
+        name: "myclaudeofficial",
+        why: "official beside claude inside one word",
+        expect: "unavailable",
+      },
+      { name: "official-anthropics", why: "official beside anthropic", expect: "unavailable" },
       {
         name: "Claude__Code",
         why: "claude-code, ignoring case and separators",
@@ -818,7 +877,7 @@ export const FIXTURES: Fixture[] = [
     freeCertainty: "probable",
     free: geminiFree(),
     taken: geminiFree(["nameable"]),
-    // Nothing enforces the documented lowercase-and-dashes rule; a name is a directory name.
+    // Gemini CLI's validateName: letters, digits and dashes.
     accepts: {
       ...reject,
       typical: true,
@@ -828,15 +887,9 @@ export const FIXTURES: Fixture[] = [
       hyphen: true,
       doubleHyphen: true,
       reservedHyphens: true,
-      underscore: true,
-      dot: true,
       leadingHyphen: true,
       trailingHyphen: true,
-      trailingAt: true,
-      specialChars: true,
       single: true,
-      unicode: true,
-      emoji: true,
       punycode: true,
     },
     refused: [
@@ -995,6 +1048,8 @@ export const FIXTURES: Fixture[] = [
     free: playFree(),
     taken: playFree(["Nameable"]),
     // Play Console: a title is at most 30 characters.
+    // An emoji has no letters or digits to compare with app titles.
+    unchecked: ["emoji"],
     accepts: {
       ...reject,
       typical: true,
@@ -1020,6 +1075,12 @@ export const FIXTURES: Fixture[] = [
     },
     maxLength: 30,
     refused: [
+      {
+        name: "claude",
+        why: "a title that names its maker after 'by'",
+        expect: "taken",
+        service: playFree(["Claude by Anthropic"]),
+      },
       {
         name: "todoist",
         why: "a title with a subtitle after a colon",

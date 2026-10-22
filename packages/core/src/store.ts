@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, rm, rmdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, rm, rmdir, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, posix, win32 } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
@@ -56,6 +56,13 @@ export function fileStore(dir: string): Store {
 
 /** Deletes the lists this tool saves in `dir`, and `dir` itself only when nothing else is left in it. */
 export async function clearStore(dir: string): Promise<void> {
-  await Promise.all(LIST_KEYS.map((key) => rm(join(dir, `${key}.gz`), { force: true })));
+  // Interrupted writes leave `<key>.gz.<pid>.partial` files behind; they are this tool's too.
+  const partials = (await readdir(dir).catch(() => [] as string[])).filter((f) =>
+    LIST_KEYS.some((key) => f.startsWith(`${key}.gz.`) && f.endsWith(".partial")),
+  );
+  await Promise.all([
+    ...LIST_KEYS.map((key) => rm(join(dir, `${key}.gz`), { force: true })),
+    ...partials.map((f) => rm(join(dir, f), { force: true })),
+  ]);
   await rmdir(dir).catch(() => undefined);
 }

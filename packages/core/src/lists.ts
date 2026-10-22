@@ -46,9 +46,11 @@ export function cachedList(
     const saved = stored?.text.startsWith(listHeader(key))
       ? { ...stored, text: stored.text.slice(listHeader(key).length) }
       : undefined;
-    // A copy dated in the future (a skewed clock, a restored file) is not trusted to be fresh.
-    const age = saved ? now - saved.savedAt : -1;
-    if (saved && !ctx.refresh && age >= 0 && age < LIST_TTL_MS) return { ...saved, stale: false };
+    // A copy dated in the future (a skewed clock, a restored file) is not trusted to be fresh. File times
+    // have sub-millisecond precision, so a copy written a moment ago can read just ahead of `now`.
+    const age = saved ? now - saved.savedAt : -Infinity;
+    if (saved && !ctx.refresh && age > -1000 && age < LIST_TTL_MS)
+      return { ...saved, stale: false };
     try {
       const text = await download();
       await ctx.store?.write(key, listHeader(key) + text).catch(() => undefined);

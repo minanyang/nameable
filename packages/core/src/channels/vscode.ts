@@ -63,7 +63,7 @@ export const vscode: Channel = defineChannel({
       return {
         status: "taken",
         url: `${SITE}/items?itemName=${id}`,
-        note: `${id}${typeof hit.displayName === "string" ? ` (${hit.displayName})` : ""}; extension names and display names are unique`,
+        note: `${id}${typeof hit.displayName === "string" ? ` (${hit.displayName})` : ""}; the Marketplace asks new extensions for a name and display name not already in use`,
       };
     }
     // A publisher page answers 200, or 301 to the publisher's display name.

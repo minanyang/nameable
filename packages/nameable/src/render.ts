@@ -3,7 +3,7 @@ import type { Channel, CheckResult, Report, Status } from "@nameable/core";
 
 type Style = Parameters<typeof styleText>[0];
 
-export type Output = { write(text: string): unknown; columns?: number };
+export type Output = { write(text: string): unknown; columns?: number; rows?: number };
 
 const LOOK: Record<Status, { mark: string; style: Style }> = {
   available: { mark: "✓", style: "green" },
@@ -62,14 +62,24 @@ export function createRenderer(out: Output, color: boolean) {
       Math.min(Math.max(...names.map(displayWidth)), columns() - labelWidth(channels) - 6),
     ) + 2;
 
-  /** Prints `rows` once and returns a function that rewrites the whole block in place. Rows must never wrap. */
-  function block(rows: string[]) {
+  /**
+   * Prints `rows` once and returns a function that rewrites the whole block in place after each of
+   * `updates` changes. Rows must never wrap. A block taller than the terminal cannot be rewritten (the
+   * cursor stops at the top of the screen), so it is printed once, after the last change.
+   */
+  function block(rows: string[], updates: number) {
     const draw = (redraw: boolean) =>
       out.write(
         `${redraw ? `\x1b[${rows.length}A` : ""}${rows.map((r) => `\r\x1b[2K${r}\n`).join("")}`,
       );
-    draw(false);
-    return () => draw(true);
+    const live = !out.rows || rows.length < out.rows;
+    if (live) draw(false);
+    let done = 0;
+    return () => {
+      done++;
+      if (live) draw(true);
+      else if (done === updates) draw(false);
+    };
   }
 
   /** One row, clipped to the terminal so it never wraps. */
@@ -88,7 +98,7 @@ export function createRenderer(out: Output, color: boolean) {
     const rows = channels.map(
       (c) => `  ${paint("dim", "·")} ${pad(c.label, width)} ${paint("dim", "checking…")}`,
     );
-    const redraw = block(rows);
+    const redraw = block(rows, channels.length);
     return (_name: string, result: CheckResult) => {
       rows[channels.findIndex((c) => c.id === result.channel)] = line(result, width);
       redraw();
@@ -116,11 +126,11 @@ export function createRenderer(out: Output, color: boolean) {
       `  ${" ".repeat(width)}  ${shown.map((n) => pad(clip(printable(n), cell - 2), cell)).join("")}`,
       ...channels.map((_, i) => row(i)),
     ];
-    const redraw = block(rows);
+    const redraw = block(rows, channels.length * names.length);
     return (name: string, result: CheckResult) => {
       const col = shown.indexOf(name);
       const i = channels.findIndex((c) => c.id === result.channel);
-      if (col < 0 || i < 0) return;
+      if (col < 0 || i < 0) return redraw();
       const look = LOOK[result.status];
       const mark = `${look.mark}${probable(result) ? "*" : ""}`;
       cells[i]![col] = { text: paint(look.style, mark), plain: mark.length };

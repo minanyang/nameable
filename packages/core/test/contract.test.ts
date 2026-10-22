@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
@@ -363,6 +363,7 @@ live("MCP Registry mirror", () => {
     const db = new DatabaseSync(join(dir, "r.db"), { readOnly: true });
     const servers = db.prepare("SELECT entry_name, updated_at FROM servers").all() as any[];
     db.close();
+    rmSync(dir, { recursive: true, force: true });
     expect(servers.length).toBeGreaterThan(10_000);
     expect(servers.map((s) => s.entry_name)).toContain("com.pulsemcp/remote-filesystem");
     const newest = Math.max(...servers.map((s) => Date.parse(s.updated_at)));

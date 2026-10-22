@@ -51,7 +51,59 @@ describe("detectProject", () => {
     [{ "pubspec.yaml": "name: x" }, ["pub", "github", "domain"]],
     [{ "pubspec.yaml": "name: x\npublish_to: none" }, ["github", "domain"]],
     [{ "X.csproj": "" }, ["nuget", "github", "domain"]],
-    [{ "compose.yaml": "" }, ["docker", "github", "domain"]],
+    [{ "compose.yaml": "" }, ["github", "domain"]],
+    [{ "Dockerfile.prod": "" }, ["docker", "github", "domain"]],
+    // A private workspace root publishes its packages.
+    [
+      { "package.json": '{"private":true,"workspaces":["packages/*"]}' },
+      ["npm", "github", "domain"],
+    ],
+    [
+      { "package.json": '{"private":true}', "pnpm-workspace.yaml": "" },
+      ["npm", "github", "domain"],
+    ],
+    // Python files that configure tools or apps, not packages.
+    [{ "pyproject.toml": "[tool.ruff]\nline-length = 100" }, ["github", "domain"]],
+    [
+      { "pyproject.toml": '[project]\nname = "x"\n[tool.uv]\npackage = false' },
+      ["github", "domain"],
+    ],
+    [{ "pyproject.toml": "[tool.poetry]\npackage-mode = false" }, ["github", "domain"]],
+    [{ "setup.cfg": "[flake8]\nmax-line-length = 100" }, ["github", "domain"]],
+    [{ "setup.py": 'from setuptools import setup\nsetup(name="x")' }, ["pypi", "github", "domain"]],
+    // Keywords and plugin entry points are not an MCP dependency or a command.
+    [
+      {
+        "pyproject.toml":
+          '[project]\nname = "x"\nkeywords = ["mcp", "llm"]\ndependencies = ["httpx"]',
+      },
+      ["pypi", "github", "domain"],
+    ],
+    [
+      { "pyproject.toml": '[project]\nname = "x"\ndependencies = [\n  "mcp[cli]>=1.2",\n]' },
+      ["pypi", "mcp-registry", "smithery", "github", "domain"],
+    ],
+    [
+      { "setup.py": 'setup(name="x", entry_points={"pytest11": ["x = x.plugin"]})' },
+      ["pypi", "github", "domain"],
+    ],
+    [{ "Cargo.toml": "[package]\npublish = false" }, ["github", "domain"]],
+    [
+      { "Cargo.toml": "[package]", "src/bin/tool.rs": "" },
+      ["crates", "homebrew", "github", "domain"],
+    ],
+    [{ Gemfile: "gem 'rails'" }, ["github", "domain"]],
+    [{ "go.mod": "module x", "main.go": "package main" }, ["homebrew", "github", "domain"]],
+    [{ "go.mod": "module x" }, ["github", "domain"]],
+    [{ "Package.swift": "" }, ["github", "domain"]],
+    [{ "X.sln": "" }, ["nuget", "github", "domain"]],
+    [
+      { "composer.json": '{"type":"library","extra":{"x":{"type":"project"}}}' },
+      ["packagist", "github", "domain"],
+    ],
+    [{ "ios/App.xcodeproj/project.pbxproj": "" }, ["app-store", "github", "domain"]],
+    [{ "android/app/src/main/AndroidManifest.xml": "" }, ["google-play", "github", "domain"]],
+    [{ "app.config.ts": "export default {}" }, ["app-store", "google-play", "github", "domain"]],
     [{ ".claude-plugin/plugin.json": "{}" }, ["claude-plugins", "github", "domain"]],
     [{ ".cursor-plugin/plugin.json": "{}" }, ["cursor", "github", "domain"]],
     [

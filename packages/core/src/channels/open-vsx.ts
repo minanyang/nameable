@@ -26,8 +26,15 @@ export const openVsx: Channel = defineChannel({
   async lookup(name, ctx) {
     const url = `https://open-vsx.org/namespace/${name}`;
     const res = await get(ctx, `${API}/${name}`);
-    if (res.status === 200) return { status: "taken", url, note: "a namespace" };
-    if (res.status !== 404) return unexpected("Open VSX", res);
+    // `/api/version` is the server's own version route, so a 200 counts only when it names the namespace.
+    if (res.status === 200) {
+      const body = (await res.json()) as { name?: unknown } | null;
+      if (typeof body?.name === "string" && body.name.toLowerCase() === name.toLowerCase()) {
+        return { status: "taken", url, note: "a namespace" };
+      }
+    } else if (res.status !== 404) {
+      return unexpected("Open VSX", res);
+    }
 
     // Namespace creation compares against every namespace; search shows those with matching extensions.
     const found = await get(
@@ -36,11 +43,7 @@ export const openVsx: Channel = defineChannel({
     );
     const { extensions } = (found.status === 200 ? await found.json() : null) ?? {};
     if (!Array.isArray(extensions)) {
-      return {
-        status: "available",
-        certainty: "probable",
-        note: "could not search for similar namespaces",
-      };
+      return { status: "unknown", note: "could not search Open VSX for similar namespaces" };
     }
     const wanted = name.toLowerCase();
     const near = extensions

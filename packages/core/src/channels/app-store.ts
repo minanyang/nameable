@@ -1,7 +1,7 @@
 import { defineChannel, unexpected } from "../define.js";
 import { get } from "../http.js";
 import type { Channel } from "../types.js";
-import { sameAppName, titleLength } from "./app-names.js";
+import { comparable, sameAppName, titleLength } from "./app-names.js";
 
 type Result = { trackName?: unknown; sellerName?: unknown; trackViewUrl?: unknown };
 
@@ -17,6 +17,12 @@ export const appStore: Channel = defineChannel({
       ? "App Store names are 2 to 30 characters"
       : undefined,
   async lookup(name, ctx) {
+    if (!comparable(name)) {
+      return {
+        status: "unknown",
+        note: "a name without letters or digits cannot be matched to app titles",
+      };
+    }
     // iOS and macOS apps are separate searches; one storefront (US) keeps within the ~20 calls a minute.
     for (const entity of ["software", "macSoftware"]) {
       const query = new URLSearchParams({ term: name, entity, limit: "200", country: "us" });
@@ -33,7 +39,10 @@ export const appStore: Channel = defineChannel({
         return {
           status: "taken",
           url: hit.trackViewUrl,
-          note: `${String(hit.trackName)} by ${String(hit.sellerName)}`,
+          note:
+            typeof hit.sellerName === "string"
+              ? `"${String(hit.trackName)}" by ${hit.sellerName}`
+              : `"${String(hit.trackName)}"`,
         };
       }
     }

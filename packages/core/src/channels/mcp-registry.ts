@@ -20,19 +20,28 @@ const VALID = /^[a-zA-Z0-9._-]+$/;
 
 class NoSqlite extends Error {}
 
-/** node:sqlite, without the experimental-feature warning Node 22 prints when it loads. */
-async function sqlite(): Promise<typeof import("node:sqlite")> {
-  const emit = process.emitWarning.bind(process);
-  process.emitWarning = ((warning: string | Error, ...rest: never[]) => {
-    if (!String(warning).includes("SQLite")) emit(warning, ...rest);
-  }) as typeof process.emitWarning;
-  try {
-    return await import("node:sqlite");
-  } catch {
-    throw new NoSqlite("the MCP Registry check needs Node.js 22.13 or later");
-  } finally {
-    process.emitWarning = emit;
-  }
+let loading: Promise<typeof import("node:sqlite")> | undefined;
+
+/**
+ * node:sqlite, without the experimental-feature warning Node 22 prints when it loads. Loaded once per
+ * process, so concurrent checks never stack their own copies of the patched emitWarning.
+ */
+function sqlite(): Promise<typeof import("node:sqlite")> {
+  loading ??= (async () => {
+    // oxlint-disable-next-line typescript/unbound-method -- restored as the same function, never called unbound
+    const original = process.emitWarning;
+    process.emitWarning = ((warning: string | Error, ...rest: never[]) => {
+      if (!String(warning).includes("SQLite")) original.call(process, warning, ...rest);
+    }) as typeof process.emitWarning;
+    try {
+      return await import("node:sqlite");
+    } catch {
+      throw new NoSqlite("the MCP Registry check needs Node.js 22.13 or later");
+    } finally {
+      process.emitWarning = original;
+    }
+  })();
+  return loading;
 }
 
 /** Every server in the mirror, one `name part\tfull name\tstatus` line each. */
@@ -83,16 +92,20 @@ export const mcpRegistry: Channel = defineChannel({
       if (err instanceof NoSqlite) return { status: "unknown", note: err.message };
       throw err;
     }
-    const servers = linesFor(list.text, name.toLowerCase());
+    // An active server leads, ahead of deprecated ones.
+    const servers = linesFor(list.text, name.toLowerCase()).sort(
+      (a, b) => Number(a[1] === "deprecated") - Number(b[1] === "deprecated"),
+    );
     if (servers.length) {
       const [full, status] = servers[0]!;
-      const others = servers.length > 1 ? ` and ${servers.length - 1} more` : "";
-      const verb = servers.length > 1 ? "use" : "uses";
+      const lead = `${full}${status === "deprecated" ? " (deprecated)" : ""}`;
+      const who =
+        servers.length === 1 ? `${lead} uses` : `${lead} and ${servers.length - 1} more use`;
       return {
         status: "taken",
         url: `${API}/servers/${encodeURIComponent(full!)}/versions/latest`,
-        note: `${full}${status === "deprecated" ? " (deprecated)" : ""}${others} ${verb} this name; your own namespace can still publish it, but clients list both by name`,
-        meta: { servers: servers.map(([s]) => s) },
+        note: `${who} this name; your own namespace can still publish it, but clients list servers by name`,
+        meta: { servers: servers.length, examples: servers.slice(0, 10).map(([s]) => s) },
       };
     }
     return {
