@@ -55,7 +55,10 @@ async function sweepTemp(): Promise<void> {
       .map(async (e) => {
         const path = join(tmpdir(), e);
         const { mtimeMs } = await stat(path).catch(() => ({ mtimeMs: Date.now() }));
-        if (Date.now() - mtimeMs > 60 * 60 * 1000) await rm(path, { recursive: true, force: true });
+        // Another user's leftover on a shared /tmp may not be ours to remove; that is not a failure.
+        if (Date.now() - mtimeMs > 60 * 60 * 1000) {
+          await rm(path, { recursive: true, force: true }).catch(() => undefined);
+        }
       }),
   );
 }
@@ -145,7 +148,7 @@ export const mcpRegistry: Channel = defineChannel({
       return {
         status: "taken",
         url: `${API}/servers/${encodeURIComponent(full!)}/versions/latest`,
-        note: `${who} this name; your own namespace can still publish it, but clients list servers by name`,
+        note: `clash, not a block: ${who} this name; your own namespace can still publish it`,
         meta: { servers: servers.length, examples: servers.slice(0, 10).map(([s]) => s) },
       };
     }

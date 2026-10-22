@@ -46,15 +46,22 @@ Add TLDs the project would really use (`io`, `sh`, `app`, `ai`, a country code).
 equally:
 
 - **Hard constraints**: an active project in the same category, a confusable well-known brand, a trademark.
+- **Hard constraint too**: the name taken or refused on the registry the project will publish to, when that
+  registry has no scopes to work around it (PyPI, crates.io, RubyGems, pub.dev, Homebrew, NuGet). The package
+  cannot be published under that name at all.
 - **Soft constraints** (each has a workaround): an unscoped npm name (a scope such as `@owner/name` works), a GitHub
-  user or org (the repo can live under another owner), a `.com` for a developer tool.
+  user or org (the repo can live under another owner), a `.com` for a developer tool, a VS Code Marketplace
+  publisher or Open VSX namespace with the name (the extension can live under another publisher), and the clashes
+  `note` marks as "not a block".
 
 Never drop a name on a soft constraint alone.
 
 ## 2. Availability
 
 Call the `check_names` tool with all candidates at once and only the channels you picked. Without the tool, run
-the CLI instead: `npx -y nameable <names...> --only <channels> --tlds <tlds> --json`.
+the CLI instead: `npx -y nameable <names...> --only <channels> --tlds <tlds> --json`. Pass TLDs only when the
+channels include `domain`. The CLI exits with 1 when any name is taken somewhere, which is a normal result, not a
+failure; read the JSON either way.
 
 Read each result exactly:
 

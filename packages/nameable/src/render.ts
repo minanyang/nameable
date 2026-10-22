@@ -160,7 +160,7 @@ export function createRenderer(out: Output, color: boolean) {
     return [
       `  ${"free".padEnd(labelWidth(channels))}  ${counts}`,
       "",
-      `  ${legend}  ${paint("dim", "* probably")}`,
+      `  ${legend}  ${paint("dim", "* probably available")}`,
       ...(hidden > 0 ? [`  ${paint("yellow", `${hidden} more did not fit; use --json`)}`] : []),
       `  ${paint("dim", "Check one name at a time for the details behind each mark.")}`,
     ].join("\n");
@@ -177,8 +177,15 @@ export function createRenderer(out: Output, color: boolean) {
   function summary(results: CheckResult[]): string {
     const counts = new Map<Status, number>();
     for (const r of results) counts.set(r.status, (counts.get(r.status) ?? 0) + 1);
+    // How many free answers are only probable, so a long list of ✓ does not read as all certain.
+    const maybe = results.filter(probable).length;
     return ORDER.filter((s) => counts.has(s))
-      .map((s) => paint(LOOK[s].style, `${counts.get(s)} ${s}`))
+      .map((s) =>
+        paint(
+          LOOK[s].style,
+          `${counts.get(s)} ${s}${s === "available" && maybe ? ` (${maybe} probably)` : ""}`,
+        ),
+      )
       .join(paint("dim", " · "));
   }
 

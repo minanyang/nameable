@@ -26,8 +26,10 @@ export const smithery: Channel = defineChannel({
   id: "smithery",
   label: "Smithery",
   category: "agent",
+  // Namespaces are looked up ignoring case (some were created with capitals); new ones are lowercase.
   rules: (name) =>
-    VALID.test(name) ? undefined : "Smithery namespaces are lowercase letters, digits and hyphens",
+    /^[a-z0-9-]+$/i.test(name) ? undefined : "Smithery namespaces are letters, digits and hyphens",
+  refuses: (name) => (VALID.test(name) ? undefined : "new Smithery namespaces are lowercase"),
   async lookup(name, ctx) {
     // The documented `namespace` filter matches the whole namespace, ignoring case.
     const res = await get(ctx, `${API}/servers?namespace=${name}&pageSize=1`);
@@ -41,7 +43,10 @@ export const smithery: Channel = defineChannel({
       return {
         status: "taken",
         url: `https://smithery.ai/servers/${first.qualifiedName}`,
-        note: `${total} ${total === 1 ? "server" : "servers"} in this namespace, such as ${first.displayName ?? first.qualifiedName}`,
+        note:
+          total === 1
+            ? `1 server in this namespace: ${first.displayName ?? first.qualifiedName}`
+            : `${total} servers in this namespace, such as ${first.displayName ?? first.qualifiedName}`,
         meta: { servers: total },
       };
     }

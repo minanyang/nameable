@@ -342,7 +342,7 @@ export const FIXTURES: Fixture[] = [
     channel: only("npm"),
     freeCertainty: "probable",
     // Old packages may have capitals, ~'!()* and more than 214 characters; new ones may not.
-    refusedAfterLookup: ["uppercase", "specialChars"],
+    refusedAfterLookup: ["uppercase", "specialChars", "leadingHyphen"],
     lengthRefusedAfterLookup: true,
     free: npmFree(),
     taken: {
@@ -547,6 +547,15 @@ export const FIXTURES: Fixture[] = [
       whois: noWhois,
     },
     // GitHub's sign-up form.
+    // Names that exist despite these rules are looked up first; the rules apply to new names.
+    refusedAfterLookup: [
+      "doubleHyphen",
+      "leadingHyphen",
+      "punycode",
+      "reservedHyphens",
+      "trailingHyphen",
+      "underscore",
+    ],
     accepts: {
       ...reject,
       typical: true,
@@ -586,8 +595,8 @@ export const FIXTURES: Fixture[] = [
       { name: "thing.gemspec", why: "ends with a file extension", expect: "unavailable" },
       {
         name: "foo.gem",
-        why: "refused by name even though its page answers 403, so the lookup cannot tell",
-        expect: "unavailable",
+        why: "its page answers 403, so the lookup cannot tell; held or refused, never free",
+        expect: "unknown",
         service: { http: (u) => (u.endsWith("/gems/foo.gem") ? 403 : 404), whois: noWhois },
       },
       { name: "123", why: "no letter", expect: "unavailable" },
@@ -661,7 +670,7 @@ export const FIXTURES: Fixture[] = [
       ],
       whois: noWhois,
     },
-    // NuGetGallery PackageIdValidator: letters, digits and _, joined by single . or -.
+    // NuGetGallery PackageIdValidator: .NET \w (letters of any script), digits and _, joined by . or -.
     accepts: {
       ...reject,
       typical: true,
@@ -672,6 +681,7 @@ export const FIXTURES: Fixture[] = [
       underscore: true,
       dot: true,
       single: true,
+      unicode: true,
     },
     maxLength: 100,
     refused: [
@@ -782,6 +792,18 @@ export const FIXTURES: Fixture[] = [
     free: dockerFree(),
     taken: dockerFree({ users: [200, { username: "nameable" }] }),
     // docs.docker.com/accounts/create-account: 4 to 30 letters and numbers, stored in lowercase.
+    // Names that exist despite these rules are looked up first; the rules apply to new names.
+    refusedAfterLookup: [
+      "dot",
+      "doubleHyphen",
+      "hyphen",
+      "punycode",
+      "reservedHyphens",
+      "single",
+      "trailingHyphen",
+      "underscore",
+    ],
+    lengthRefusedAfterLookup: true,
     accepts: {
       ...reject,
       typical: true,
@@ -817,6 +839,8 @@ export const FIXTURES: Fixture[] = [
     free: smitheryFree(),
     taken: smitheryFree([{ qualifiedName: "nameable/server", displayName: "Held" }]),
     // "lowercase alphanumeric with hyphens" (smithery.ai/docs/concepts/namespaces).
+    // Names that exist despite these rules are looked up first; the rules apply to new names.
+    refusedAfterLookup: ["uppercase"],
     accepts: {
       ...reject,
       typical: true,
@@ -891,6 +915,8 @@ export const FIXTURES: Fixture[] = [
     free: cursorFree(),
     taken: cursorFree(["nameable"]),
     // cursor.com/docs/reference/plugins: lowercase kebab-case, letters, digits, - and .
+    // Names that exist despite these rules are looked up first; the rules apply to new names.
+    refusedAfterLookup: ["uppercase"],
     accepts: {
       ...reject,
       typical: true,
@@ -911,6 +937,8 @@ export const FIXTURES: Fixture[] = [
     free: geminiFree(),
     taken: geminiFree(["nameable"]),
     // Gemini CLI's validateName: letters, digits and dashes.
+    // Names that exist despite these rules are looked up first; the rules apply to new names.
+    refusedAfterLookup: ["dot", "emoji", "specialChars", "trailingAt", "underscore", "unicode"],
     accepts: {
       ...reject,
       typical: true,
@@ -1020,6 +1048,16 @@ export const FIXTURES: Fixture[] = [
       whois: noWhois,
     },
     // structure-base Validator.kt: ALLOWED_NAME_SYMBOLS, at most 64.
+    // Names that exist despite these rules are looked up first; the rules apply to new names.
+    refusedAfterLookup: [
+      "emoji",
+      "scoped",
+      "scopedUnderscore",
+      "specialChars",
+      "trailingAt",
+      "unicode",
+    ],
+    lengthRefusedAfterLookup: true,
     accepts: {
       ...reject,
       typical: true,
@@ -1122,8 +1160,8 @@ export const FIXTURES: Fixture[] = [
     refused: [
       {
         name: "claude",
-        why: "a title that names its maker after 'by'",
-        expect: "taken",
+        why: "a title that only adds its maker after 'by' is a similar title, not this one",
+        expect: "available",
         service: playFree([["Claude by Anthropic", "Anthropic PBC"]]),
       },
       {
@@ -1144,7 +1182,7 @@ export const FIXTURES: Fixture[] = [
         server === "whois.iana.org" ? "whois:        whois.nic.sh\n" : "Domain not found.\n",
     },
     taken: {
-      http: (u) => (u === BOOTSTRAP ? bootstrap : [200, { events: [] }]),
+      http: (u) => (u === BOOTSTRAP ? bootstrap : [200, { objectClassName: "domain", events: [] }]),
       whois: (server, q) =>
         server === "whois.iana.org" ? "whois:        whois.nic.sh\n" : `Domain Name: ${q}\n`,
     },

@@ -104,7 +104,7 @@ export const packagist: Channel = defineChannel({
         return {
           status: "unavailable",
           url: `${SITE}/packages/${twin}`,
-          note: `Packagist rejects ${name}/${name} as too similar to ${twin}`,
+          note: `Packagist refuses the package ${name}/${name} as too similar to ${twin}; the vendor itself is free`,
         };
       }
     }

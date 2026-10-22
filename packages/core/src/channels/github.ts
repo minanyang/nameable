@@ -9,10 +9,16 @@ export const github: Channel = defineChannel({
   id: "github",
   label: "GitHub user/org",
   category: "code",
+  // Old accounts predate the sign-up rules (`Soaa-`, `up_the_irons`), so only what can be looked up is
+  // checked first, and the sign-up rules apply once nobody holds the name.
   rules: (name) =>
+    /^[A-Za-z0-9_-]{1,39}$/.test(name)
+      ? undefined
+      : "GitHub names are letters, digits, hyphens and underscores (max 39)",
+  refuses: (name) =>
     VALID.test(name)
       ? undefined
-      : "GitHub names are letters, digits and single inner hyphens (max 39)",
+      : "new GitHub names are letters, digits and single inner hyphens (max 39)",
   async lookup(name, ctx) {
     const headers: Record<string, string> = { accept: "application/vnd.github+json" };
     if (ctx.githubToken) headers.authorization = `Bearer ${ctx.githubToken}`;
@@ -30,7 +36,7 @@ export const github: Channel = defineChannel({
       return {
         status: "taken",
         url: `https://github.com/${user.login}`,
-        note: `${user.type}, ${user.public_repos} public repos, updated ${user.updated_at.slice(0, 10)}`,
+        note: `${user.type.toLowerCase()}, ${user.public_repos} public repos, profile updated ${user.updated_at.slice(0, 10)}`,
         meta: { type: user.type, publicRepos: user.public_repos, updated: user.updated_at },
       };
     }

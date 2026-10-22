@@ -14,24 +14,34 @@ const head = (title: string) => title.split(/:| [-–—|] /)[0]!;
 export const comparable = (name: string): boolean => norm(name) !== "";
 
 /**
- * Whether a store title is this name. A title may also name its maker, before it ("Google Gemini" by
- * Google LLC) or after "by" ("Claude by Anthropic" by Anthropic PBC); the maker is dropped before
- * comparing, but only when it is the developer's name, so "Stand by Me" stays a title of its own.
+ * How a store title relates to a name. "same": the title is the name, or the name followed by a subtitle
+ * ("Todoist: To Do List"). "similar": the title only adds its maker, before the name ("Google Gemini" by
+ * Google LLC) or after "by" ("Claude by Anthropic"); store names are unique by their exact title, so that
+ * is a clash to weigh, not a holder of the name.
  */
-export function sameAppName(title: string, name: string, developer?: unknown): boolean {
+export function appNameMatch(
+  title: string,
+  name: string,
+  developer?: unknown,
+): "same" | "similar" | undefined {
   const wanted = norm(name);
-  if (wanted === "") return false;
-  const titles = [title];
+  if (wanted === "") return undefined;
+  const same = (t: string) => norm(t) === wanted || norm(head(t)) === wanted;
+  if (same(title)) return "same";
   const maker =
     typeof developer === "string" ? developer.split(/[^\p{L}\p{N}]+/u).find(Boolean) : "";
-  if (maker && title.toLowerCase().startsWith(`${maker.toLowerCase()} `)) {
-    titles.push(title.slice(maker.length + 1));
+  if (!maker) return undefined;
+  if (
+    title.toLowerCase().startsWith(`${maker.toLowerCase()} `) &&
+    same(title.slice(maker.length + 1))
+  ) {
+    return "similar";
   }
   const by = title.toLowerCase().lastIndexOf(" by ");
-  if (maker && by > 0 && norm(title.slice(by + 4)).startsWith(norm(maker))) {
-    titles.push(title.slice(0, by));
+  if (by > 0 && norm(title.slice(by + 4)).startsWith(norm(maker)) && same(title.slice(0, by))) {
+    return "similar";
   }
-  return titles.some((t) => norm(t) === wanted || norm(head(t)) === wanted);
+  return undefined;
 }
 
 export type Storefront = { country: string; language: string };
@@ -45,8 +55,10 @@ export function storefronts(name: string): Storefront[] {
   if (/\p{Script=Han}/u.test(name)) {
     found.push({ country: "cn", language: "zh-CN" }, { country: "tw", language: "zh-TW" });
   }
-  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(name))
+  // Kanji alone (東京) is Japanese as often as Chinese.
+  if (/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(name)) {
     found.push({ country: "jp", language: "ja" });
+  }
   if (/\p{Script=Hangul}/u.test(name)) found.push({ country: "kr", language: "ko" });
   return found;
 }

@@ -63,13 +63,17 @@ export const vscode: Channel = defineChannel({
       return {
         status: "taken",
         url: `${SITE}/items?itemName=${id}`,
-        note: `${id}${typeof hit.displayName === "string" ? ` (${hit.displayName})` : ""}; the Marketplace asks new extensions for a name and display name not already in use`,
+        note: `${id}${typeof hit.displayName === "string" ? ` (${hit.displayName})` : ""} uses this name; a new extension cannot reuse its name or display name`,
       };
     }
     // A publisher page answers 200, or 301 to the publisher's display name.
     const publisher = await get(ctx, `${SITE}/publishers/${name}`, { redirect: "manual" });
     if (publisher.status === 200 || publisher.status === 301) {
-      return { status: "taken", url: `${SITE}/publishers/${name}`, note: "a publisher" };
+      return {
+        status: "taken",
+        url: `${SITE}/publishers/${name}`,
+        note: "a publisher has this ID; it blocks only using it as your publisher, not as an extension name",
+      };
     }
     if (publisher.status !== 404) return unexpected("the VS Code Marketplace", publisher);
     return {

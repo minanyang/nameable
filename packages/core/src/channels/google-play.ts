@@ -1,7 +1,7 @@
 import { defineChannel, unexpected, type Finding } from "../define.js";
 import { get } from "../http.js";
 import type { Channel } from "../types.js";
-import { comparable, sameAppName, storefronts, storeNames, titleLength } from "./app-names.js";
+import { appNameMatch, comparable, storefronts, storeNames, titleLength } from "./app-names.js";
 
 type App = { id: string; title: string; developer: unknown };
 
@@ -63,6 +63,7 @@ export const googlePlay: Channel = defineChannel({
     }
     // Play is not available in mainland China, so a Chinese name is searched in Taiwan.
     const stores = storefronts(name).filter((s) => s.country !== "cn");
+    let similar: string | undefined;
     for (const { country, language } of stores) {
       const query = new URLSearchParams({
         q: name,
@@ -75,19 +76,23 @@ export const googlePlay: Channel = defineChannel({
       const found = apps(await res.text());
       if (!found)
         return { status: "unknown", note: "the Google Play search page could not be read" };
-      const hit = found.find((a) => sameAppName(a.title, name, a.developer));
-      if (hit) {
+      const by = (a: App) => (typeof a.developer === "string" ? ` by ${a.developer}` : "");
+      const same = found.find((a) => appNameMatch(a.title, name) === "same");
+      if (same) {
         return {
           status: "taken",
-          url: `https://play.google.com/store/apps/details?id=${hit.id}`,
-          note: `"${hit.title}"${typeof hit.developer === "string" ? ` by ${hit.developer}` : ""} uses this title; Play titles are not unique, so this is a clash, not a block`,
+          url: `https://play.google.com/store/apps/details?id=${same.id}`,
+          // Clipped in the table, so what matters comes first.
+          note: `clash, not a block: "${same.title}"${by(same)} uses this title; Play titles are not unique`,
         };
       }
+      const near = found.find((a) => appNameMatch(a.title, name, a.developer) === "similar");
+      similar ??= near && `"${near.title}"${by(near)}`;
     }
     return {
       status: "available",
       certainty: "probable",
-      note: `no app with this title in search results of ${storeNames(stores)}; unreleased apps are not listed`,
+      note: `no app with this title in search results of ${storeNames(stores)}${similar ? `; ${similar} is a similar title` : ""}; unreleased apps are not listed`,
     };
   },
 });

@@ -32,7 +32,13 @@ export const gemini: Channel = defineChannel({
   id: "gemini",
   label: "Gemini extensions",
   category: "agent",
+  // Gallery entries with other names exist (agent_manager_jp), so they are looked up; Gemini CLI loads
+  // only the valid ones, so that rule applies once nobody holds the name.
   rules: (name) =>
+    /^[^\s/\\]+$/.test(name)
+      ? undefined
+      : "Gemini CLI extension names cannot contain spaces or slashes",
+  refuses: (name) =>
     /^[a-zA-Z0-9-]+$/.test(name)
       ? undefined
       : "Gemini CLI extension names are letters, digits and dashes",
@@ -45,8 +51,8 @@ export const gemini: Channel = defineChannel({
         url: repos[0],
         note:
           repos.length === 1
-            ? "an extension in the gallery; names are not unique, but two installed extensions cannot share one"
-            : `${repos.length} extensions in the gallery use this name`,
+            ? "clash, not a block: a gallery extension uses this name; two installed extensions cannot share one"
+            : `clash, not a block: ${repos.length} gallery extensions use this name`,
         meta: { repositories: repos },
       };
     }
@@ -54,7 +60,7 @@ export const gemini: Channel = defineChannel({
       status: "available",
       certainty: "probable",
       note: list.stale
-        ? `not in the Gemini CLI gallery from ${asOf(list)}`
+        ? `could not refresh the Gemini CLI gallery; not in the copy from ${asOf(list)}`
         : "not in the Gemini CLI gallery; it lists only tagged GitHub repositories",
     };
   },

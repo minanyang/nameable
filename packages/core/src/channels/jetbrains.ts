@@ -24,14 +24,13 @@ export const jetbrains: Channel = defineChannel({
   id: "jetbrains",
   label: "JetBrains Marketplace",
   category: "editor",
-  rules: (name) => {
+  // Existing plugins predate the character rules ("Sketch It!"), so only an empty name is refused first.
+  rules: (name) => (name.trim() ? undefined : "JetBrains plugin names cannot be empty"),
+  // Plugins published before these checks keep their names (PluginBeanValidator flags only new plugins).
+  refuses: (name) => {
     if (!NAME_CHARS.test(name.trim())) {
       return "JetBrains plugin names are letters, digits, spaces and . , + _ - / : ( ) # ' & [ ] |, at most 64";
     }
-    return undefined;
-  },
-  // Plugins published before these checks keep their names (PluginBeanValidator flags only new plugins).
-  refuses: (name) => {
     const word = RESTRICTED.exec(name)?.[0];
     if (word) return `JetBrains refuses new plugin names containing "${word}"`;
     if (TEMPLATE_NAMES.has(name.trim().toLowerCase()))

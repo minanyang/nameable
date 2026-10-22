@@ -57,7 +57,10 @@ async function projectList(ctx: Context): Promise<string> {
     carry = text.slice(Math.max(end, text.length - 1024));
   }
   // An index in an unexpected shape must fail the check, not read as "no similar projects".
-  if (!projects || !count) throw new Error("PyPI simple index is not in the expected shape");
+  // A body cut short still holds a "projects" key and names; only the closing brackets show it ended.
+  if (!projects || !count || !/\]\s*\}\s*$/.test(carry)) {
+    throw new Error("PyPI simple index is not in the expected shape or ended early");
+  }
   return `${parts.join("")}\n`;
 }
 
@@ -136,7 +139,7 @@ export const pypi: Channel = defineChannel({
       ? {
           status: "available",
           certainty: "probable",
-          note: `checked against PyPI's project list from ${asOf(list)}`,
+          note: `could not refresh PyPI's project list; used the copy from ${asOf(list)}`,
         }
       : { status: "available", certainty: "confirmed" };
   },

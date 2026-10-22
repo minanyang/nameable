@@ -2,9 +2,10 @@ import { defineChannel, unexpected } from "../define.js";
 import { get } from "../http.js";
 import type { Channel } from "../types.js";
 
-// NuGetGallery.Core/Packaging/PackageIdValidator.cs: ASCII letters, digits and _, joined by single
+// NuGetGallery.Core/Packaging/PackageIdValidator.cs: letters, digits and _, joined by single
 // . or -; NuGet's client caps IDs at 100 characters. IDs are compared ignoring case.
-const VALID = /^[A-Za-z0-9_]+(?:[.-][A-Za-z0-9_]+)*$/;
+// .NET's \w, which the validator's ^\w+([.-]\w+)*$ uses, matches letters of any script (Felsökning.Utilities).
+const VALID = /^[\p{L}\p{N}\p{Mn}\p{Pc}]+(?:[.-][\p{L}\p{N}\p{Mn}\p{Pc}]+)*$/u;
 const MAX = 100;
 
 type Registration = {
@@ -22,11 +23,11 @@ export const nuget: Channel = defineChannel({
   },
   async lookup(name, ctx) {
     const id = name.toLowerCase();
-    const url = `https://www.nuget.org/packages/${name}`;
+    const url = `https://www.nuget.org/packages/${encodeURIComponent(name)}`;
     // Registration lists unlisted packages too; search does not.
     const reg = await get(
       ctx,
-      `https://api.nuget.org/v3/registration5-gz-semver2/${id}/index.json`,
+      `https://api.nuget.org/v3/registration5-gz-semver2/${encodeURIComponent(id)}/index.json`,
     );
     if (reg.status === 200) {
       const body = (await reg.json()) as Registration | null;
@@ -60,7 +61,7 @@ export const nuget: Channel = defineChannel({
     return {
       status: "available",
       certainty: "probable",
-      note: "reserved ID prefixes and NuGet's typosquatting check are not public and can still refuse it",
+      note: "no package with this ID; reserved prefixes and the typosquatting check are hidden and can still refuse it",
     };
   },
 });

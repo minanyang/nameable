@@ -191,7 +191,7 @@ export const crates: Channel = defineChannel({
         ? {
             status: "available",
             certainty: "probable",
-            note: `checked against crates.io's database dump from ${asOf(list)}`,
+            note: `could not refresh crates.io's reserved and deleted names; used the copy from ${asOf(list)}`,
           }
         : { status: "available", certainty: "confirmed" };
     }

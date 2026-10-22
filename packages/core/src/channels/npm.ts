@@ -15,7 +15,6 @@ function problem(name: string): string | undefined {
   // Errors.
   if (!name.length) return "npm names cannot be empty";
   if (name.startsWith(".")) return "npm names cannot start with a period";
-  if (name.startsWith("-")) return "npm names cannot start with a hyphen";
   if (name.startsWith("_")) return "npm names cannot start with an underscore";
   if (name.trim() !== name) return "npm names cannot have leading or trailing spaces";
   if (EXCLUDED.has(name.toLowerCase())) return `${name} is not a valid npm name`;
@@ -35,6 +34,9 @@ function problem(name: string): string | undefined {
  * rules out, so they apply only once nobody holds the name.
  */
 function newOnly(name: string): string | undefined {
+  // The registry still takes these (`-` and `--fix-lockfile` exist, and new ones appear), but the
+  // validator warns and npm's own client refuses to publish them.
+  if (name.startsWith("-")) return "npm names cannot start with a hyphen";
   if (builtinModules.includes(name.toLowerCase())) return "npm reserves Node.js core module names";
   if (name.length > 214) return "npm names are at most 214 characters";
   if (name.toLowerCase() !== name) return "npm names must be lowercase";
@@ -70,21 +72,30 @@ async function similar(ctx: Context, name: string): Promise<string | undefined> 
     .flat()
     .map((o) => o.package.name)
     .find((n) => !n.startsWith("@") && n !== name && squash(n) === squash(name));
-  if (found || name !== squash(name) || name.length > MAX_PROBED_LENGTH) return found;
+  if (found || name.length > MAX_PROBED_LENGTH) return found;
 
-  const hyphenated = Array.from(
-    { length: name.length - 1 },
-    (_, i) => `${name.slice(0, i + 1)}-${name.slice(i + 1)}`,
-  );
+  // Search does not always surface the package that clashes (`react-dom` for `react_dom`), so the likely
+  // spellings are asked for directly: the same separators swapped for each other and dropped, or, for a
+  // name without any, a hyphen at each position.
+  const variants =
+    name !== squash(name)
+      ? ["-", "_", "."].map((sep) => name.replace(/[-_.]/g, sep)).concat(squash(name))
+      : Array.from(
+          { length: name.length - 1 },
+          (_, i) => `${name.slice(0, i + 1)}-${name.slice(i + 1)}`,
+        );
   const probes = await Promise.all(
-    hyphenated.map(async (variant) => {
-      // The abbreviated document is far smaller than the full one for popular packages.
-      const res = await get(ctx, `${REGISTRY}/${variant}`, {
-        headers: { accept: "application/vnd.npm.install-v1+json" },
-      });
-      if (res.status !== 200 && res.status !== 404) throw new Error(`registry HTTP ${res.status}`);
-      return res.status === 200 ? variant : undefined;
-    }),
+    [...new Set(variants)]
+      .filter((v) => v !== name)
+      .map(async (variant) => {
+        // The abbreviated document is far smaller than the full one for popular packages.
+        const res = await get(ctx, `${REGISTRY}/${variant}`, {
+          headers: { accept: "application/vnd.npm.install-v1+json" },
+        });
+        if (res.status !== 200 && res.status !== 404)
+          throw new Error(`registry HTTP ${res.status}`);
+        return res.status === 200 ? variant : undefined;
+      }),
   );
   return probes.find(Boolean);
 }
@@ -96,7 +107,7 @@ async function scopeNote(ctx: Context, scope: string): Promise<string> {
   );
   if (res?.status === 200)
     return `@${scope} is an npm organization; only its members can publish under it`;
-  return `only the npm user or organization "${scope}" can publish under @${scope}`;
+  return `only the npm user or organization "${scope}" can publish under @${scope}; if nobody has that name, you can create it`;
 }
 
 export const npm: Channel = defineChannel({
@@ -154,12 +165,15 @@ export const npm: Channel = defineChannel({
     try {
       const clash = await similar(ctx, name);
       if (clash) {
-        return { status: "unavailable", note: `npm rejects names too similar to "${clash}"` };
+        return {
+          status: "unavailable",
+          note: `npm refuses it: the same as "${clash}" without punctuation`,
+        };
       }
       return {
         status: "available",
         certainty: "probable",
-        note: "npm also refuses names equal to an existing one without punctuation; not every spelling can be checked",
+        note: "not every punctuation variant can be checked (npm refuses first-one if firstone exists)",
       };
     } catch {
       return {

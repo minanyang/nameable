@@ -174,6 +174,12 @@ describe("findProject", () => {
     });
   });
 
+  it("does not take a package.json in the home directory for a project", async () => {
+    const home = project({ "package.json": '{"dependencies":{"x":"1"}}' });
+    mkdirSync(join(home, "projects", "x"), { recursive: true });
+    expect(await findProject(join(home, "projects", "x"), home)).toBeUndefined();
+  });
+
   it("stops at the repository root", async () => {
     const outer = project({ "package.json": "{}" });
     const repo = join(outer, "repo");

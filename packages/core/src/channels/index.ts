@@ -78,7 +78,9 @@ const unique = (channels: Channel[]) =>
 export const MAX_TLDS = 20;
 
 export function selectChannels({ only, tlds = DEFAULT_TLDS }: Selection = {}): Channel[] {
-  if (tlds.length > MAX_TLDS) throw new Error(`at most ${MAX_TLDS} TLDs at a time`);
+  if (new Set(tlds.map((t) => t.trim().replace(/^\./, "").toLowerCase())).size > MAX_TLDS) {
+    throw new Error(`at most ${MAX_TLDS} TLDs at a time`);
+  }
   const all = unique([...fixed, ...tlds.map(domainFor)]);
   if (!only?.length) return all;
 

@@ -20,6 +20,17 @@ import { createRenderer, printable, type Output } from "./render.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
+/** Wraps a comma-separated list onto lines of `width`, continued under the help's option column. */
+function wrap(list: string, width: number): string {
+  const lines: string[] = [""];
+  for (const item of list.split(" ")) {
+    const last = lines.length - 1;
+    if (lines[last] && lines[last]!.length + item.length + 1 > width) lines.push(item);
+    else lines[last] = lines[last] ? `${lines[last]} ${item}` : item;
+  }
+  return lines.join(`\n${" ".repeat(18)}`);
+}
+
 const HELP = `nameable ${version}
 Find out if a name is free everywhere it matters for your project.
 
@@ -29,16 +40,21 @@ Usage
   nameable mcp
 
   One name shows each channel with its evidence; several names show a comparison grid.
-  Channels are picked from the project files in the current directory (package.json, pyproject.toml,
-  Cargo.toml, a .gemspec, composer.json, pubspec.yaml, a .csproj or .sln, a Dockerfile, .claude-plugin,
-  .cursor-plugin, gemini-extension.json, a VS Code or JetBrains extension, an Xcode, Android, Expo
-  or Flutter app); private apps and unpublished packages skip their registry. Without any, a general set is checked.
   \`mcp\` serves the same checks to AI agents as an MCP server over stdio.
 
+  Channels are picked from the project files in the current directory, or its parents up to the
+  repository root: package.json, pyproject.toml, setup.py, Cargo.toml, a .gemspec, composer.json,
+  pubspec.yaml, a .csproj or .sln, a Dockerfile, .claude-plugin, .cursor-plugin,
+  gemini-extension.json, a VS Code extension, a JetBrains plugin, an MCP SDK dependency, and an
+  Xcode, Android, Expo or Flutter app. Private apps and unpublished packages skip their registry.
+  Outside a project, a general set is checked.
+
 Options
-  --only <ids>    Comma-separated channels: ${channelIds().join(", ")}
+  --only <ids>    Comma-separated channels:
+                  ${wrap(channelIds().join(", "), 82)}
   --all           Check every channel
-  --tlds <list>   Domains to check (default: ${DEFAULT_TLDS.join(",")})
+  --tlds <list>   Domains to check, at most 20 (default: ${DEFAULT_TLDS.join(",")}); with --only,
+                  include domain
   --json          Print JSON (default when stdout is not a terminal)
   --refresh       Download the registry name lists even if the cached copy is fresh
   --clear-cache   Delete the cached name lists and exit
@@ -106,7 +122,10 @@ function parse(argv: string[]) {
       },
     });
   } catch (err) {
-    throw new UsageError((err as Error).message);
+    // Node's own wording ("… place it at the end of the command after '--', as in '-- \"--x\"") is
+    // longer than the mistake; name the option instead.
+    const option = /'(-[^']*)'/.exec((err as Error).message)?.[1];
+    throw new UsageError(option ? `unknown option ${option}` : (err as Error).message);
   }
   const { values, positionals } = parsed;
   // `check` is the subcommand only when names follow it; `nameable check` checks the name "check".
@@ -140,7 +159,9 @@ export async function run(argv: string[], io: Io): Promise<number> {
     }
     if (values["clear-cache"]) {
       // Clearing checks nothing, so names or channel options would silently do nothing.
-      const extra = names.length || values.only || values.all || values.tlds || values.refresh;
+      const extra =
+        names.length ||
+        [values.only, values.all, values.tlds, values.refresh].some((v) => v !== undefined);
       if (extra) throw new UsageError("--clear-cache takes no names or other options");
       if (io.cacheDir) {
         try {
@@ -172,12 +193,18 @@ export async function run(argv: string[], io: Io): Promise<number> {
       only = detected?.only ?? GENERAL_CHANNELS;
       picked = detected
         ? `picked from ${detected.from.join(", ")}`
-        : "no project files here; the general set";
+        : "no project files found: general set";
     }
     try {
       channels = selectChannels({ only, tlds: split(values.tlds) });
     } catch (err) {
-      throw new UsageError((err as Error).message);
+      const message = (err as Error).message;
+      // The core says "channels"; on the command line they are given with --only.
+      throw new UsageError(
+        message.startsWith("TLDs apply to domains")
+          ? "--tlds needs domain in --only (e.g. --only npm,domain)"
+          : message,
+      );
     }
   } catch (err) {
     if (!(err instanceof UsageError)) throw err;

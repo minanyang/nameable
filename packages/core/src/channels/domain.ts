@@ -22,10 +22,22 @@ async function rdapBase(ctx: Context, tld: string): Promise<string | undefined> 
   return url && (url.endsWith("/") ? url : `${url}/`);
 }
 
-async function viaWhois(ctx: Context, fqdn: string, tld: string, url: string): Promise<Finding> {
+async function viaWhois(
+  ctx: Context,
+  fqdn: string,
+  tld: string,
+  url: string,
+  rdapUnknown: boolean,
+): Promise<Finding> {
   const base = { url };
   const server = await whoisServer(ctx, tld);
-  if (!server) return { ...base, status: "unknown", note: `.${tld} has neither RDAP nor whois` };
+  if (!server) {
+    // Without IANA's RDAP list, a TLD served only by RDAP (.dev) looks like one with no service at all.
+    const note = rdapUnknown
+      ? `could not download IANA's RDAP server list, and .${tld} has no whois server`
+      : `.${tld} has no RDAP or whois server at IANA; check that the TLD exists`;
+    return { ...base, status: "unknown", note };
+  }
   const text = await whoisQuery(ctx, server, fqdn);
   const answer = readWhois(text);
   if (answer === "free") {
@@ -51,10 +63,11 @@ async function viaWhois(ctx: Context, fqdn: string, tld: string, url: string): P
 }
 
 /** Why a free answer is still only probable. IDN TLDs (`xn--…`) also limit which scripts they take. */
+// What can still refuse it comes first, before the table clips the note.
 const freeNote = (tld: string, via: string) =>
-  `not registered${via}; premium or reserved names can still be refused` +
-  (tld.startsWith("xn--") ? ", and this TLD accepts only some scripts" : "") +
-  ", confirm at a registrar";
+  `not registered${via}` +
+  (tld.startsWith("xn--") ? "; this TLD accepts only some scripts" : "") +
+  "; a registry can still refuse premium or reserved names, so confirm at a registrar";
 
 /** `tld` is in its ASCII (punycode) form; `display` is how to show it. */
 export function domain(tld: string, display: string = tld): Channel {
@@ -83,8 +96,12 @@ export function domain(tld: string, display: string = tld): Channel {
       const fqdn = `${domainToASCII(name)}.${tld}`;
       const url = `https://lookup.icann.org/en/lookup?name=${fqdn}`;
       // Many ccTLDs (.io, .sh, .co, .me, .de, .jp) have no RDAP service; whois answers for them.
-      const rdap = await rdapBase(ctx, tld).catch(() => undefined);
-      if (!rdap) return viaWhois(ctx, fqdn, tld, url);
+      let rdapUnknown = false;
+      const rdap = await rdapBase(ctx, tld).catch(() => {
+        rdapUnknown = true;
+        return undefined;
+      });
+      if (!rdap) return viaWhois(ctx, fqdn, tld, url, rdapUnknown);
       const res = await get(ctx, `${rdap}domain/${fqdn}`, {
         headers: { accept: "application/rdap+json" },
       });
@@ -97,7 +114,18 @@ export function domain(tld: string, display: string = tld): Channel {
         };
       }
       if (res.status !== 200) return { ...unexpected("RDAP", res), url };
-      const doc = (await res.json()) as { events?: { eventAction: string; eventDate: string }[] };
+      const doc = (await res.json()) as {
+        objectClassName?: unknown;
+        events?: { eventAction: string; eventDate: string }[];
+      } | null;
+      // An RDAP answer for a domain says so; anything else (a captive portal) proves nothing.
+      if (doc?.objectClassName !== "domain") {
+        return {
+          status: "unknown",
+          url,
+          note: "RDAP returned something other than a domain record",
+        };
+      }
       const event = (action: string) =>
         doc.events?.find((e) => e.eventAction === action)?.eventDate.slice(0, 10);
       const registered = event("registration");

@@ -18,7 +18,10 @@ const MAX_RETRY_AFTER_MS = 10_000;
 
 /** How long a 429 or 503 asks to wait, from its `Retry-After` header in seconds, when it says. */
 function retryAfter(res: Response): number | undefined {
-  const seconds = Number(res.headers.get("retry-after"));
+  // Number(null) and Number("") are 0, which would read a missing header as "retry at once".
+  const header = res.headers.get("retry-after")?.trim();
+  if (!header) return undefined;
+  const seconds = Number(header);
   return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : undefined;
 }
 
@@ -48,24 +51,27 @@ export async function get(ctx: Context, url: string, opts: RequestOptions = {}):
     }
     try {
       // The timeout starts once a slot is free, so queueing behind other requests never counts against it.
-      const res = await gate.run(() => {
-        if (ctx.cache.has(down)) {
-          throw Object.assign(new Error(`${host} did not respond`), { name: "TimeoutError" });
-        }
-        return ctx
-          .fetch(url, {
-            headers: { "user-agent": USER_AGENT, ...opts.headers },
-            redirect: opts.redirect,
-            ...(opts.body === undefined ? {} : { method: "POST", body: opts.body }),
-            signal: AbortSignal.timeout(timeoutMs),
-          })
-          .catch((err: unknown) => {
-            // Marked before the slot passes to the next request in line, so that one sees it.
-            if (err instanceof Error && err.name === "TimeoutError")
-              ctx.cache.set(down, Promise.resolve());
-            throw err;
-          });
-      });
+      const res = await gate.run(
+        () => {
+          if (ctx.cache.has(down)) {
+            throw Object.assign(new Error(`${host} did not respond`), { name: "TimeoutError" });
+          }
+          return ctx
+            .fetch(url, {
+              headers: { "user-agent": USER_AGENT, ...opts.headers },
+              redirect: opts.redirect,
+              ...(opts.body === undefined ? {} : { method: "POST", body: opts.body }),
+              signal: AbortSignal.timeout(timeoutMs),
+            })
+            .catch((err: unknown) => {
+              // Marked before the slot passes to the next request in line, so that one sees it.
+              if (err instanceof Error && err.name === "TimeoutError")
+                ctx.cache.set(down, Promise.resolve());
+              throw err;
+            });
+        },
+        () => !ctx.cache.has(down),
+      );
       if (!retryable(res.status) || attempt === retries) return res;
       // Honor a short Retry-After; waiting longer than a check should take is not worth it.
       const asked = retryAfter(res);
@@ -80,7 +86,9 @@ export async function get(ctx: Context, url: string, opts: RequestOptions = {}):
       lastError = err;
     }
   }
-  throw lastError instanceof Error ? lastError : new Error(String(lastError));
+  // Name the host: "fetch failed" alone does not say which of twenty services was unreachable.
+  const reason = lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`could not reach ${host} (${reason})`);
 }
 
 export function memo<T>(ctx: Context, key: string, load: () => Promise<T>): Promise<T> {

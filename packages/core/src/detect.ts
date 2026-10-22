@@ -225,6 +225,8 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
  */
 export async function findProject(start: string, home?: string): Promise<Detection | undefined> {
   for (let dir = start; ; dir = dirname(dir)) {
+    // A package.json in the home directory (left by `npm install` there) is not a project.
+    if (dir === home) return undefined;
     const found = await detectProject(dir);
     if (found) return { ...found, from: found.from.map((f) => relative(start, join(dir, f)) || f) };
     const entries = await list(dir);

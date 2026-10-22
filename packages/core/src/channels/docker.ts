@@ -13,7 +13,14 @@ export const docker: Channel = defineChannel({
   id: "docker",
   label: "Docker Hub",
   category: "package",
-  rules: (name) => (VALID.test(name) ? undefined : "Docker IDs are 4 to 30 letters and digits"),
+  // Official images (hello-world, rocket.chat) and Docker's own namespaces (ai, mcp) break the Docker ID
+  // rule, so it applies only once nobody holds the name.
+  rules: (name) =>
+    /^[a-z0-9][a-z0-9._-]{0,254}$/i.test(name)
+      ? undefined
+      : "Docker Hub names are letters, digits, . _ and -",
+  refuses: (name) =>
+    VALID.test(name) ? undefined : "new Docker IDs are 4 to 30 letters and digits",
   async lookup(raw, ctx) {
     const name = raw.toLowerCase();
     // Each endpoint answers for its own kind and redirects (308) to the other for the other kind, so

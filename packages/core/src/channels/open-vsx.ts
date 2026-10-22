@@ -76,7 +76,11 @@ export const openVsx: Channel = defineChannel({
     if (res.status === 200) {
       const body = (await res.json()) as { name?: unknown } | null;
       if (typeof body?.name === "string" && body.name.toLowerCase() === name.toLowerCase()) {
-        return { status: "taken", url, note: "a namespace" };
+        return {
+          status: "taken",
+          url,
+          note: "a namespace has this name; it blocks only using it as your namespace, not as an extension name",
+        };
       }
     } else if (res.status !== 404) {
       return unexpected("Open VSX", res);
@@ -113,7 +117,7 @@ export const openVsx: Channel = defineChannel({
       .slice(1)
       .map(Number);
     const partial =
-      read! < total! ? `; ${total! - read!} of ${total} extensions were beyond reach` : "";
+      read! < total! ? `; ${total! - read!} of ${total} extensions could not be read` : "";
     return {
       status: "available",
       certainty: "probable",

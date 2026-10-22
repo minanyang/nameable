@@ -56,13 +56,14 @@ describe("usage", () => {
     [["foo", "--tlds", "co.uk"], "several labels"],
     [["foo", "--tlds", " , "], "--tlds needs at least one value"],
     [["foo", "--only", "nope"], 'unknown channel "nope"'],
-    [["foo", "--bogus"], "Unknown option"],
+    [["foo", "--bogus"], "unknown option --bogus"],
     [["mcp", "--only", "npm"], "`mcp` takes no options"],
     [["foo", "--only", "npm", "--all"], "--only and --all cannot be combined"],
-    [["foo", "--only", "npm", "--tlds", "io"], "TLDs apply to domains"],
+    [["foo", "--only", "npm", "--tlds", "io"], "--tlds needs domain in --only"],
     [["foo", "--tlds", Array.from({ length: 21 }, (_, i) => `t${i}`).join(",")], "at most 20 TLDs"],
     [["foo", "--only", "domain:-"], "not a valid TLD"],
     [["foo", "--clear-cache"], "--clear-cache takes no names or other options"],
+    [["--clear-cache", "--only="], "--clear-cache takes no names or other options"],
   ])("exits 64 for %j", async (argv, message) => {
     const r = await cli(argv);
     expect(r.code).toBe(64);
@@ -210,7 +211,7 @@ describe("channel selection", () => {
 
   it("checks a general set outside a project", async () => {
     expect(await header({})).toBe(
-      'Checking "zz" on 7 channels (no project files here; the general set; --all for every channel)',
+      'Checking "zz" on 7 channels (no project files found: general set; --all for every channel)',
     );
   });
 

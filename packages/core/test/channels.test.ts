@@ -8,7 +8,7 @@ import {
   type CheckResult,
 } from "../src/index.js";
 import { Gate } from "../src/gate.js";
-import { sameAppName, storefronts } from "../src/channels/app-names.js";
+import { appNameMatch, storefronts } from "../src/channels/app-names.js";
 import { fakeFetch, fakeWhois, seq, zipArchive, rangeReply, type Reply } from "./fake-fetch.js";
 import { CRATES_DUMP, cratesDump, mcpDatabase, sqlite } from "./fixtures.js";
 
@@ -56,7 +56,7 @@ describe("npm", () => {
       ...hyphenProbes("zzname"),
     });
     expect(r).toMatchObject({ status: "available", certainty: "probable" });
-    expect(r.note).toContain("not every spelling can be checked");
+    expect(r.note).toContain("not every punctuation variant can be checked");
   });
 
   it("says who can publish under a scope", async () => {
@@ -81,7 +81,7 @@ describe("npm", () => {
     });
     expect(r).toMatchObject({
       status: "unavailable",
-      note: 'npm rejects names too similar to "lodash-es"',
+      note: 'npm refuses it: the same as "lodash-es" without punctuation',
     });
   });
 
@@ -336,8 +336,17 @@ describe("github", () => {
     expect((await one("github", "someone", { [url]: 403 })).status).toBe("unknown");
   });
 
-  it("rejects invalid logins", async () => {
-    expect((await one("github", "-bad", {})).status).toBe("unavailable");
+  it("looks up a login the sign-up form would refuse, then refuses it if nobody has it", async () => {
+    expect(
+      (await one("github", "-bad", { [`https://api.github.com/users/-bad`]: 404 })).status,
+    ).toBe("unavailable");
+    const old = await one("github", "Soaa-", {
+      [`https://api.github.com/users/Soaa-`]: [
+        200,
+        { login: "Soaa-", type: "User", public_repos: 1, updated_at: "2014-01-01T00:00:00Z" },
+      ],
+    });
+    expect(old.status).toBe("taken");
   });
 });
 
@@ -478,7 +487,10 @@ describe("domain", () => {
   });
 
   it("reports registration dates when taken", async () => {
-    const doc = { events: [{ eventAction: "registration", eventDate: "1999-02-13T00:00:00Z" }] };
+    const doc = {
+      objectClassName: "domain",
+      events: [{ eventAction: "registration", eventDate: "1999-02-13T00:00:00Z" }],
+    };
     const r = await one("domain:dev", "zz", {
       [BOOTSTRAP]: bootstrap,
       "https://rdap.example/v1/domain/zz.dev": [200, doc],
@@ -586,7 +598,10 @@ describe("check", () => {
     const r = await one("crates", "serde", {
       "https://crates.io/api/v1/crates/serde": new TypeError("fetch failed"),
     });
-    expect(r).toMatchObject({ status: "unknown", note: "request failed: fetch failed" });
+    expect(r).toMatchObject({
+      status: "unknown",
+      note: "could not reach crates.io (fetch failed)",
+    });
   });
 
   it("stops asking a host that timed out, instead of waiting on it once per name", async () => {
@@ -621,6 +636,34 @@ describe("check", () => {
     expect(whois.calls.filter((c) => c.startsWith("whois.nic.sh"))).toHaveLength(1);
   });
 
+  it("slows down after a 429 that names no Retry-After", async () => {
+    const fetch = fakeFetch({
+      "https://crates.io/api/v1/crates/serde": seq(429, [200, { crate: { name: "serde" } }]),
+    });
+    const started = Date.now();
+    const [r] = await check("serde", selectChannels({ only: ["crates"] }), { fetch, backoffMs: 1 });
+    expect(r!.status).toBe("taken");
+    expect(Date.now() - started).toBeGreaterThanOrEqual(1900);
+  });
+
+  it("keeps a failed lookup unknown when the name breaks a new-name rule, since it may be held", async () => {
+    const r = await one("npm", "events", { [`${NPM}/events`]: 503 });
+    expect(r).toMatchObject({
+      status: "unknown",
+      note: "npm registry returned HTTP 503; if nobody holds it, npm reserves Node.js core module names",
+    });
+  });
+
+  it("does not trust a PyPI index that ends early", async () => {
+    const full = JSON.stringify({ projects: [{ name: "requests" }, { name: "flask" }] });
+    const r = await one("pypi", "f1ask", {
+      "https://pypi.org/pypi/f1ask/json": 404,
+      "https://pypi.org/simple/f1ask/": 404,
+      "https://pypi.org/simple/": new Response(full.slice(0, full.indexOf("flask") + 7)),
+    });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
+
   it("does not retry a timeout and reports it as unknown", async () => {
     const timeout = Object.assign(new Error("aborted"), { name: "TimeoutError" });
     const fetch = fakeFetch({ "https://crates.io/api/v1/crates/serde": timeout });
@@ -645,7 +688,7 @@ describe("check", () => {
     const fetch = fakeFetch({
       [BOOTSTRAP]: bootstrap,
       "https://rdap.example/v1/domain/aa.dev": 404,
-      "https://rdap.example/v1/domain/bb.dev": [200, {}],
+      "https://rdap.example/v1/domain/bb.dev": [200, { objectClassName: "domain" }],
     });
     const reports = await checkMany(["aa", "bb"], selectChannels({ only: ["domain:dev"] }), {
       fetch,
@@ -774,7 +817,7 @@ describe.runIf(sqlite())("mcp-registry", () => {
       whois: fakeWhois(),
       backoffMs: 0,
     });
-    expect(r!.note).toMatch(/^ai\.old\/check and 2 more use this name/);
+    expect(r!.note).toMatch(/^clash, not a block: ai\.old\/check and 2 more use this name/);
     expect(r!.meta).toMatchObject({ servers: 3 });
   });
 
@@ -827,25 +870,28 @@ describe("jetbrains", () => {
 });
 
 describe("app titles", () => {
-  it("drops the maker's name from the front of a title", () => {
-    expect(sameAppName("Google Gemini", "Gemini", "Google LLC")).toBe(true);
-    expect(sameAppName("Microsoft Copilot", "copilot", "Microsoft Corporation")).toBe(true);
-    // Only the maker's own name: another leading word still makes a different title.
-    expect(sameAppName("Google Gemini", "Gemini", "Someone Else")).toBe(false);
-    expect(sameAppName("Notion Calendar", "Calendar", "Notion Labs")).toBe(true);
-    expect(sameAppName("Claude by Anthropic", "Claude", "Anthropic PBC")).toBe(true);
-    // "by" that does not name the developer is part of the title.
+  it("tells a title that is the name from one that only adds its maker", () => {
+    expect(appNameMatch("Slack", "slack")).toBe("same");
+    expect(appNameMatch("Todoist: To Do List", "todoist")).toBe("same");
+    // Store names are unique by exact title, so these are clashes, not holders.
+    expect(appNameMatch("Google Gemini", "Gemini", "Google LLC")).toBe("similar");
+    expect(appNameMatch("Microsoft Translator", "translator", "Microsoft Corporation")).toBe(
+      "similar",
+    );
+    expect(appNameMatch("Claude by Anthropic", "Claude", "Anthropic PBC")).toBe("similar");
+    // A leading word or "by" that is not the developer belongs to the title.
+    expect(appNameMatch("Google Gemini", "Gemini", "Someone Else")).toBeUndefined();
     for (const [title, name] of [
       ["Stand by Me", "Stand"],
       ["Side by Side", "Side"],
       ["Step by Step: Habit Tracker", "Step"],
     ]) {
-      expect(sameAppName(title!, name!, "Indie Dev"), title).toBe(false);
+      expect(appNameMatch(title!, name!, "Indie Dev"), title).toBeUndefined();
     }
   });
 
   it("searches the stores a Chinese, Japanese or Korean name would be released in", () => {
-    expect(storefronts("微信").map((s) => s.country)).toEqual(["us", "cn", "tw"]);
+    expect(storefronts("微信").map((s) => s.country)).toEqual(["us", "cn", "tw", "jp"]);
     expect(storefronts("ポケモン").map((s) => s.country)).toEqual(["us", "jp"]);
     expect(storefronts("카카오톡").map((s) => s.country)).toEqual(["us", "kr"]);
     expect(storefronts("nameable").map((s) => s.country)).toEqual(["us"]);
@@ -857,6 +903,62 @@ describe("app titles", () => {
         new Response("Rate limit has been exceeded for: itunes-apple-com|general|192.0.2.1"),
     });
     expect(r).toMatchObject({ status: "unknown", note: expect.stringContaining("rate limited") });
+  });
+});
+
+describe("names that exist despite a registry's rules for new names", () => {
+  it("finds an npm package whose separators differ, which search does not return", async () => {
+    const r = await one("npm", "react_dom", {
+      [`${NPM}/react_dom`]: 404,
+      [searchUrl("react_dom")]: searchHits(),
+      [searchUrl("reactdom")]: searchHits(),
+      [`${NPM}/react-dom`]: [200, { name: "react-dom" }],
+      [`${NPM}/react.dom`]: 404,
+      [`${NPM}/reactdom`]: 404,
+    });
+    expect(r).toMatchObject({
+      status: "unavailable",
+      note: expect.stringContaining('"react-dom"'),
+    });
+  });
+
+  it("finds a NuGet ID in another script", async () => {
+    const id = "Felsökning.Utilities.Json";
+    const r = await one("nuget", id, {
+      [`https://api.nuget.org/v3/registration5-gz-semver2/${encodeURIComponent(id.toLowerCase())}/index.json`]:
+        [200, { items: [] }],
+    });
+    expect(r.status).toBe("taken");
+  });
+
+  it("finds a Docker official image that breaks the Docker ID rule", async () => {
+    const H = "https://hub.docker.com/v2";
+    const r = await one("docker", "hello-world", {
+      [`${H}/users/hello-world/`]: 404,
+      [`${H}/orgs/hello-world/`]: 404,
+      [`${H}/namespaces/hello-world/repositories/?page_size=1`]: [200, { count: 0 }],
+      [`${H}/repositories/library/hello-world/`]: [200, { namespace: "library" }],
+    });
+    expect(r.status).toBe("taken");
+  });
+
+  it("finds a Homebrew formula typed with capitals", async () => {
+    const api = "https://formulae.brew.sh/api";
+    const r = await one("homebrew", "Git", {
+      [`${api}/formula/git.json`]: [200, { name: "git", desc: "Distributed revision control" }],
+      [`${api}/cask/git.json`]: 404,
+    });
+    expect(r.status).toBe("taken");
+  });
+
+  it("finds a JetBrains plugin whose name breaks the character rule", async () => {
+    const r = await one("jetbrains", "Sketch It!", {
+      "https://plugins.jetbrains.com/api/searchPlugins?search=Sketch+It%21&max=20": [
+        200,
+        { plugins: [{ name: "Sketch It!", xmlId: "sketch", link: "/plugin/1-sketch-it" }] },
+      ],
+    });
+    expect(r.status).toBe("taken");
   });
 });
 

@@ -78,8 +78,9 @@ live("live channels", () => {
     ["pub", "providers", "unavailable", "too similar"],
     ["nuget", "Coinbase.Core", "unavailable", "deleted by the NuGet team"],
     ["docker", "postgres", "taken", "official image"],
-    // Most core module names are held on npm by placeholders; this one is not.
-    ["npm", "worker_threads", "unavailable", "core module"],
+    // Every plain core module name is held on npm (mostly by placeholders), so the core-module rule is
+    // covered by unit tests; this one is refused for a spelling that search does not return.
+    ["npm", "worker_threads", "unavailable", '"worker-threads"'],
     ["npm", "test-unpublish", "reclaimable", "anyone can publish it again"],
     ["npm", "@babel/zq-not-a-real-pkg", "available", "@babel is an npm organization"],
   ];
@@ -99,7 +100,7 @@ live("live channels", () => {
       const [r] = await check(name!, selectChannels({ only: ["npm"] }));
       expect(r, JSON.stringify(r)).toMatchObject({
         status: "unavailable",
-        note: `npm rejects names too similar to "${clash}"`,
+        note: `npm refuses it: the same as "${clash}" without punctuation`,
       });
     }, 30_000);
   }

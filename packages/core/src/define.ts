@@ -39,12 +39,15 @@ export function defineChannel(spec: ChannelSpec): Channel {
       const problem = spec.rules(name);
       if (problem) return { ...base, status: "unavailable", note: problem };
       const result: CheckResult = { ...base, ...(await spec.lookup(name, ctx)) };
-      // Also when the lookup could not tell: the name is then held or refused, never free.
       const refused =
         result.status === "available" || result.status === "unknown"
           ? spec.refuses?.(name)
           : undefined;
-      if (refused) return { ...base, status: "unavailable", note: refused };
+      if (refused && result.status === "available")
+        return { ...base, status: "unavailable", note: refused };
+      // When the lookup failed the name may still be held, so it stays unknown, with both reasons.
+      if (refused)
+        result.note = `${result.note ?? "the lookup failed"}; if nobody holds it, ${refused}`;
       // Registry text such as a package description can be null or empty; the result keeps its
       // documented shape, in which `url` and `note` are present only as text.
       for (const key of ["url", "note"] as const) {

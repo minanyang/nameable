@@ -50,9 +50,7 @@ async function run(
       channel: channel.id,
       label: channel.label,
       status: "unknown",
-      note: timedOut
-        ? "timed out"
-        : `request failed: ${err instanceof Error ? err.message : String(err)}`,
+      note: timedOut ? "timed out" : err instanceof Error ? err.message : String(err),
     };
   }
   onResult?.(name, result);

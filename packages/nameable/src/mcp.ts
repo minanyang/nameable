@@ -132,6 +132,8 @@ const reply = (code: number, message: string) =>
  */
 function screened(stdin: NodeJS.ReadableStream, stdout: NodeJS.WritableStream): Readable {
   let rest = "";
+  // Decoded as a stream: a character split between two chunks must not turn into replacement marks.
+  const decoder = new TextDecoder();
   const screen = (lines: string[]) =>
     lines.filter((line) => {
       if (!line.trim()) return true;
@@ -146,12 +148,13 @@ function screened(stdin: NodeJS.ReadableStream, stdout: NodeJS.WritableStream): 
   return Readable.from(
     (async function* () {
       for await (const chunk of stdin) {
-        const lines = (rest + chunk.toString()).split("\n");
+        const lines = (rest + decoder.decode(chunk as Uint8Array, { stream: true })).split("\n");
         rest = lines.pop()!;
         const kept = screen(lines);
         // The SDK's read buffer takes bytes, not strings.
         if (kept.length) yield Buffer.from(`${kept.join("\n")}\n`);
       }
+      rest += decoder.decode();
       if (rest) yield Buffer.from(`${screen([rest]).join("\n")}\n`);
     })(),
   );

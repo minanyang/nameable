@@ -28,19 +28,25 @@ export const cursor: Channel = defineChannel({
   label: "Cursor plugins",
   category: "agent",
   rules: (name) =>
-    VALID.test(name)
+    VALID.test(name.toLowerCase())
       ? undefined
-      : "Cursor plugin names are lowercase letters, digits, - and ., starting and ending with a letter or digit",
+      : "Cursor plugin names are letters, digits, - and ., starting and ending with a letter or digit",
+  refuses: (name) =>
+    name === name.toLowerCase() ? undefined : "Cursor plugin names are lowercase",
   async lookup(name, ctx) {
     const list = await cachedList(ctx, "cursor-plugins", () => pluginList(ctx));
-    if (linesFor(list.text, name).length) {
-      return { status: "taken", url: `https://cursor.com/marketplace/${name}` };
+    if (linesFor(list.text, name.toLowerCase()).length) {
+      return {
+        status: "taken",
+        url: `https://cursor.com/marketplace/${name.toLowerCase()}`,
+        note: "a plugin in Cursor's marketplace",
+      };
     }
     return {
       status: "available",
       certainty: "probable",
       note: list.stale
-        ? `not among Cursor's listed plugins from ${asOf(list)}`
+        ? `could not refresh Cursor's plugin list; not in the copy from ${asOf(list)}`
         : "not among Cursor's listed plugins; plugins in review or in team marketplaces are not visible",
     };
   },

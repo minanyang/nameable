@@ -152,8 +152,8 @@ export const pub: Channel = defineChannel({
       status: "available",
       certainty: "probable",
       note: list.stale
-        ? `checked against pub.dev's packages from ${asOf(list)}; moderated packages and reservations are not public`
-        : "moderated packages and reserved names are not public and can still block it",
+        ? `could not refresh pub.dev's package list; used the copy from ${asOf(list)}`
+        : "no package with this name; moderated packages and reserved names are hidden and can still block it",
     };
   },
 });

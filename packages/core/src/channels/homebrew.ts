@@ -95,7 +95,9 @@ export const homebrew: Channel = defineChannel({
     if (disallowed(name)) return "homebrew/core does not allow this name";
     return undefined;
   },
-  async lookup(name, ctx) {
+  async lookup(typed, ctx) {
+    // brew finds formulae ignoring case (`brew info Git`); every name it holds is lowercase.
+    const name = typed.toLowerCase();
     const [formula, cask] = await Promise.all([
       get(ctx, `${API}/formula/${name}.json`),
       get(ctx, `${API}/cask/${name}.json`),
@@ -156,7 +158,7 @@ export const homebrew: Channel = defineChannel({
       ? {
           status: "available",
           certainty: "probable",
-          note: `checked against Homebrew's names from ${asOf(list)}`,
+          note: `could not refresh Homebrew's aliases and old names; used the copy from ${asOf(list)}`,
         }
       : { status: "available", certainty: "confirmed", note: "no homebrew-core formula or cask" };
   },

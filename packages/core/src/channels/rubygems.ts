@@ -142,12 +142,12 @@ export const rubygems: Channel = defineChannel({
       ? {
           status: "available",
           certainty: "probable",
-          note: `checked against RubyGems' names from ${asOf(list)}`,
+          note: `could not refresh RubyGems' name list; used the copy from ${asOf(list)}`,
         }
       : {
           status: "available",
           certainty: "probable",
-          note: "a yanked gem spelled with other capitals is not visible and would still hold the name",
+          note: "no gem with this name; a yanked gem spelled with other capitals is hidden and would still hold it",
         };
   },
 });

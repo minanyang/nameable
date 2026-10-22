@@ -1,7 +1,7 @@
 import { defineChannel, unexpected } from "../define.js";
 import { get } from "../http.js";
 import type { Channel } from "../types.js";
-import { comparable, sameAppName, storefronts, storeNames, titleLength } from "./app-names.js";
+import { appNameMatch, comparable, storefronts, storeNames, titleLength } from "./app-names.js";
 
 type Result = { trackName?: unknown; sellerName?: unknown; trackViewUrl?: unknown };
 
@@ -25,6 +25,7 @@ export const appStore: Channel = defineChannel({
     }
     // iOS and macOS apps are separate searches, in each storefront the name's script points to.
     const stores = storefronts(name);
+    let similar: Result | undefined;
     for (const { country } of stores) {
       for (const entity of ["software", "macSoftware"]) {
         const query = new URLSearchParams({ term: name, entity, limit: "200", country });
@@ -42,25 +43,35 @@ export const appStore: Channel = defineChannel({
         if (!Array.isArray(results)) {
           return { status: "unknown", note: "the App Store returned an unexpected list" };
         }
-        const hit = results.find(
-          (r) => typeof r?.trackName === "string" && sameAppName(r.trackName, name, r.sellerName),
+        const titled = (r: Result) =>
+          typeof r?.trackName === "string" && typeof r.trackViewUrl === "string";
+        const same = results.find(
+          (r) => titled(r) && appNameMatch(String(r.trackName), name) === "same",
         );
-        if (hit && typeof hit.trackViewUrl === "string") {
+        if (same) {
           return {
             status: "taken",
-            url: hit.trackViewUrl,
+            url: String(same.trackViewUrl),
             note:
-              typeof hit.sellerName === "string"
-                ? `"${String(hit.trackName)}" by ${hit.sellerName}`
-                : `"${String(hit.trackName)}"`,
+              typeof same.sellerName === "string"
+                ? `"${String(same.trackName)}" by ${same.sellerName}`
+                : `"${String(same.trackName)}"`,
           };
         }
+        similar ??= results.find(
+          (r) => titled(r) && appNameMatch(String(r.trackName), name, r.sellerName) === "similar",
+        );
       }
     }
+    // A title that only adds its maker's name does not hold this one, but users will confuse them.
+    const clash = similar
+      ? `; "${String(similar.trackName)}" by ${String(similar.sellerName)} is a similar title`
+      : "";
     return {
       status: "available",
       certainty: "probable",
-      note: `no app with this name in ${storeNames(stores)}; unreleased apps are not searched`,
+      url: similar ? String(similar.trackViewUrl) : undefined,
+      note: `no app with this name in ${storeNames(stores)}${clash}; unreleased apps are not listed`,
     };
   },
 });

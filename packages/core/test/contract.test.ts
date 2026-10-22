@@ -405,6 +405,12 @@ live(
       expect(tlds.has("com") && tlds.has("dev")).toBe(true);
       expect(tlds.has("io")).toBe(false);
     });
+    it("labels a registered domain's record as a domain", async () => {
+      const doc = await json("https://rdap.verisign.com/com/v1/domain/google.com", {
+        accept: "application/rdap+json",
+      });
+      expect(doc.objectClassName).toBe("domain");
+    });
     it("looks up internationalized names in punycode", async () => {
       expect(await status("https://rdap.verisign.com/com/v1/domain/xn--caf-dma.com")).toBe(200);
     });

@@ -49,6 +49,20 @@ dist("packed CLI", () => {
     ]);
   });
 
+  it("reads a message whose multi-byte characters arrive split across chunks", async () => {
+    const child = spawn(cli, ["mcp"], { stdio: ["pipe", "pipe", "ignore"] });
+    let out = "";
+    child.stdout.on("data", (d: Buffer) => (out += d.toString()));
+    // "名" is three bytes; the first write ends in the middle of it.
+    const bytes = Buffer.from('{"jsonrpc":"2.0","id":"名","method":"ping"}\n');
+    const cut = bytes.indexOf(Buffer.from("名")) + 1;
+    child.stdin.write(bytes.subarray(0, cut));
+    await new Promise((r) => setTimeout(r, 50));
+    child.stdin.end(bytes.subarray(cut));
+    await new Promise((resolve) => child.on("exit", resolve));
+    expect(JSON.parse(out.trim())).toEqual({ jsonrpc: "2.0", id: "名", result: {} });
+  });
+
   it("reports the package version", async () => {
     expect(await run("--version")).toMatchObject({ code: 0, stdout: `${pkg.version}\n` });
   });

@@ -12,10 +12,11 @@ export class Gate {
     readonly intervalMs = 0,
   ) {}
 
-  async run<T>(task: () => Promise<T>): Promise<T> {
+  /** `paced` says whether the task will make a request; one that will fail at once is not spaced out. */
+  async run<T>(task: () => Promise<T>, paced: () => boolean = () => true): Promise<T> {
     if (this.#active < this.max) this.#active++;
     else await new Promise<void>((resolve) => this.#waiting.push(resolve));
-    if (this.intervalMs) {
+    if (this.intervalMs && paced()) {
       const now = Date.now();
       const at = Math.max(now, this.#nextStart);
       this.#nextStart = at + this.intervalMs;

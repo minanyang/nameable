@@ -17,7 +17,11 @@ export const tcpWhois: Whois = (server, query) =>
       socket.destroy();
       reject(Object.assign(new Error(`whois ${server} timed out`), { name: "TimeoutError" }));
     }, 10_000);
-    socket.on("close", () => clearTimeout(deadline));
+    // A close without "end" or "error" (a reset after some data) still settles the query.
+    socket.on("close", () => {
+      clearTimeout(deadline);
+      reject(new Error(`whois ${server} closed the connection`));
+    });
     socket.on("data", (chunk) => chunks.push(chunk));
     socket.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
     socket.on("error", reject);

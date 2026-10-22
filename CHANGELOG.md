@@ -2,24 +2,57 @@
 
 ## Unreleased
 
-- Without `--only`, the channels are picked from the project files in the current directory: npm, PyPI, crates.io, RubyGems, Packagist, pub.dev and NuGet manifests (skipping private apps and unpublished packages), Dockerfiles, Claude Code, Cursor, Gemini CLI, VS Code and JetBrains plugins, MCP SDK dependencies, and Xcode, Android, Expo and Flutter apps. Outside a project, a general set is checked. `--all` checks every channel; `--tlds` without a domain channel is a usage error.
-- A rule a registry applies only to new names (reserved words, names kept for its owners, newer formats) no longer hides a name published before it: such a name shows as taken, with its link.
-- RubyGems free answers are now probable: a yanked gem spelled with other capitals still holds the name and cannot be seen.
-- A table taller than the terminal is printed once instead of redrawn.
-- npm, PyPI, crates.io and Homebrew also apply their new-package-only rules after the lookup: `events`, `JSONStream`, `asyncio`, `1password` and `firefox@developer-edition` show as taken, not refused. A rule a registry would refuse a name by also applies when the lookup cannot tell.
-- App stores: a title that leads with its maker's name ("Google Gemini") or names it after "by" matches; names in Chinese, Japanese or Korean are also searched in those storefronts.
-- Open VSX: checks every namespace for the similar-name rule, and refuses a name a VS Code Marketplace publisher already has.
-- A host that stops answering is skipped for the rest of the run instead of being waited on for each name; requests to rate-limited hosts (Google's RDAP, the App Store) are paced, and a short `Retry-After` is honored.
-- The PyPI index is read as it streams in, using a fraction of the memory. MCP calls running at the same time share downloads.
-- `--tlds` takes at most 20 TLDs, and a TLD must be a valid DNS label. `--clear-cache` takes no names, reports errors in one line and supports `--json`.
+Sixteen new channels, channels picked from your project, and fixes from three rounds of testing.
+
+**New channels**
+
+- Package registries:
+  - `rubygems`: names unique ignoring case, reserved names, yanked gems held for their owners, and the typo rule
+    against popular or recent gems.
+  - `packagist`: the name as a vendor, reserved vendors, and the typo rule that refuses `name/name` when a
+    well-downloaded package one edit away has the same package name.
+  - `pub`: Dart reserved words, names kept for the Dart and Flutter teams, and pub.dev's similar-name rule.
+  - `nuget`: unlisted packages, and IDs the NuGet team deleted but still holds.
+  - `docker`: Docker Hub users and organizations, including accounts only a redirect reveals, and official images.
+- AI agent directories:
+  - `mcp-registry`: servers in the official MCP Registry whose name part matches, read from a daily community
+    mirror because the registry's own search takes 30 seconds or more. Needs Node.js 22.13 or later; older versions
+    report it as unknown.
+  - `smithery`: Smithery namespaces, which only one owner can hold.
+  - `claude-plugins`: Anthropic's official Claude Code marketplace, with the names Claude Code refuses or cannot
+    install.
+  - `cursor`: Cursor's marketplace. `gemini`: the Gemini CLI extension gallery, where names are not unique.
+- Editor marketplaces: `vscode` (extension name, display name and publisher), `open-vsx` (the name as a namespace,
+  with Open VSX's similar-namespace and VS Code publisher rules) and `jetbrains` (plugin ID and name, with the words
+  JetBrains refuses in new plugin names).
+- App stores: `app-store` and `google-play` show whether an app already has the name, in the US store and, for
+  Chinese, Japanese or Korean names, in those stores too. A title that only adds its maker ("Google Gemini") is
+  noted as similar. A free answer there is always probable.
+
+**Channels picked from your project**
+
+- Without `--only`, Nameable reads the project in the current directory, or its parents up to the repository root:
+  npm, PyPI, crates.io, RubyGems, Packagist, pub.dev and NuGet manifests (skipping private apps and unpublished
+  packages), Dockerfiles, Claude Code, Cursor, Gemini CLI, VS Code and JetBrains plugins, MCP SDK dependencies, and
+  Xcode, Android, Expo and Flutter apps. Outside a project it checks a general set. `--all` checks every channel.
+
+**Changes to existing channels and the CLI**
+
+- A rule a registry applies only to new names (npm core modules and capitals, PyPI standard library names,
+  Homebrew formula naming) no longer hides a name published before it: `events`, `JSONStream`, `asyncio` and
+  `1password` show as taken, with their links. When a lookup fails, such a name stays unknown rather than refused.
+- A response that is not the registry's own answer (a captive portal, a proxy page) is never read as taken.
+- A host that stops answering is skipped for the rest of the run instead of being waited on for every name.
+  Rate-limited hosts (Google's RDAP for .dev and .app, the App Store) are paced, and a short `Retry-After` is
+  honored. Errors name the host that could not be reached.
+- The PyPI project list is read as it downloads, with a fraction of the memory. MCP calls running at the same time
+  share downloads.
+- `--tlds` takes at most 20 valid TLDs and needs `domain` among the channels. `--clear-cache` takes no names,
+  supports `--json` and reports errors in one line.
 - `nameable mcp` answers lines that are not JSON-RPC messages with a JSON-RPC error instead of ignoring them.
-- Rows wider than the terminal, and bidirectional control characters in names or descriptions, no longer garble the table.
-- The published package no longer ships source maps.
-- New package registry channels: `rubygems` (case-insensitive uniqueness, reserved names, yanked gems held for 100 days, the typo rule against popular or recent gems), `packagist` (the name as a vendor, reserved vendors, the typo rule against well-downloaded packages), `pub` (Dart reserved words, names kept for the Dart and Flutter teams, pub.dev's similar-name rule), `nuget` (unlisted packages, IDs NuGet deleted but still holds) and `docker` (Docker Hub users and organizations, including accounts only a redirect reveals, and official images).
-- `mcp-registry`: servers in the official MCP Registry whose name part matches, read from a daily community mirror (rosmur/official-mcp-registry-database), because the registry's own search takes 30 seconds or more. Needs Node.js 22.13 or later; older versions report it as unknown.
-- Editor extension channels: `vscode` (extension name, display name and publisher, all unique in the VS Code Marketplace), `open-vsx` (the name as a namespace, with Open VSX's similar-namespace rule) and `jetbrains` (plugin ID and name, with the words JetBrains refuses in new plugin names).
-- New channels: `cursor` (Cursor's marketplace), `gemini` (the Gemini CLI extension gallery), `app-store` (US iOS and macOS search) and `google-play` (US search). App store matches ignore case, punctuation and a subtitle; a free answer there is always probable.
-- New channels for agent tools: `smithery` (the Smithery namespace, which only one owner can hold) and `claude-plugins` (Anthropic's official Claude Code marketplace, including the names `claude plugin validate` reserves).
+- The table no longer garbles when it is taller or wider than the terminal, or when a name or description holds
+  bidirectional control characters. Notes lead with what matters, since the table clips them.
+- The package no longer ships source maps.
 
 ## 0.1.0 — 2026-10-21
 

@@ -67,7 +67,7 @@ export const claudePlugins: Channel = defineChannel({
   // Anthropic's own plugins carry these names.
   refuses: (name) =>
     reserved(name)
-      ? "Claude Code reserves names that pass as one of Anthropic's own plugins"
+      ? "Claude Code refuses names that look like an Anthropic plugin (claude, anthropic, official)"
       : undefined,
   async lookup(name, ctx) {
     const plugins = await pluginList(ctx);
