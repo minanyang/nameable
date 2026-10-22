@@ -77,6 +77,25 @@ describe("detectProject", () => {
       },
       ["nuget", "github", "domain"],
     ],
+    // An app that is marked not packable is still an app in its solution.
+    [
+      {
+        "X.sln":
+          'Project("{G}") = "Api", "Api\\Api.csproj", "{H}"\nProject("{G}") = "Lib", "Lib\\Lib.csproj", "{I}"',
+        "Api/Api.csproj": '<Project Sdk="Microsoft.NET.Sdk.Web"><IsPackable>false</IsPackable>',
+        "Lib/Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+      },
+      ["github", "domain"],
+    ],
+    // What a props file sets only under a condition, such as test references, reaches no project here.
+    [
+      {
+        "Lib.csproj": "<PackageId>Lib</PackageId>",
+        "Directory.Build.props":
+          '<ItemGroup Condition="$(MSBuildProjectName.EndsWith(\'Tests\'))"><PackageReference Include="Microsoft.NET.Test.Sdk" /></ItemGroup>',
+      },
+      ["nuget", "github", "domain"],
+    ],
     // MSBuild imports the nearest Directory.Build.props up the tree.
     [
       {
@@ -384,35 +403,64 @@ describe("detectProject", () => {
   });
 
   it.each([
+    // Pushes and registry settings that name another registry.
     [
-      "ECR in a workflow",
-      { ".github/workflows/deploy.yml": "uses: aws-actions/amazon-ecr-login@v2" },
+      "ECR login in a workflow",
+      { ".github/workflows/ci.yml": "- uses: aws-actions/amazon-ecr-login@v2" },
       [],
     ],
     ["a CDK deploy script", { "deploy.sh": "npx cdk deploy --all" }, []],
-    ["GHCR in a GitLab pipeline", { ".gitlab-ci.yml": "docker push ghcr.io/me/app" }, []],
     [
-      "Docker Hub beside a private registry",
+      "a push to GHCR in a GitLab pipeline",
+      { ".gitlab-ci.yml": "script: docker push ghcr.io/me/app" },
+      [],
+    ],
+    ["a login to GHCR", { ".github/workflows/ci.yml": "with:\n  registry: ghcr.io" }, []],
+    [
+      "GitHub's GHCR starter workflow",
       {
-        ".github/workflows/release.yml":
-          "registry: ghcr.io\nusername: ${{ secrets.DOCKERHUB_USERNAME }}",
+        ".github/workflows/ci.yml":
+          "env:\n  REGISTRY: ghcr.io\n  IMAGE_NAME: ${{ github.repository }}\nsteps:\n  - with:\n      registry: ${{ env.REGISTRY }}\n  - with:\n      images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\n  - with:\n      push: true\n      tags: ${{ steps.meta.outputs.tags }}",
       },
-      ["docker"],
-    ],
-    ["no CI at all", {}, ["docker"]],
-    // Images a job only pulls, comments and prose say nothing about where this one goes.
-    [
-      "a service image a test job pulls",
-      { ".github/workflows/ci.yml": "services:\n  db:\n    image: ghcr.io/baosystems/postgis:15" },
-      ["docker"],
+      [],
     ],
     [
-      "a comment",
-      { Makefile: "# TODO: push to ECR later\nbuild:\n\tdocker build -t me/app ." },
-      ["docker"],
+      "a tag with an expression",
+      { ".github/workflows/ci.yml": "tags: ghcr.io/me/app:${{ github.sha }}" },
+      [],
     ],
-    ["prose", { "DEPLOY.md": "Pull the image from quay.io." }, ["docker"]],
-    ["a push to Docker Hub", { "deploy.sh": "docker push me/app:1" }, ["docker"]],
+    [
+      "a push with an expression",
+      { ".github/workflows/ci.yml": "run: docker push ghcr.io/${{ github.repository }}:latest" },
+      [],
+    ],
+    [
+      "a tags block",
+      { ".github/workflows/ci.yml": "tags: |\n  ghcr.io/me/app:latest\n  ghcr.io/me/app:1" },
+      [],
+    ],
+    [
+      "buildx with --push first",
+      { ".github/workflows/ci.yml": "run: docker buildx build --push -t ghcr.io/me/app ." },
+      [],
+    ],
+    [
+      "a continued command",
+      { "deploy.sh": "docker buildx build \\\n  -t quay.io/me/app \\\n  --push ." },
+      [],
+    ],
+    [
+      "a Makefile variable",
+      { Makefile: "IMAGE ?= ghcr.io/me/app\npush:\n\tdocker push $(IMAGE)" },
+      [],
+    ],
+    ["a quoted #", { "deploy.sh": 'echo "build #1" && docker push ghcr.io/me/app' }, []],
+    ["podman with a destination", { "deploy.sh": "podman push app docker://quay.io/me/app" }, []],
+    [
+      "buildah with a destination",
+      { "deploy.sh": "buildah push app:latest quay.io/me/app:latest" },
+      [],
+    ],
     [
       "a push to ECR beside a pulled Docker Hub image",
       {
@@ -421,10 +469,53 @@ describe("detectProject", () => {
       },
       [],
     ],
+    // Docker Hub, by credentials, a login or a reference without a registry.
     [
-      "build-push-action tags on GHCR",
-      { ".github/workflows/release.yml": "with:\n  push: true\n  tags: ghcr.io/me/app:latest" },
-      [],
+      "Docker Hub credentials beside GHCR",
+      {
+        ".github/workflows/ci.yml":
+          "registry: ghcr.io\nusername: ${{ secrets.DOCKERHUB_USERNAME }}",
+      },
+      ["docker"],
+    ],
+    ["a login to docker.io", { ".github/workflows/ci.yml": "registry: docker.io" }, ["docker"]],
+    ["a push to Docker Hub", { "deploy.sh": "docker push me/app:1" }, ["docker"]],
+    ["a quoted push to Docker Hub", { "deploy.sh": 'docker push "me/app:1"' }, ["docker"]],
+    [
+      "two tags, one on Docker Hub",
+      {
+        ".github/workflows/ci.yml": "run: docker buildx build -t ghcr.io/me/app -t me/app --push .",
+      },
+      ["docker"],
+    ],
+    // Nothing that says where this image goes: Docker Hub stays.
+    ["no CI at all", {}, ["docker"]],
+    [
+      "a service image a test job pulls",
+      { ".github/workflows/ci.yml": "services:\n  db:\n    image: ghcr.io/baosystems/postgis:15" },
+      ["docker"],
+    ],
+    [
+      "a container a job runs in",
+      { ".github/workflows/ci.yml": "container: ghcr.io/renovatebot/renovate:39" },
+      ["docker"],
+    ],
+    [
+      "a comment",
+      { Makefile: "# TODO: push to ECR later\nbuild:\n\tdocker build -t me/app ." },
+      ["docker"],
+    ],
+    ["prose", { "DEPLOY.md": "Pull the image from quay.io." }, ["docker"]],
+    [
+      "GitLab runner tags",
+      { ".gitlab-ci.yml": "build:\n  tags: [ docker ]\n  script: make" },
+      ["docker"],
+    ],
+    ["release tags", { ".github/workflows/ci.yml": "on:\n  push:\n    tags: [ v1 ]" }, ["docker"]],
+    [
+      "a git push",
+      { ".github/workflows/ci.yml": "run: git push https://github.com/me/app.git data" },
+      ["docker"],
     ],
   ])("reads where images go from %s", async (_, files, docker) => {
     const dir = project({ ".git/": "", Dockerfile: "", ...files });
@@ -440,6 +531,17 @@ describe("detectProject", () => {
       "github",
       "domain",
     ]);
+  });
+
+  it("reads a large CI file in linear time", async () => {
+    const dir = project({
+      ".git/": "",
+      Dockerfile: "",
+      ".github/workflows/ci.yml": `run: docker buildx build ${"-t a ".repeat(100_000)}--push .`,
+    });
+    const started = Date.now();
+    await detectProject(dir);
+    expect(Date.now() - started).toBeLessThan(500);
   });
 
   it("reads the CI of the repository a service lives in", async () => {

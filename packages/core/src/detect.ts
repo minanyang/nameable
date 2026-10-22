@@ -79,15 +79,17 @@ type DotnetProject = "package" | "library" | "app" | "none";
  * package metadata. A plain library is packable by default, so NuGet takes it unless something says
  * otherwise.
  */
-function dotnetProject(xml: string): DotnetProject {
+function dotnetProject(project: string, props = ""): DotnetProject {
+  // Properties a props file sets only under a condition (for test projects, say) are not read: which
+  // projects they reach cannot be told without evaluating MSBuild.
+  const xml = project + props.replace(/<(\w+)\s[^>]*\bCondition\b[^>]*>[\s\S]*?<\/\1>/g, "");
   const prop = (name: string) =>
     new RegExp(`<${name}(?:\\s[^>]*)?>([^<]*)</${name}>`, "i").exec(xml)?.[1]?.trim().toLowerCase();
   if (prop("PackAsTool") === "true") return "package";
   // Before the executable check: xunit v3 and Microsoft.Testing.Platform test projects are executables.
   if (
-    prop("IsPackable") === "false" ||
     prop("IsTestProject") === "true" ||
-    /Include\s*=\s*"(?:Microsoft\.NET\.Test\.Sdk|xunit\.v3)"/i.test(xml)
+    /Include\s*=\s*"(?:Microsoft\.NET\.Test\.Sdk|xunit\.v3)"/i.test(project)
   ) {
     return "none";
   }
@@ -97,6 +99,7 @@ function dotnetProject(xml: string): DotnetProject {
   ) {
     return "app";
   }
+  if (prop("IsPackable") === "false") return "none";
   if (
     prop("IsPackable") === "true" ||
     prop("GeneratePackageOnBuild") === "true" ||
@@ -131,7 +134,7 @@ async function buildProps(dir: string): Promise<string> {
 async function nugetPackage(dir: string, file: string, xml: string): Promise<boolean> {
   const props = (sub: string) => buildProps(join(dir, sub));
   if (!/\.slnx?$/.test(file)) {
-    const kind = dotnetProject(xml + (await props(".")));
+    const kind = dotnetProject(xml, await props("."));
     return kind === "package" || kind === "library";
   }
   const paths = [...xml.matchAll(/"([^"]+\.(?:cs|fs|vb)proj)"/g)].map((m) =>
@@ -141,7 +144,7 @@ async function nugetPackage(dir: string, file: string, xml: string): Promise<boo
     paths.map(async (path) => {
       const project = await text(dir, path);
       if (project === undefined) return "none";
-      return dotnetProject(project + (await props(dirname(path))));
+      return dotnetProject(project, await props(dirname(path)));
     }),
   );
   return kinds.includes("package") || (kinds.includes("library") && !kinds.includes("app"));
@@ -283,18 +286,22 @@ async function workspaceMembers(
   return { members: [...new Set(await expanded(patterns))].filter((m) => !skip.has(m)), js };
 }
 
-// Where CI and deploy scripts push images. An image named without a registry, or on docker.io, goes to
-// Docker Hub, as do Docker Hub credentials; one on another registry (ECR, Artifact Registry, GHCR, Azure,
-// GitLab, Quay) does not, and neither does a cloud deploy that builds and stores the image itself (CDK,
-// SAM, `dotnet lambda`, Cloud Run, Fly). Images a job only pulls (services, containers) say nothing.
-const PUSH = /\b(?:docker|podman|buildah)\s+(?:image\s+)?push\s+(?:-\S+\s+)*([^\s'"`]+)/g;
-const TAG =
-  /^[ \t]*(?:-[ \t]*)?tags[ \t]*:[ \t]*(.+)$|(?:-t|--tag)[ \t=]+([^\s'"`]+)[^\n]*--push/gm;
-// What an image reference can look like; YAML such as "|" or "['v*']" is not one.
-const IMAGE_REF = /^[a-z0-9][\w.\-/:@]*$/i;
+// Where CI and deploy scripts push images. Docker Hub when a push names it (a reference without a
+// registry, or docker.io) or Docker Hub credentials are used; elsewhere when a push, a registry login or
+// a registry setting names another registry (ECR, Artifact Registry, GHCR, Azure, GitLab, Quay), or a
+// cloud deploy builds and stores the image itself (CDK, SAM, `dotnet lambda`, Cloud Run, Fly). Images a
+// job only pulls (services, containers) say nothing. Undefined, when nothing says, keeps Docker Hub.
 const HUB_CREDENTIALS = /DOCKER_?HUB|DOCKER_USERNAME|hub\.docker\.com/i;
-const ELSEWHERE =
-  /amazon-ecr-login|ecr get-login|\bcdk deploy\b|\bsam deploy\b|\bdotnet lambda deploy|gcloud run deploy|\bfly(?:ctl)? deploy\b/;
+const CLOUD =
+  /amazon-ecr-login|ecr get-login|gcloud auth configure-docker|az acr login|\bcdk deploy\b|\bsam deploy\b|\bdotnet lambda deploy|gcloud run deploy|\bfly(?:ctl)? deploy\b/;
+// Lines that set where images go: a registry login or setting, a metadata-action image, a push, a tag.
+// A lowercase `image:` is a job's service or container, which it pulls; it is not read.
+const REGISTRY_SETTING = /\b(?:registry|images|REGISTRY|IMAGE(?:_NAME)?)\s*(?:[?:+]?=|:)/;
+// A line of a `tags: |` block: one image reference with its registry.
+const TAG_LINE = /^\s*(?:-\s*)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?\/\S+\s*$/i;
+const PUSHES = /\b(?:push|--push|--tag|-t|tags)\b/;
+const HOST = /^(?:(?:[a-z0-9-]+\.)+[a-z]{2,}|localhost)(?::\d+)?$/i;
+const HUB_HOST = /^(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)$/i;
 // Only CI, build and deploy scripts, never prose such as DEPLOY.md.
 const CI_FILE =
   /^(?:\.gitlab-ci\.ya?ml|bitbucket-pipelines\.yml|Makefile|deploy[\w.-]*\.(?:sh|bash|ps1))$/i;
@@ -303,30 +310,49 @@ const MAX_CI_LEVELS = 5;
 // CI files are small; anything bigger (or not a file) is not read.
 const MAX_CI_BYTES = 1024 * 1024;
 
-/** Where an image reference such as `me/app:1` or `ghcr.io/me/app` is stored. References built from
- * variables never get here: IMAGE_REF keeps them out. */
-function registryOf(ref: string): "hub" | "elsewhere" {
-  // A reference built from variables names no registry that can be read.
-  const first = ref.split("/")[0]!;
-  const host = ref.includes("/") && /[.:]|^localhost$/.test(first) ? first : "docker.io";
-  return /^(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)$/.test(host)
-    ? "hub"
-    : "elsewhere";
+/** A CI or script file as lines, continuations joined and comment lines dropped; [] when unreadable. */
+async function ciLines(dir: string, file: string): Promise<string[]> {
+  const info = await stat(join(dir, file)).catch(() => undefined);
+  if (!info?.isFile() || info.size > MAX_CI_BYTES) return [];
+  const raw = (await text(dir, file)) ?? "";
+  return raw
+    .replace(/\\\r?\n/g, " ")
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*#/.test(line));
 }
 
-/** A CI or script file without its comments, or "" when it is missing, large or not a file. */
-async function ciText(dir: string, file: string): Promise<string> {
-  const path = join(dir, file);
-  const info = await stat(path).catch(() => undefined);
-  if (!info?.isFile() || info.size > MAX_CI_BYTES) return "";
-  const raw = (await text(dir, file)) ?? "";
-  return raw.replace(/(^|\s)#.*$/gm, "$1");
+/** Where the images a line pushes or configures go, from the registry hosts its words name. */
+function lineRegistry(line: string): "hub" | "elsewhere" | undefined {
+  const words = line.split(/[\s"'`,=[\]()]+/).map((w) => w.replace(/^docker:\/\//, ""));
+  let found: "hub" | "elsewhere" | undefined;
+  for (const [at, word] of words.entries()) {
+    const first = word.split("/")[0]!;
+    if (HOST.test(first) && (word.includes("/") || /registry:?$/i.test(words[at - 1] ?? ""))) {
+      if (HUB_HOST.test(first)) return "hub";
+      found = "elsewhere";
+    }
+  }
+  // A literal reference with no registry goes to Docker Hub: `docker push me/app`, or a tag on a build
+  // that pushes (`docker buildx build -t me/app --push`).
+  const refs = [
+    /\bdocker\s+(?:image\s+)?push\s+(?:-\S+\s+)*(\S+)/i.exec(line)?.[1],
+    ...(/(?:^|\s)--push\b/.test(line)
+      ? [...line.matchAll(/(?:^|\s)(?:-t|--tag)[\s=]+(\S+)/g)].map((m) => m[1])
+      : []),
+  ];
+  const literal = /^[a-z0-9][\w.\-/:@]*$/i;
+  for (const ref of refs.map((r) => r?.replace(/^["']|["']$/g, ""))) {
+    if (ref && literal.test(ref) && !(ref.includes("/") && HOST.test(ref.split("/")[0]!))) {
+      return "hub";
+    }
+  }
+  return found;
 }
 
 /**
  * Where the project's images go, read from the CI and deploy files from `dir` up to its repository root
  * (only `dir` itself when it is in no repository): "hub" when anything pushes to Docker Hub, "elsewhere"
- * when images are pushed only to other registries or by a cloud deploy, undefined when nothing says.
+ * when images go only to other registries or a cloud deploy, undefined when nothing says.
  */
 async function imageRegistry(dir: string): Promise<"hub" | "elsewhere" | undefined> {
   const levels: string[] = [];
@@ -335,24 +361,21 @@ async function imageRegistry(dir: string): Promise<"hub" | "elsewhere" | undefin
     levels.push(at);
     if ((await list(at)).includes(".git") || dirname(at) === at) break;
   }
-  const inRepository = (await list(levels.at(-1)!)).includes(".git");
+  const inRepository = levels.length > 0 && (await list(levels.at(-1)!)).includes(".git");
   let found: "elsewhere" | undefined;
   for (const at of inRepository ? levels : [dir]) {
     const workflows = (await list(join(at, ".github", "workflows"))).map((f) =>
       join(".github", "workflows", f),
     );
     for (const file of [...workflows, ...(await list(at)).filter((e) => CI_FILE.test(e))]) {
-      const content = await ciText(at, file);
-      if (HUB_CREDENTIALS.test(content)) return "hub";
-      const refs = [
-        ...[...content.matchAll(PUSH)].map((m) => m[1]!),
-        ...[...content.matchAll(TAG)].flatMap((m) => (m[1] ?? m[2]!).split(/[\s,]+/)),
-      ]
-        .map((r) => r.replace(/^["']|["']$/g, ""))
-        .filter((r) => IMAGE_REF.test(r));
-      const where = refs.map(registryOf);
-      if (where.includes("hub")) return "hub";
-      if (where.includes("elsewhere") || ELSEWHERE.test(content)) found = "elsewhere";
+      for (const line of await ciLines(at, file)) {
+        if (HUB_CREDENTIALS.test(line)) return "hub";
+        if (CLOUD.test(line)) found = "elsewhere";
+        if (!PUSHES.test(line) && !REGISTRY_SETTING.test(line) && !TAG_LINE.test(line)) continue;
+        const where = lineRegistry(line);
+        if (where === "hub") return "hub";
+        found ??= where;
+      }
     }
   }
   return found;

@@ -27,21 +27,25 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-      # The branch does not exist before the first run; the script then reads every server.
-      - name: Read the previous list
-        run: curl -fsS -o previous.tsv "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/data/mcp-servers.tsv" || true
+      # The list lives on its own branch, with no history in common with main, so the daily commits stay out
+      # of main's log and CI. The branch does not exist before the first run; the script then reads every
+      # server.
+      - name: Check out the previous list
+        run: |
+          git init -q data && cd data
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q --depth=1 origin data; then git checkout -q -b data FETCH_HEAD; else git checkout -q --orphan data; fi
       - name: Build the list
-        run: mkdir out && node scripts/mcp-servers.ts previous.tsv out/mcp-servers.tsv ${FULL:+--full}
+        run: node scripts/mcp-servers.ts data/mcp-servers.tsv data/mcp-servers.tsv.new ${FULL:+--full} && mv data/mcp-servers.tsv.new data/mcp-servers.tsv
         env:
           FULL: ${{ inputs.full && '1' || '' }}
-      # One commit, replaced each day, so the branch never grows.
+      # One commit a day, kept: a bad list can be reverted, and when a server appeared can be looked up.
       - name: Publish the list
-        working-directory: out
+        working-directory: data
         run: |
-          git init -q -b data
           git add mcp-servers.tsv
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit -qm "data: MCP Registry servers"
-          git push -qf "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+            commit -qm "data: MCP Registry servers as of $(sed -n 's/^#asof\t//p' mcp-servers.tsv)"
+          git push -q "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
         env:
           GITHUB_TOKEN: ${{ github.token }}
