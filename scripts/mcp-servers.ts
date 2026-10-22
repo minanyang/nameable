@@ -14,6 +14,11 @@ const FULL_EVERY_MS = 7 * 24 * 60 * 60 * 1000;
 const OVERLAP_MS = 60 * 60 * 1000;
 // The registry holds well over this many; fewer means the API answered something else.
 const MIN_SERVERS = 1000;
+// Servers are rarely deleted; a list that shrinks more than this is more likely a bad read. Run with
+// --full to publish it anyway.
+const MAX_SHRINK = 0.1;
+// Far more pages than the registry has; a cursor that never ends is a broken API, not a long list.
+const MAX_PAGES = 5000;
 
 export type Update = { name: string; status: string };
 type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
@@ -25,20 +30,27 @@ export type ServerList = {
   full: string;
 };
 
+/**
+ * A list written by formatList, or undefined for anything else: another file, a corrupt date, or a list
+ * cut short, which the count on its last line gives away.
+ */
 export function parseList(text: string): ServerList | undefined {
   const lines = text.split("\n");
   if (lines[0] !== HEADER) return undefined;
   const servers = new Map<string, string>();
   let asOf = "";
   let full = "";
+  let end = -1;
   for (const line of lines.slice(1)) {
     const [name, value] = line.split("\t");
     if (!name || value === undefined) continue;
     if (name === "#asof") asOf = value;
     else if (name === "#full") full = value;
+    else if (name === "#end") end = Number(value);
     else servers.set(name, value);
   }
-  return asOf && full ? { servers, asOf, full } : undefined;
+  const dated = !Number.isNaN(Date.parse(asOf)) && !Number.isNaN(Date.parse(full));
+  return dated && end === servers.size ? { servers, asOf, full } : undefined;
 }
 
 export function formatList({ servers, asOf, full }: ServerList): string {
@@ -48,6 +60,7 @@ export function formatList({ servers, asOf, full }: ServerList): string {
     `#asof\t${asOf}`,
     `#full\t${full}`,
     ...names.map((n) => `${n}\t${servers.get(n)}`),
+    `#end\t${names.length}`,
     "",
   ].join("\n");
 }
@@ -64,7 +77,10 @@ export function merge(servers: Map<string, string>, updates: Update[]): void {
 export async function readRegistry(since?: string, fetchFn: FetchFn = fetch): Promise<Update[]> {
   const found: Update[] = [];
   let cursor: string | undefined;
+  const seen = new Set<string>();
   do {
+    if (seen.size >= MAX_PAGES)
+      throw new Error(`more than ${MAX_PAGES} pages; the cursor never ends`);
     const query = new URLSearchParams({ limit: "100", version: "latest" });
     if (since) query.set("updated_since", since);
     if (cursor) query.set("cursor", cursor);
@@ -82,6 +98,8 @@ export async function readRegistry(since?: string, fetchFn: FetchFn = fetch): Pr
       found.push({ name, status });
     }
     cursor = typeof page.metadata?.nextCursor === "string" ? page.metadata.nextCursor : undefined;
+    if (cursor && seen.has(cursor)) throw new Error(`the registry repeated the cursor ${cursor}`);
+    if (cursor) seen.add(cursor);
   } while (cursor);
   return found;
 }
@@ -124,6 +142,11 @@ export async function update(
   if (next.servers.size < MIN_SERVERS) {
     throw new Error(`only ${next.servers.size} servers; refusing to publish the list`);
   }
+  if (previous && !full && next.servers.size < previous.servers.size * (1 - MAX_SHRINK)) {
+    throw new Error(
+      `${next.servers.size} servers, down from ${previous.servers.size}; run with --full to publish it`,
+    );
+  }
   return next;
 }
 
@@ -133,7 +156,10 @@ if (import.meta.main) {
     console.error("usage: node scripts/mcp-servers.ts <previous list> <output> [--full]");
     process.exit(64);
   }
-  const previous = parseList(await readFile(previousPath, "utf8").catch(() => ""));
+  const text = await readFile(previousPath, "utf8").catch(() => "");
+  const previous = parseList(text);
+  // A previous list that is there but unreadable (cut short in transfer) means reading every server.
+  if (text && !previous) console.warn("the previous list is not complete; reading every server");
   const next = await update(previous, { full: flag === "--full" });
   await writeFile(output, formatList(next));
   const kind = next.full === next.asOf ? "full" : "incremental";

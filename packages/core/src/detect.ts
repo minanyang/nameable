@@ -1,4 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
+import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 
 /** The channels a project ships on, read from its manifests, and the files that said so. */
@@ -82,13 +83,20 @@ function dotnetProject(xml: string): DotnetProject {
   const prop = (name: string) =>
     new RegExp(`<${name}(?:\\s[^>]*)?>([^<]*)</${name}>`, "i").exec(xml)?.[1]?.trim().toLowerCase();
   if (prop("PackAsTool") === "true") return "package";
+  // Before the executable check: xunit v3 and Microsoft.Testing.Platform test projects are executables.
+  if (
+    prop("IsPackable") === "false" ||
+    prop("IsTestProject") === "true" ||
+    /Include\s*=\s*"(?:Microsoft\.NET\.Test\.Sdk|xunit\.v3)"/i.test(xml)
+  ) {
+    return "none";
+  }
   if (
     /Sdk\s*=\s*"Microsoft\.NET\.Sdk\.(?:Web|Worker|BlazorWebAssembly)"/i.test(xml) ||
     /^(?:winexe|exe)$/.test(prop("OutputType") ?? "")
   ) {
     return "app";
   }
-  if (prop("IsPackable") === "false" || prop("IsTestProject") === "true") return "none";
   if (
     prop("IsPackable") === "true" ||
     prop("GeneratePackageOnBuild") === "true" ||
@@ -100,12 +108,28 @@ function dotnetProject(xml: string): DotnetProject {
 }
 
 /**
+ * The Directory.Build.props MSBuild imports for a project in `dir`: the nearest one up the tree, as far as
+ * the repository root.
+ */
+async function buildProps(dir: string): Promise<string> {
+  for (let at = dir, level = 0; level < MAX_CI_LEVELS && at !== homedir(); level++) {
+    const entries = await list(at);
+    if (entries.includes("Directory.Build.props")) {
+      return (await text(at, "Directory.Build.props")) ?? "";
+    }
+    if (entries.includes(".git") || dirname(at) === at) break;
+    at = dirname(at);
+  }
+  return "";
+}
+
+/**
  * Whether a .NET project or solution is published to NuGet. A solution that holds an application
  * keeps its plain libraries to itself; only projects that declare package metadata count there. Test
  * projects take no side, and projects the solution lists but that are missing are skipped.
  */
 async function nugetPackage(dir: string, file: string, xml: string): Promise<boolean> {
-  const props = async (sub: string) => (await text(join(dir, sub), "Directory.Build.props")) ?? "";
+  const props = (sub: string) => buildProps(join(dir, sub));
   if (!/\.slnx?$/.test(file)) {
     const kind = dotnetProject(xml + (await props(".")));
     return kind === "package" || kind === "library";
@@ -117,7 +141,7 @@ async function nugetPackage(dir: string, file: string, xml: string): Promise<boo
     paths.map(async (path) => {
       const project = await text(dir, path);
       if (project === undefined) return "none";
-      return dotnetProject(project + (await props(dirname(path))) + (await props(".")));
+      return dotnetProject(project + (await props(dirname(path))));
     }),
   );
   return kinds.includes("package") || (kinds.includes("library") && !kinds.includes("app"));
@@ -232,7 +256,7 @@ async function workspaceMembers(
   dir: string,
   manifest: { workspaces?: unknown } | undefined,
   cargo: string | undefined,
-): Promise<string[] | undefined> {
+): Promise<{ members: string[]; js: boolean } | undefined> {
   const patterns: string[] = [];
   const add = (value: unknown) => {
     if (Array.isArray(value)) for (const v of value) if (typeof v === "string") patterns.push(v);
@@ -244,6 +268,8 @@ async function workspaceMembers(
   const lerna = await json(dir, "lerna.json");
   // Lerna's default when lerna.json names no packages.
   add(lerna && (Array.isArray(lerna.packages) ? lerna.packages : ["packages/*"]));
+  // A JavaScript workspace that names members; with none found, the root still publishes something.
+  const js = patterns.length > 0;
   const cargoWorkspace = cargo !== undefined && /^\[workspace\]/m.test(cargo);
   const excluded = cargoWorkspace ? tomlStrings(table(cargo, "workspace"), "exclude") : [];
   if (cargoWorkspace) patterns.push(...tomlStrings(table(cargo, "workspace"), "members"));
@@ -254,42 +280,80 @@ async function workspaceMembers(
     ...(await expanded(excluded)),
     ...(await expanded(patterns.filter((p) => p.startsWith("!")).map((p) => p.slice(1)))),
   ]);
-  return [...new Set(await expanded(patterns))].filter((m) => !skip.has(m));
+  return { members: [...new Set(await expanded(patterns))].filter((m) => !skip.has(m)), js };
 }
 
-// Where CI and deploy scripts push images. Docker Hub when they name it; a private registry (ECR, Google
-// Artifact Registry, GHCR, Azure, GitLab, Quay) or a cloud deploy that builds the image itself (CDK,
-// `dotnet lambda`, Cloud Run, Fly) otherwise.
-const DOCKER_HUB = /docker\.io\b|hub\.docker\.com|DOCKER_?HUB|DOCKER_USERNAME/i;
-const PRIVATE_REGISTRY =
-  /\.dkr\.ecr\.|amazon-ecr-login|\bECR\b|\bgcr\.io\b|-docker\.pkg\.dev\b|\bghcr\.io\b|\.azurecr\.io\b|registry\.gitlab\.com|\bquay\.io\b|\bcdk deploy\b|ContainerImage\.fromAsset|DockerImageAsset|\bdotnet lambda\b|gcloud run deploy|\bfly(?:ctl)? deploy\b/;
-// How far up a project's files are looked for, when no repository root comes first.
+// Where CI and deploy scripts push images. An image named without a registry, or on docker.io, goes to
+// Docker Hub, as do Docker Hub credentials; one on another registry (ECR, Artifact Registry, GHCR, Azure,
+// GitLab, Quay) does not, and neither does a cloud deploy that builds and stores the image itself (CDK,
+// SAM, `dotnet lambda`, Cloud Run, Fly). Images a job only pulls (services, containers) say nothing.
+const PUSH = /\b(?:docker|podman|buildah)\s+(?:image\s+)?push\s+(?:-\S+\s+)*([^\s'"`]+)/g;
+const TAG =
+  /^[ \t]*(?:-[ \t]*)?tags[ \t]*:[ \t]*(.+)$|(?:-t|--tag)[ \t=]+([^\s'"`]+)[^\n]*--push/gm;
+// What an image reference can look like; YAML such as "|" or "['v*']" is not one.
+const IMAGE_REF = /^[a-z0-9][\w.\-/:@]*$/i;
+const HUB_CREDENTIALS = /DOCKER_?HUB|DOCKER_USERNAME|hub\.docker\.com/i;
+const ELSEWHERE =
+  /amazon-ecr-login|ecr get-login|\bcdk deploy\b|\bsam deploy\b|\bdotnet lambda deploy|gcloud run deploy|\bfly(?:ctl)? deploy\b/;
+// Only CI, build and deploy scripts, never prose such as DEPLOY.md.
+const CI_FILE =
+  /^(?:\.gitlab-ci\.ya?ml|bitbucket-pipelines\.yml|Makefile|deploy[\w.-]*\.(?:sh|bash|ps1))$/i;
+// How far up a project's repository root is looked for.
 const MAX_CI_LEVELS = 5;
+// CI files are small; anything bigger (or not a file) is not read.
+const MAX_CI_BYTES = 1024 * 1024;
+
+/** Where an image reference such as `me/app:1` or `ghcr.io/me/app` is stored. References built from
+ * variables never get here: IMAGE_REF keeps them out. */
+function registryOf(ref: string): "hub" | "elsewhere" {
+  // A reference built from variables names no registry that can be read.
+  const first = ref.split("/")[0]!;
+  const host = ref.includes("/") && /[.:]|^localhost$/.test(first) ? first : "docker.io";
+  return /^(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)$/.test(host)
+    ? "hub"
+    : "elsewhere";
+}
+
+/** A CI or script file without its comments, or "" when it is missing, large or not a file. */
+async function ciText(dir: string, file: string): Promise<string> {
+  const path = join(dir, file);
+  const info = await stat(path).catch(() => undefined);
+  if (!info?.isFile() || info.size > MAX_CI_BYTES) return "";
+  const raw = (await text(dir, file)) ?? "";
+  return raw.replace(/(^|\s)#.*$/gm, "$1");
+}
 
 /**
- * Where the project's images go, read from the CI and deploy files from `dir` up to the repository root:
- * "hub" when anything names Docker Hub, "private" when only a private registry or a cloud deploy is
- * named, undefined when nothing says.
+ * Where the project's images go, read from the CI and deploy files from `dir` up to its repository root
+ * (only `dir` itself when it is in no repository): "hub" when anything pushes to Docker Hub, "elsewhere"
+ * when images are pushed only to other registries or by a cloud deploy, undefined when nothing says.
  */
-async function imageRegistry(dir: string): Promise<"hub" | "private" | undefined> {
-  let found: "private" | undefined;
-  for (let at = dir, level = 0; level < MAX_CI_LEVELS; level++, at = dirname(at)) {
-    const entries = await list(at);
+async function imageRegistry(dir: string): Promise<"hub" | "elsewhere" | undefined> {
+  const levels: string[] = [];
+  for (let at = dir; levels.length < MAX_CI_LEVELS; at = dirname(at)) {
+    if (at === homedir()) break;
+    levels.push(at);
+    if ((await list(at)).includes(".git") || dirname(at) === at) break;
+  }
+  const inRepository = (await list(levels.at(-1)!)).includes(".git");
+  let found: "elsewhere" | undefined;
+  for (const at of inRepository ? levels : [dir]) {
     const workflows = (await list(join(at, ".github", "workflows"))).map((f) =>
       join(".github", "workflows", f),
     );
-    const files = [
-      ...workflows,
-      ...entries.filter((e) =>
-        /^(?:\.gitlab-ci\.ya?ml|bitbucket-pipelines\.yml|Makefile|cdk\.json|deploy.*)$/i.test(e),
-      ),
-    ];
-    for (const file of files) {
-      const content = (await text(at, file)) ?? "";
-      if (DOCKER_HUB.test(content)) return "hub";
-      if (PRIVATE_REGISTRY.test(content)) found = "private";
+    for (const file of [...workflows, ...(await list(at)).filter((e) => CI_FILE.test(e))]) {
+      const content = await ciText(at, file);
+      if (HUB_CREDENTIALS.test(content)) return "hub";
+      const refs = [
+        ...[...content.matchAll(PUSH)].map((m) => m[1]!),
+        ...[...content.matchAll(TAG)].flatMap((m) => (m[1] ?? m[2]!).split(/[\s,]+/)),
+      ]
+        .map((r) => r.replace(/^["']|["']$/g, ""))
+        .filter((r) => IMAGE_REF.test(r));
+      const where = refs.map(registryOf);
+      if (where.includes("hub")) return "hub";
+      if (where.includes("elsewhere") || ELSEWHERE.test(content)) found = "elsewhere";
     }
-    if (entries.includes(".git") || dirname(at) === at) break;
   }
   return found;
 }
@@ -347,6 +411,8 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
     depth < MAX_WORKSPACE_DEPTH ? await workspaceMembers(dir, manifest, cargo) : undefined;
   // A private app keeps its images to itself, as it keeps its package off npm.
   let privateApp = false;
+  // Whether the root package.json could be published: not an extension, not a server or site.
+  let rootPublishes = false;
 
   if (manifest) {
     // Read even when unreadable: its presence alone says the project is JavaScript.
@@ -369,6 +435,7 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
       manifest.scripts && typeof manifest.scripts === "object" ? Object.keys(manifest.scripts) : [];
     const runs = !publishes && scripts.some((s) => /^(?:start|serve|deploy)(?::|$)/.test(s));
     privateApp = manifest.private === true && !workspace;
+    rootPublishes = !manifest.engines?.vscode && !runs;
     pick("package.json");
     // A VS Code extension is published to both extension marketplaces, not to npm.
     if (manifest.engines?.vscode) pick("package.json", "vscode", "open-vsx");
@@ -457,7 +524,7 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
   );
   if (container) {
     pick(container);
-    if (!privateApp && (await imageRegistry(dir)) !== "private") pick(container, "docker");
+    if (!privateApp && (await imageRegistry(dir)) !== "elsewhere") pick(container, "docker");
   }
 
   if (has(".claude-plugin")) pick(".claude-plugin", "claude-plugins");
@@ -496,7 +563,7 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
   }
 
   let projects = 0;
-  for (const member of workspace ?? []) {
+  for (const member of workspace?.members ?? []) {
     const found = await detect(join(dir, member), depth + 1);
     if (found) projects++;
     const ids = found?.only.filter((id) => id !== "github" && id !== "domain") ?? [];
@@ -507,8 +574,9 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
       if (!from.includes(join(member, file))) from.push(join(member, file));
     }
   }
-  // A workspace whose members cannot be found still publishes something.
-  if (workspace && !projects && manifest && !manifest.engines?.vscode) pick("package.json", "npm");
+  // A JavaScript workspace whose members cannot be found still publishes something, unless its root
+  // says it is an app.
+  if (workspace?.js && !projects && rootPublishes) pick("package.json", "npm");
 
   if (!from.length) return undefined;
   return { only: [...only, "github", "domain"], from };

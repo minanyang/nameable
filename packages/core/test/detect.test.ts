@@ -66,6 +66,26 @@ describe("detectProject", () => {
     ],
     [{ "X.csproj": "<IsPackable>false</IsPackable>" }, ["github", "domain"]],
     [{ "X.csproj": "<IsTestProject>true</IsTestProject>" }, ["github", "domain"]],
+    // xunit v3 test projects are executables; they still take no side in a solution.
+    [
+      {
+        "X.sln":
+          'Project("{G}") = "Lib", "Lib\\Lib.csproj", "{H}"\nProject("{G}") = "T", "T\\T.csproj", "{I}"',
+        "Lib/Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "T/T.csproj":
+          '<OutputType>Exe</OutputType><PackageReference Include="xunit.v3" Version="1.0.0" />',
+      },
+      ["nuget", "github", "domain"],
+    ],
+    // MSBuild imports the nearest Directory.Build.props up the tree.
+    [
+      {
+        "X.sln": 'Project("{G}") = "Tool", "src\\Tool\\Tool.csproj", "{H}"',
+        "src/Tool/Tool.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "src/Directory.Build.props": "<IsPackable>false</IsPackable>",
+      },
+      ["github", "domain"],
+    ],
     [{ "X.csproj": '<Project Sdk="Microsoft.NET.Sdk.Worker">' }, ["github", "domain"]],
     [{ "X.csproj": '<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">' }, ["github", "domain"]],
     [{ "X.csproj": '<IsPackable Condition="x">false</IsPackable>' }, ["github", "domain"]],
@@ -106,6 +126,21 @@ describe("detectProject", () => {
     ],
     // A private app's image is deployed, not published; a package's image may be.
     [{ "package.json": '{"name":"web","private":true}', Dockerfile: "" }, ["github", "domain"]],
+    // Only a JavaScript workspace with members it cannot find falls back to npm, and not for an app.
+    [
+      {
+        "Cargo.toml": '[workspace]\nmembers = ["crates/*"]',
+        "package.json": '{"private":true,"devDependencies":{"x":"1"}}',
+      },
+      ["github", "domain"],
+    ],
+    [
+      {
+        "package.json": '{"name":"app","private":true,"scripts":{"start":"node ."}}',
+        "pnpm-workspace.yaml": "packages: []\n",
+      },
+      ["github", "domain"],
+    ],
     // A Cargo workspace root without a [package] is no crate.
     [{ "Cargo.toml": '[workspace]\nmembers = ["crates/*"]' }, ["github", "domain"]],
     [{ "Dockerfile.prod": "" }, ["docker", "github", "domain"]],
@@ -365,9 +400,46 @@ describe("detectProject", () => {
       ["docker"],
     ],
     ["no CI at all", {}, ["docker"]],
+    // Images a job only pulls, comments and prose say nothing about where this one goes.
+    [
+      "a service image a test job pulls",
+      { ".github/workflows/ci.yml": "services:\n  db:\n    image: ghcr.io/baosystems/postgis:15" },
+      ["docker"],
+    ],
+    [
+      "a comment",
+      { Makefile: "# TODO: push to ECR later\nbuild:\n\tdocker build -t me/app ." },
+      ["docker"],
+    ],
+    ["prose", { "DEPLOY.md": "Pull the image from quay.io." }, ["docker"]],
+    ["a push to Docker Hub", { "deploy.sh": "docker push me/app:1" }, ["docker"]],
+    [
+      "a push to ECR beside a pulled Docker Hub image",
+      {
+        ".github/workflows/ci.yml":
+          "services:\n  db:\n    image: docker.io/library/postgres:16\nsteps:\n  - uses: aws-actions/amazon-ecr-login@v2",
+      },
+      [],
+    ],
+    [
+      "build-push-action tags on GHCR",
+      { ".github/workflows/release.yml": "with:\n  push: true\n  tags: ghcr.io/me/app:latest" },
+      [],
+    ],
   ])("reads where images go from %s", async (_, files, docker) => {
     const dir = project({ ".git/": "", Dockerfile: "", ...files });
     expect((await detectProject(dir))?.only).toEqual([...docker, "github", "domain"]);
+  });
+
+  it("reads CI files only up to the repository, and only the project's own outside one", async () => {
+    const outer = project({ Makefile: "docker push gcr.io/me/app" });
+    mkdirSync(join(outer, "a", "proj"), { recursive: true });
+    writeFileSync(join(outer, "a", "proj", "Dockerfile"), "");
+    expect((await detectProject(join(outer, "a", "proj")))?.only).toEqual([
+      "docker",
+      "github",
+      "domain",
+    ]);
   });
 
   it("reads the CI of the repository a service lives in", async () => {

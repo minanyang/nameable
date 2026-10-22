@@ -29,6 +29,9 @@ describe("scripts/mcp-servers.ts", () => {
     expect(parseList(text)).toEqual(list);
     expect(parseList("something else")).toBeUndefined();
     expect(parseList(`${HEADER}\na/b\tactive\n`)).toBeUndefined();
+    // Cut short in transfer, or with a date that does not parse.
+    expect(parseList(text.slice(0, text.length / 2))).toBeUndefined();
+    expect(parseList(text.replace(/#full\t[^\n]*/, "#full\tgarbage"))).toBeUndefined();
   });
 
   it("drops a deleted server and keeps a deprecated one with its status", () => {
@@ -90,6 +93,31 @@ describe("scripts/mcp-servers.ts", () => {
       [`${API}?limit=100&version=latest`]: [200, { servers: many(10), metadata: {} }],
     });
     await expect(update(undefined, { fetchFn: fetch })).rejects.toThrow("only 10 servers");
+  });
+
+  it("refuses a list far smaller than the previous one unless asked for a full read", async () => {
+    const fetch = fakeFetch({
+      [`${API}?limit=100&version=latest`]: [200, { servers: many(1000), metadata: {} }],
+    });
+    const big = previous("2026-10-14T00:00:00.000Z");
+    for (let i = 0; i < 500; i++) big.servers.set(`more/s${i}`, "active");
+    const now = new Date("2026-10-23T00:00:00.000Z");
+    await expect(update(big, { now, fetchFn: fetch })).rejects.toThrow("down from 1500");
+    expect((await update(big, { now, full: true, fetchFn: fetch })).servers.size).toBe(1000);
+  });
+
+  it("stops when the registry repeats a cursor", async () => {
+    const fetch = fakeFetch({
+      [`${API}?limit=100&version=latest`]: [
+        200,
+        { servers: many(1), metadata: { nextCursor: "c" } },
+      ],
+      [`${API}?limit=100&version=latest&cursor=c`]: [
+        200,
+        { servers: many(1), metadata: { nextCursor: "c" } },
+      ],
+    });
+    await expect(update(undefined, { fetchFn: fetch })).rejects.toThrow("repeated the cursor c");
   });
 
   it("stops on a page that is not a server list", async () => {

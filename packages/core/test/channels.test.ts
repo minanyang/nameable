@@ -836,24 +836,39 @@ describe("mcp-registry", () => {
     });
 
   it("leads with an active server and counts the rest", async () => {
-    const list = mcpList(["ai.new/check", "ai.third/check"]).replace(
-      "\n",
-      "\nai.old/check\tdeprecated\n",
-    );
+    const list = mcpList(["ai.new/check", "ai.third/check"])
+      .replace("\n", "\nai.old/check\tdeprecated\n")
+      .replace("#end\t1002", "#end\t1003");
     const [r] = await run("check", list);
     expect(r!.note).toMatch(/^clash, not a block: ai\.new\/check and 2 more use this name/);
     expect(r!.meta).toMatchObject({ servers: 3 });
   });
 
   it("dates a free answer by when the list was read from the registry, not by the download", async () => {
-    const [r] = await run("other", mcpList());
-    expect(r!.note).toContain("in the registry as of 2026-10-21");
+    const [r] = await check("other", selectChannels({ only: ["mcp-registry"] }), {
+      fetch: fakeFetch({ [LIST]: () => new Response(mcpList()) }),
+      backoffMs: 0,
+      now: () => Date.parse("2026-10-30T00:00:00Z"),
+    });
+    expect(r!.note).toBe(
+      "no server uses this name in the registry as of 2026-10-21, and the list has not been updated since",
+    );
+    const [fresh] = await check("other", selectChannels({ only: ["mcp-registry"] }), {
+      fetch: fakeFetch({ [LIST]: () => new Response(mcpList()) }),
+      backoffMs: 0,
+      now: () => Date.parse("2026-10-22T00:00:00Z"),
+    });
+    expect(fresh!.note).toBe("no server uses this name in the registry as of 2026-10-21");
   });
 
   it.each([
     ["another file", "<html>Not Found</html>"],
     ["a list cut short", mcpList().split("\n").slice(0, 500).join("\n")],
     ["a list without its date", mcpList().replace(/#asof[^\n]*\n/, "")],
+    [
+      "a list cut short after its header",
+      mcpList().replace(/io\.github\.someone\/server9\d\d\tactive\n/g, ""),
+    ],
   ])("does not read %s as a registry where nothing is taken", async (_, list) => {
     const [r] = await run("server1", list);
     expect(r).toMatchObject({ status: "unknown" });

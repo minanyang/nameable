@@ -9,6 +9,7 @@ import type { Channel, Context } from "../types.js";
 const MCP_SERVERS = "https://raw.githubusercontent.com/minanyang/nameable/data/mcp-servers.tsv";
 const API = "https://registry.modelcontextprotocol.io/v0.1";
 const HEADER = "#nameable-data mcp-servers v1";
+const STALE_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
 
 // server.json `name` is `namespace/name`, the name part matching [a-zA-Z0-9._-]+ (openapi.yaml). The
 // namespace is a domain or GitHub account the publisher proves, so nobody owns the name part itself:
@@ -26,7 +27,9 @@ async function serverList(ctx: Context): Promise<string> {
   // A file in another shape must fail the check, not read as an empty registry.
   const asOf = lines.find((l) => l.startsWith("#asof\t"))?.slice(6, 16) ?? "";
   const servers = lines.slice(1).filter((l) => l && !l.startsWith("#"));
-  if (lines[0] !== HEADER || !asOf || servers.length < 1000) {
+  // The last line counts the servers, so a list cut short is never read as complete.
+  const end = lines.find((l) => l.startsWith("#end\t"))?.slice(5);
+  if (lines[0] !== HEADER || !asOf || servers.length < 1000 || Number(end) !== servers.length) {
     throw new Error("the MCP Registry list is not in the expected shape");
   }
   const rows = servers.flatMap((line) => {
@@ -63,10 +66,13 @@ export const mcpRegistry: Channel = defineChannel({
         meta: { servers: servers.length, examples: servers.slice(0, 10).map(([s]) => s) },
       };
     }
+    const date = linesFor(list.text, "#asof")[0]?.[0] || asOf(list);
+    // The list is rebuilt daily; an older one means the workflow that builds it has stopped.
+    const behind = (ctx.now?.() ?? Date.now()) - Date.parse(date) > STALE_AFTER_MS;
     return {
       status: "available",
       certainty: "probable",
-      note: `no server uses this name in the registry as of ${linesFor(list.text, "#asof")[0]?.[0] || asOf(list)}`,
+      note: `no server uses this name in the registry as of ${date}${behind ? ", and the list has not been updated since" : ""}`,
     };
   },
 });

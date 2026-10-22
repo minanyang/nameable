@@ -284,6 +284,7 @@ export function mcpList(names: string[] = [], status = "active"): string {
     "#full\t2026-10-20T08:00:00.000Z",
     ...servers,
     ...names.map((n) => `${n}\t${status}`),
+    `#end\t${1000 + names.length}`,
     "",
   ].join("\n");
 }
