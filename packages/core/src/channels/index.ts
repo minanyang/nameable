@@ -10,6 +10,7 @@ import { gemini } from "./gemini.js";
 import { github } from "./github.js";
 import { googlePlay } from "./google-play.js";
 import { homebrew } from "./homebrew.js";
+import { mcpRegistry } from "./mcp-registry.js";
 import { jetbrains } from "./jetbrains.js";
 import { npm } from "./npm.js";
 import { nuget } from "./nuget.js";
@@ -34,6 +35,7 @@ const fixed = [
   nuget,
   docker,
   github,
+  mcpRegistry,
   smithery,
   claudePlugins,
   cursor,

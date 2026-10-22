@@ -20,6 +20,7 @@ const cases: [channel: string, taken: string][] = [
   ["homebrew", "wget"],
   ["github", "torvalds"],
   ["cursor", "github"],
+  ["mcp-registry", "remote-filesystem"],
   ["vscode", "esbenp"],
   ["open-vsx", "redhat"],
   ["jetbrains", "Rust"],

@@ -683,6 +683,7 @@ describe("selectChannels", () => {
       "nuget",
       "docker",
       "github",
+      "mcp-registry",
       "smithery",
       "claude-plugins",
       "cursor",

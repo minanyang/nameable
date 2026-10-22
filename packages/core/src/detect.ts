@@ -51,7 +51,7 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     if (manifest.engines?.vscode) pick("package.json", "vscode", "open-vsx");
     else if (manifest.private !== true) pick("package.json", "npm");
     if (manifest.bin) pick("package.json", "homebrew");
-    if (MCP_PACKAGES.test(pkg)) pick("package.json", "smithery");
+    if (MCP_PACKAGES.test(pkg)) pick("package.json", "mcp-registry", "smithery");
   }
 
   for (const file of ["pyproject.toml", "setup.py", "setup.cfg"]) {
@@ -61,7 +61,7 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     if (/^\[(?:project\.scripts|tool\.poetry\.scripts)\]|entry_points|console_scripts/m.test(py)) {
       pick(file, "homebrew");
     }
-    if (MCP_PYTHON.test(py)) pick(file, "smithery");
+    if (MCP_PYTHON.test(py)) pick(file, "mcp-registry", "smithery");
   }
 
   const cargo = has("Cargo.toml") ? await text(dir, "Cargo.toml") : undefined;

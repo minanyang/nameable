@@ -38,7 +38,7 @@ be checked, the answer says "probably" and why, instead of "available". A failed
 
 ## Use it from the terminal
 
-Requires Node.js 22 or later. Run it in your project and it checks the channels the project ships on, picked from its
+Requires Node.js 22 or later (22.13 for the MCP Registry check). Run it in your project and it checks the channels the project ships on, picked from its
 files: `package.json` for npm (and Homebrew when it has a `bin`), `pyproject.toml` for PyPI, `Cargo.toml` for
 crates.io, a `.gemspec` for RubyGems, `composer.json` for Packagist, `pubspec.yaml` for pub.dev, a `.csproj` for NuGet,
 a `Dockerfile` for Docker Hub, `.claude-plugin/`, `.cursor-plugin/` and `gemini-extension.json` for those directories, `engines.vscode` for VS Code
@@ -51,29 +51,37 @@ npx nameable nameable --all --tlds com,dev,sh
 ```
 
 ```
-Checking "nameable" on 15 channels
+Checking "nameable" on 23 channels
 
-  ✗ npm             taken              Find out if a name is free everywhere it matters for your p…
-  ✓ PyPI            available
-  ✓ crates.io       available
-  ✓ Homebrew        available          no homebrew-core formula or cask
-  ✗ RubyGems        taken              A library that provides parsing and output of person names,…
-  ✓ Packagist       probably available no packages under this vendor; packages frozen for spam are…
-  ✓ pub.dev         probably available moderated packages and reserved names are not public and ca…
-  ✓ NuGet           probably available reserved ID prefixes and NuGet's typosquatting check are no…
-  ✓ Docker Hub      probably available no user or organization; deactivated or reserved Docker IDs…
-  ✓ GitHub user/org probably available suspended, deleted or reserved accounts also look free; con…
-  ✓ Smithery        probably available no public servers; a namespace with none, or with only unli…
-  ✓ Claude plugins  available          not in the official marketplace
-  ✗ .com            taken              registered 1999-02-13, expires 2027-02-13
-  ✓ .dev            probably available not registered; premium or reserved names can still be refu…
-  ✓ .sh             probably available not registered (whois); premium or reserved names can still…
+  ✗ npm                   taken              Find out if a name is free everywhere it matters for …
+  ✓ PyPI                  available
+  ✓ crates.io             available
+  ✓ Homebrew              available          no homebrew-core formula or cask
+  ✗ RubyGems              taken              A library that provides parsing and output of person …
+  ✓ Packagist             probably available no packages under this vendor; packages frozen for sp…
+  ✓ pub.dev               probably available moderated packages and reserved names are not public …
+  ✓ NuGet                 probably available reserved ID prefixes and NuGet's typosquatting check …
+  ✓ Docker Hub            probably available no user or organization; deactivated or reserved Dock…
+  ✓ GitHub user/org       probably available suspended, deleted or reserved accounts also look fre…
+  ✓ MCP Registry          probably available no server uses this name in a community mirror of the…
+  ✓ Smithery              probably available no public servers; a namespace with none, or with onl…
+  ✓ Claude plugins        available          not in the official marketplace
+  ✓ Cursor plugins        probably available not among Cursor's listed plugins; plugins in review …
+  ✓ Gemini extensions     probably available not in the Gemini CLI gallery; it lists only tagged G…
+  ✓ VS Code Marketplace   probably available no extension or publisher; removed extensions keep th…
+  ✓ Open VSX              probably available no namespace; similar namespaces without matching ext…
+  ✓ JetBrains Marketplace probably available no plugin with this name or ID; unapproved and hidden…
+  ✓ App Store             probably available no US app with this name; unreleased apps and other s…
+  ✓ Google Play           probably available no app with this title in US search results; unreleas…
+  ✗ .com                  taken              registered 1999-02-13, expires 2027-02-13
+  ✓ .dev                  probably available not registered; premium or reserved names can still b…
+  ✓ .sh                   probably available not registered (whois); premium or reserved names can…
 
   npm       https://www.npmjs.com/package/nameable
   RubyGems  https://rubygems.org/gems/nameable
   .com      https://lookup.icann.org/en/lookup?name=nameable.com
 
-  12 available · 3 taken
+  20 available · 3 taken
 ```
 
 Several names show a grid to compare them:
@@ -93,14 +101,14 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
   free             4/6       5/6       4/6
 ```
 
-| Option          |                                                                                                                                                                                                                                                                                          |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--all`         | Check every channel                                                                                                                                                                                                                                                                      |
-| `--only <ids>`  | Channels to check: `npm`, `pypi`, `crates`, `homebrew`, `rubygems`, `packagist`, `pub`, `nuget`, `docker`, `github`, `smithery`, `claude-plugins`, `cursor`, `gemini`, `vscode`, `open-vsx`, `jetbrains`, `app-store`, `google-play`, `domain` (every TLD in `--tlds`) or `domain:<tld>` |
-| `--tlds <list>` | Domains to check, any TLD (default `com,dev`). TLDs without RDAP, such as `.io`, `.sh` and `.de`, go through whois                                                                                                                                                                       |
-| `--json`        | Print JSON; also the default when the output is not a terminal                                                                                                                                                                                                                           |
-| `--refresh`     | Download the registry name lists again                                                                                                                                                                                                                                                   |
-| `--clear-cache` | Delete the cached name lists                                                                                                                                                                                                                                                             |
+| Option          |                                                                                                                                                                                                                                                                                                          |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--all`         | Check every channel                                                                                                                                                                                                                                                                                      |
+| `--only <ids>`  | Channels to check: `npm`, `pypi`, `crates`, `homebrew`, `rubygems`, `packagist`, `pub`, `nuget`, `docker`, `github`, `mcp-registry`, `smithery`, `claude-plugins`, `cursor`, `gemini`, `vscode`, `open-vsx`, `jetbrains`, `app-store`, `google-play`, `domain` (every TLD in `--tlds`) or `domain:<tld>` |
+| `--tlds <list>` | Domains to check, any TLD (default `com,dev`). TLDs without RDAP, such as `.io`, `.sh` and `.de`, go through whois                                                                                                                                                                                       |
+| `--json`        | Print JSON; also the default when the output is not a terminal                                                                                                                                                                                                                                           |
+| `--refresh`     | Download the registry name lists again                                                                                                                                                                                                                                                                   |
+| `--clear-cache` | Delete the cached name lists                                                                                                                                                                                                                                                                             |
 
 GitHub checks use `GITHUB_TOKEN`, `GH_TOKEN` or `gh auth token` when one is available, for a higher rate limit.
 
@@ -146,35 +154,37 @@ reserved accounts, npm's similar-name rule cannot be checked for every spelling,
 reserved domains, or a name list could not be downloaded. Two PyPI rules rest on data PyPI does not publish, so even a
 confirmed PyPI answer cannot cover them: names its admins prohibited, and names similar to a quarantined project.
 
-| Channel               | Checked beyond "not found"                                                                                                                                                                            |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| npm                   | npm's name rules and Node.js core modules, names equal without punctuation, unpublished packages and the 24-hour block after an unpublish; a missing scoped package may be private, so it is probable |
-| PyPI                  | PEP 508 names, standard library names, similar names (`f1ask` = `flask`), projects with no releases or in quarantine                                                                                  |
-| crates.io             | Cargo's name rules, reserved names, recently deleted names, `-` and `_` as one                                                                                                                        |
-| Homebrew              | Formula name rules, aliases and old names of formulae and casks, names homebrew-core disallows                                                                                                        |
-| RubyGems              | Gem name rules, names unique ignoring case, reserved names, yanked gems held for their owners, names equal to a popular or recent gem without `-` and `_`                                             |
-| Packagist             | The name as a vendor: vendor rules and reserved vendors, and the typo rule against vendors one edit away; packages frozen for spam are hidden, so a free answer is probable                           |
-| pub.dev               | Dart name rules and reserved words, names kept for the Dart and Flutter teams, similar names (`_` dropped, plurals, `rn` for `m`); moderated packages are hidden, so a free answer is probable        |
-| NuGet                 | ID rules, unlisted packages, IDs NuGet deleted but still holds; reserved prefixes and the typosquatting check are private, so a free answer is probable                                               |
-| Docker Hub            | Docker ID rules, users and organizations (including ones only a redirect reveals), official images; deactivated IDs are hidden, so a free answer is probable                                          |
-| GitHub                | Users and organizations; hidden accounts make a free answer probable                                                                                                                                  |
-| Domains               | Any TLD through RDAP or whois, internationalized names, labels registries cannot accept                                                                                                               |
-| Smithery              | Namespace rules; a namespace with no public servers also looks free, so a free answer is probable                                                                                                     |
-| Cursor plugins        | Cursor's marketplace; plugin name rules. Undocumented data, so a free answer is probable                                                                                                              |
-| Gemini extensions     | The Gemini CLI gallery. Names are not unique there, so a match only means users will meet another extension by that name                                                                              |
-| VS Code Marketplace   | The name as an extension name, display name and publisher, all unique there; removed extensions keep their names but are hidden, so a free answer is probable                                         |
-| Open VSX              | The name as a namespace, and Open VSX's rule against namespaces within 20% of an existing one, as far as search shows them                                                                            |
-| JetBrains Marketplace | The name as a plugin ID and plugin name: the words JetBrains refuses in new names (`plugin`, `IDEA`, product names), and the unique-name guideline                                                    |
-| App Store             | Apps with the same name, ignoring case, punctuation and a subtitle, in US iOS and macOS search; names are unique per localization, but unreleased apps are invisible, so a free answer is probable    |
-| Google Play           | Apps with the same title in US search. Titles are not unique, so a match is a clash, not a block, and a free answer is probable                                                                       |
-| Claude plugins        | Anthropic's official marketplace; plugin name rules and the names `claude plugin validate` reserves as Anthropic's own                                                                                |
+| Channel               | Checked beyond "not found"                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| npm                   | npm's name rules and Node.js core modules, names equal without punctuation, unpublished packages and the 24-hour block after an unpublish; a missing scoped package may be private, so it is probable                                                        |
+| PyPI                  | PEP 508 names, standard library names, similar names (`f1ask` = `flask`), projects with no releases or in quarantine                                                                                                                                         |
+| crates.io             | Cargo's name rules, reserved names, recently deleted names, `-` and `_` as one                                                                                                                                                                               |
+| Homebrew              | Formula name rules, aliases and old names of formulae and casks, names homebrew-core disallows                                                                                                                                                               |
+| RubyGems              | Gem name rules, names unique ignoring case, reserved names, yanked gems held for their owners, names equal to a popular or recent gem without `-` and `_`                                                                                                    |
+| Packagist             | The name as a vendor: vendor rules and reserved vendors, and the typo rule against vendors one edit away; packages frozen for spam are hidden, so a free answer is probable                                                                                  |
+| pub.dev               | Dart name rules and reserved words, names kept for the Dart and Flutter teams, similar names (`_` dropped, plurals, `rn` for `m`); moderated packages are hidden, so a free answer is probable                                                               |
+| NuGet                 | ID rules, unlisted packages, IDs NuGet deleted but still holds; reserved prefixes and the typosquatting check are private, so a free answer is probable                                                                                                      |
+| Docker Hub            | Docker ID rules, users and organizations (including ones only a redirect reveals), official images; deactivated IDs are hidden, so a free answer is probable                                                                                                 |
+| GitHub                | Users and organizations; hidden accounts make a free answer probable                                                                                                                                                                                         |
+| Domains               | Any TLD through RDAP or whois, internationalized names, labels registries cannot accept                                                                                                                                                                      |
+| MCP Registry          | Servers whose name part matches, in any namespace, from a daily community mirror of the registry (its own search takes 30 seconds or more); nobody owns a bare name there, so a match is a clash and a free answer is probable. Needs Node.js 22.13 or later |
+| Smithery              | Namespace rules; a namespace with no public servers also looks free, so a free answer is probable                                                                                                                                                            |
+| Cursor plugins        | Cursor's marketplace; plugin name rules. Undocumented data, so a free answer is probable                                                                                                                                                                     |
+| Gemini extensions     | The Gemini CLI gallery. Names are not unique there, so a match only means users will meet another extension by that name                                                                                                                                     |
+| VS Code Marketplace   | The name as an extension name, display name and publisher, all unique there; removed extensions keep their names but are hidden, so a free answer is probable                                                                                                |
+| Open VSX              | The name as a namespace, and Open VSX's rule against namespaces within 20% of an existing one, as far as search shows them                                                                                                                                   |
+| JetBrains Marketplace | The name as a plugin ID and plugin name: the words JetBrains refuses in new names (`plugin`, `IDEA`, product names), and the unique-name guideline                                                                                                           |
+| App Store             | Apps with the same name, ignoring case, punctuation and a subtitle, in US iOS and macOS search; names are unique per localization, but unreleased apps are invisible, so a free answer is probable                                                           |
+| Google Play           | Apps with the same title in US search. Titles are not unique, so a match is a clash, not a block, and a free answer is probable                                                                                                                              |
+| Claude plugins        | Anthropic's official marketplace; plugin name rules and the names `claude plugin validate` reserves as Anthropic's own                                                                                                                                       |
 
 ### Name lists
 
-PyPI, Homebrew, crates.io, pub.dev and RubyGems checks compare against registry-wide lists: every PyPI project, every
-Homebrew alias and old name, the reserved and recently deleted names in crates.io's daily database dump (read by byte
-range, under 1 MB of a 2 GB archive), every pub.dev package and every gem. Each is downloaded the first time a check
-needs it, about 20 MB in all, and at most once a day after that. They are kept compressed (about 12 MB) in `~/Library/Caches/nameable` on macOS,
+Several checks compare against registry-wide lists: every PyPI project, every Homebrew alias and old name, the reserved
+and recently deleted names in crates.io's daily database dump (read by byte range, under 1 MB of a 2 GB archive), every
+pub.dev package, every gem, every MCP server, and every plugin and extension in Cursor's marketplace and the Gemini CLI
+gallery. Each is downloaded the first time a check needs it, about 40 MB in all, and at most once a day after that. They
+are kept compressed (about 13 MB) in `~/Library/Caches/nameable` on macOS,
 `$XDG_CACHE_HOME/nameable` on Linux, `%LOCALAPPDATA%\nameable\Cache` on Windows, or `NAMEABLE_CACHE_DIR`.
 
 ### JSON
@@ -213,14 +223,13 @@ Exit codes: `0` every channel is available or reclaimable for every name · `1` 
 ## Planned channels
 
 Nameable checks npm, PyPI, crates.io, Homebrew, RubyGems, Packagist, pub.dev, NuGet, Docker Hub, GitHub users and
-organizations, Smithery, Claude Code's official plugin marketplace, Cursor's marketplace, the Gemini CLI gallery, VS Code
-Marketplace, Open VSX, JetBrains Marketplace, the App Store, Google Play, and domains today. Each channel below
-was tested before it was listed: a request about a name gets an answer that tells an existing name apart from a missing
-one.
+organizations, the MCP Registry, Smithery, Claude Code's official plugin marketplace, Cursor's marketplace, the Gemini
+CLI gallery, VS Code Marketplace, Open VSX, JetBrains Marketplace, the App Store, Google Play, and domains today. Each
+channel below was tested before it was listed: a request about a name gets an answer that tells an existing name apart
+from a missing one.
 
 | Group          | Channels           |
 | -------------- | ------------------ |
-| AI agents      | MCP Registry       |
 | Social handles | X, YouTube, TikTok |
 
 Not every channel has an official API. Where Nameable reads a public page or an undocumented endpoint, the site can

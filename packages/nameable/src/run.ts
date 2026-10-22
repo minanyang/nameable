@@ -51,8 +51,8 @@ Exit codes
   64 usage error
 
 GitHub checks use GITHUB_TOKEN, GH_TOKEN or \`gh auth token\` when available.
-PyPI, Homebrew, crates.io, pub.dev and RubyGems checks download registry-wide name lists (about
-20 MB in all) at most once a day and keep them in the cache directory (NAMEABLE_CACHE_DIR to change it).
+Several checks download registry-wide name lists (about 40 MB in all) at most once a day and keep
+them in the cache directory (NAMEABLE_CACHE_DIR to change it).
 `;
 
 export type Io = {

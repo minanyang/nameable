@@ -1,3 +1,7 @@
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { selectChannels, type Channel, type Status } from "../src/index.js";
 import { rangeReply, zipArchive, type Headers, type Reply } from "./fake-fetch.js";
 
@@ -248,6 +252,25 @@ const jetbrainsFree = (names: string[] = ["Other"]): Service => ({
       : 404,
   whois: noWhois,
 });
+/** A copy of the MCP Registry mirror's database, with the servers table the channel reads. */
+export function mcpDatabase(names: string[] = []): Buffer {
+  const dir = mkdtempSync(join(tmpdir(), "nameable-mcp-fixture-"));
+  try {
+    const db = new DatabaseSync(join(dir, "registry.db"));
+    db.exec("CREATE TABLE servers (id INTEGER PRIMARY KEY, entry_name TEXT NOT NULL, status TEXT)");
+    const insert = db.prepare("INSERT INTO servers (entry_name, status) VALUES (?, ?)");
+    for (let i = 0; i < 1000; i++) insert.run(`io.github.someone/server${i}`, "active");
+    for (const name of names) insert.run(name, "active");
+    db.close();
+    return readFileSync(join(dir, "registry.db"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+const mcpFree = (names: string[] = ["io.github.x/nameable-tools"]): Service => {
+  const bytes = mcpDatabase(names);
+  return { http: () => new Response(new Uint8Array(bytes)), whois: noWhois };
+};
 const NUGET_DELETED = "<p>This package has been deleted from the gallery.</p>";
 const PUB_NAMES = "https://pub.dev/api/package-names";
 const pubFree = (names: string[] = ["http"]): Service => ({
@@ -666,6 +689,37 @@ export const FIXTURES: Fixture[] = [
         why: "an official image whose name no account holds",
         expect: "taken",
         service: dockerFree({ repositories: [200, { namespace: "library" }] }),
+      },
+    ],
+  },
+  {
+    channel: only("mcp-registry"),
+    freeCertainty: "probable",
+    free: mcpFree(),
+    taken: mcpFree(["io.github.someone/nameable"]),
+    // server.json: the name part of `namespace/name` is [a-zA-Z0-9._-]+.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      dot: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      single: true,
+      punycode: true,
+    },
+    refused: [
+      {
+        name: "NameAble",
+        why: "another namespace's server, compared ignoring case",
+        expect: "taken",
+        service: mcpFree(["com.example/nameable"]),
       },
     ],
   },

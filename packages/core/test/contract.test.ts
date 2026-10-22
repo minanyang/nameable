@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { tcpWhois } from "../src/tcp-whois.js";
 import { remoteZipFiles } from "../src/zip.js";
@@ -345,6 +348,25 @@ live("JetBrains Marketplace", () => {
     expect(body.plugins.some((p: any) => p.name === "Rust" && typeof p.link === "string")).toBe(
       true,
     );
+  });
+});
+
+live("MCP Registry mirror", () => {
+  it("is a SQLite copy of every server, rebuilt within the last few days", async () => {
+    const { DatabaseSync } = await import("node:sqlite");
+    const res = await fetch(
+      "https://raw.githubusercontent.com/rosmur/official-mcp-registry-database/main/official_mcp_registry.db",
+      { headers: UA },
+    );
+    const dir = mkdtempSync(join(tmpdir(), "nameable-mcp-contract-"));
+    writeFileSync(join(dir, "r.db"), Buffer.from(await res.arrayBuffer()));
+    const db = new DatabaseSync(join(dir, "r.db"), { readOnly: true });
+    const servers = db.prepare("SELECT entry_name, updated_at FROM servers").all() as any[];
+    db.close();
+    expect(servers.length).toBeGreaterThan(10_000);
+    expect(servers.map((s) => s.entry_name)).toContain("com.pulsemcp/remote-filesystem");
+    const newest = Math.max(...servers.map((s) => Date.parse(s.updated_at)));
+    expect(Date.now() - newest).toBeLessThan(7 * 24 * 60 * 60 * 1000);
   });
 });
 

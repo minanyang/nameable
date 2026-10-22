@@ -13,6 +13,7 @@ export const LIST_KEYS = [
   "rubygems-names",
   "cursor-plugins",
   "gemini-extensions",
+  "mcp-servers",
 ] as const;
 export type ListKey = (typeof LIST_KEYS)[number];
 

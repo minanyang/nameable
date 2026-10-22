@@ -28,7 +28,7 @@ describe("detectProject", () => {
     [{ "package.json": '{"bin":"cli.js"}' }, ["npm", "homebrew", "github", "domain"]],
     [
       { "package.json": '{"dependencies":{"@modelcontextprotocol/sdk":"1"}}' },
-      ["npm", "smithery", "github", "domain"],
+      ["npm", "mcp-registry", "smithery", "github", "domain"],
     ],
     // A private package is an app or a monorepo root: nothing to publish on npm.
     [{ "package.json": '{"private":true}' }, ["github", "domain"]],
@@ -38,7 +38,7 @@ describe("detectProject", () => {
       {
         "pyproject.toml": '[project]\ndependencies = ["mcp>=1.2"]\n[project.scripts]\nx = "x:main"',
       },
-      ["pypi", "homebrew", "smithery", "github", "domain"],
+      ["pypi", "homebrew", "mcp-registry", "smithery", "github", "domain"],
     ],
     [
       { "Cargo.toml": "[package]", "src/main.rs": "fn main() {}" },
