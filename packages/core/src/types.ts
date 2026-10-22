@@ -13,7 +13,7 @@ export type Status = "available" | "taken" | "reclaimable" | "unavailable" | "un
 /** "probable" marks an `available` the channel cannot fully prove, e.g. GitHub hides suspended accounts. */
 export type Certainty = "confirmed" | "probable";
 
-export type Category = "package" | "code" | "domain";
+export type Category = "package" | "code" | "agent" | "domain";
 
 export type CheckResult = {
   channel: string;

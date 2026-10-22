@@ -10,7 +10,7 @@ Find out if a name is free everywhere your project will ship, and don't take a 4
 
 </div>
 
-Nameable checks a name on package registries, GitHub and domains, shows the evidence behind every answer, and
+Nameable checks a name on package registries, GitHub, agent directories and domains, shows the evidence behind every answer, and
 says how sure each answer is. It runs as a CLI, as an MCP server for AI agents, and as a Claude Code plugin that also
 looks for prior art and recommends which name to keep.
 
@@ -41,13 +41,15 @@ npx nameable nameable --tlds com,dev,sh
 ```
 
 ```
-Checking "nameable" on 8 channels
+Checking "nameable" on 10 channels
 
   ✗ npm             taken              Find out if a name is free everywhere it matters for your p…
   ✓ PyPI            available
   ✓ crates.io       available
   ✓ Homebrew        available          no homebrew-core formula or cask
   ✓ GitHub user/org probably available suspended, deleted or reserved accounts also look free; con…
+  ✓ Smithery        probably available no public servers; a namespace with none, or with only unli…
+  ✓ Claude plugins  available          not in the official marketplace
   ✗ .com            taken              registered 1999-02-13, expires 2027-02-13
   ✓ .dev            probably available not registered; premium or reserved names can still be refu…
   ✓ .sh             probably available not registered (whois); premium or reserved names can still…
@@ -55,7 +57,7 @@ Checking "nameable" on 8 channels
   npm   https://www.npmjs.com/package/nameable
   .com  https://lookup.icann.org/en/lookup?name=nameable.com
 
-  6 available · 2 taken
+  8 available · 2 taken
 ```
 
 Several names show a grid to compare them:
@@ -75,13 +77,13 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
   free             4/6       5/6       4/6
 ```
 
-| Option          |                                                                                                                      |
-| --------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `--only <ids>`  | Channels to check: `npm`, `pypi`, `crates`, `homebrew`, `github`, `domain` (every TLD in `--tlds`) or `domain:<tld>` |
-| `--tlds <list>` | Domains to check, any TLD (default `com,dev`). TLDs without RDAP, such as `.io`, `.sh` and `.de`, go through whois   |
-| `--json`        | Print JSON; also the default when the output is not a terminal                                                       |
-| `--refresh`     | Download the registry name lists again                                                                               |
-| `--clear-cache` | Delete the cached name lists                                                                                         |
+| Option          |                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--only <ids>`  | Channels to check: `npm`, `pypi`, `crates`, `homebrew`, `github`, `smithery`, `claude-plugins`, `domain` (every TLD in `--tlds`) or `domain:<tld>` |
+| `--tlds <list>` | Domains to check, any TLD (default `com,dev`). TLDs without RDAP, such as `.io`, `.sh` and `.de`, go through whois                                 |
+| `--json`        | Print JSON; also the default when the output is not a terminal                                                                                     |
+| `--refresh`     | Download the registry name lists again                                                                                                             |
+| `--clear-cache` | Delete the cached name lists                                                                                                                       |
 
 GitHub checks use `GITHUB_TOKEN`, `GH_TOKEN` or `gh auth token` when one is available, for a higher rate limit.
 
@@ -127,14 +129,16 @@ reserved accounts, npm's similar-name rule cannot be checked for every spelling,
 reserved domains, or a name list could not be downloaded. Two PyPI rules rest on data PyPI does not publish, so even a
 confirmed PyPI answer cannot cover them: names its admins prohibited, and names similar to a quarantined project.
 
-| Channel   | Checked beyond "not found"                                                                                                                                                                            |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| npm       | npm's name rules and Node.js core modules, names equal without punctuation, unpublished packages and the 24-hour block after an unpublish; a missing scoped package may be private, so it is probable |
-| PyPI      | PEP 508 names, standard library names, similar names (`f1ask` = `flask`), projects with no releases or in quarantine                                                                                  |
-| crates.io | Cargo's name rules, reserved names, recently deleted names, `-` and `_` as one                                                                                                                        |
-| Homebrew  | Formula name rules, aliases and old names of formulae and casks, names homebrew-core disallows                                                                                                        |
-| GitHub    | Users and organizations; hidden accounts make a free answer probable                                                                                                                                  |
-| Domains   | Any TLD through RDAP or whois, internationalized names, labels registries cannot accept                                                                                                               |
+| Channel        | Checked beyond "not found"                                                                                                                                                                            |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| npm            | npm's name rules and Node.js core modules, names equal without punctuation, unpublished packages and the 24-hour block after an unpublish; a missing scoped package may be private, so it is probable |
+| PyPI           | PEP 508 names, standard library names, similar names (`f1ask` = `flask`), projects with no releases or in quarantine                                                                                  |
+| crates.io      | Cargo's name rules, reserved names, recently deleted names, `-` and `_` as one                                                                                                                        |
+| Homebrew       | Formula name rules, aliases and old names of formulae and casks, names homebrew-core disallows                                                                                                        |
+| GitHub         | Users and organizations; hidden accounts make a free answer probable                                                                                                                                  |
+| Domains        | Any TLD through RDAP or whois, internationalized names, labels registries cannot accept                                                                                                               |
+| Smithery       | Namespace rules; a namespace with no public servers also looks free, so a free answer is probable                                                                                                     |
+| Claude plugins | Anthropic's official marketplace; plugin name rules and the names `claude plugin validate` reserves as Anthropic's own                                                                                |
 
 ### Name lists
 
@@ -179,16 +183,17 @@ Exit codes: `0` every channel is available or reclaimable for every name · `1` 
 
 ## Planned channels
 
-Nameable checks npm, PyPI, crates.io, Homebrew, GitHub users and organizations, and domains today. Each channel below
+Nameable checks npm, PyPI, crates.io, Homebrew, GitHub users and organizations, Smithery, Claude Code's official plugin
+marketplace, and domains today. Each channel below
 was tested before it was listed: a request about a name gets an answer that tells an existing name apart from a missing
 one.
 
-| Group              | Channels                                                                                  |
-| ------------------ | ----------------------------------------------------------------------------------------- |
-| AI agents          | MCP Registry, Smithery, the Claude Code plugin marketplace, Cursor, Gemini CLI extensions |
-| Package registries | Packagist, RubyGems, pub.dev, NuGet, Docker Hub                                           |
-| Editor extensions  | VS Code Marketplace, Open VSX, JetBrains Marketplace                                      |
-| Social handles     | X, YouTube, TikTok                                                                        |
+| Group              | Channels                                             |
+| ------------------ | ---------------------------------------------------- |
+| AI agents          | MCP Registry, Cursor, Gemini CLI extensions          |
+| Package registries | Packagist, RubyGems, pub.dev, NuGet, Docker Hub      |
+| Editor extensions  | VS Code Marketplace, Open VSX, JetBrains Marketplace |
+| Social handles     | X, YouTube, TikTok                                   |
 
 Not every channel has an official API. Where Nameable reads a public page or an undocumented endpoint, the site can
 change it or block requests at any time: a free answer there is probable at most, and a blocked request is `unknown`.

@@ -10,7 +10,7 @@
 
 </div>
 
-Nameable 會在套件 registry、GitHub 和網域上查一個名稱，附上每個答案背後的證據，也會說明每個答案有多確定。它可以當 CLI 用，也可以當 AI agent 的 MCP server，還有一個 Claude Code plugin，會另外找有沒有人做過一樣的東西，並建議該留下哪個名字。
+Nameable 會在套件 registry、GitHub、AI agent 目錄和網域上查一個名稱，附上每個答案背後的證據，也會說明每個答案有多確定。它可以當 CLI 用，也可以當 AI agent 的 MCP server，還有一個 Claude Code plugin，會另外找有沒有人做過一樣的東西，並建議該留下哪個名字。
 
 ## 為什麼需要 Nameable
 
@@ -36,13 +36,15 @@ npx nameable nameable --tlds com,dev,sh
 ```
 
 ```
-Checking "nameable" on 8 channels
+Checking "nameable" on 10 channels
 
   ✗ npm             taken              Find out if a name is free everywhere it matters for your p…
   ✓ PyPI            available
   ✓ crates.io       available
   ✓ Homebrew        available          no homebrew-core formula or cask
   ✓ GitHub user/org probably available suspended, deleted or reserved accounts also look free; con…
+  ✓ Smithery        probably available no public servers; a namespace with none, or with only unli…
+  ✓ Claude plugins  available          not in the official marketplace
   ✗ .com            taken              registered 1999-02-13, expires 2027-02-13
   ✓ .dev            probably available not registered; premium or reserved names can still be refu…
   ✓ .sh             probably available not registered (whois); premium or reserved names can still…
@@ -50,7 +52,7 @@ Checking "nameable" on 8 channels
   npm   https://www.npmjs.com/package/nameable
   .com  https://lookup.icann.org/en/lookup?name=nameable.com
 
-  6 available · 2 taken
+  8 available · 2 taken
 ```
 
 一次查好幾個名稱時，會用表格比較：
@@ -70,13 +72,13 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
   free             4/6       5/6       4/6
 ```
 
-| 選項            |                                                                                                               |
-| --------------- | ------------------------------------------------------------------------------------------------------------- |
-| `--only <ids>`  | 要查的渠道：`npm`、`pypi`、`crates`、`homebrew`、`github`、`domain`（`--tlds` 裡的每個 TLD）或 `domain:<tld>` |
-| `--tlds <list>` | 要查的網域，任何 TLD 都可以（預設 `com,dev`）。沒有 RDAP 的 TLD，例如 `.io`、`.sh`、`.de`，會改用 whois       |
-| `--json`        | 輸出 JSON；輸出不是終端機時預設就是 JSON                                                                      |
-| `--refresh`     | 重新下載 registry 的名稱清單                                                                                  |
-| `--clear-cache` | 刪除快取的名稱清單                                                                                            |
+| 選項            |                                                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--only <ids>`  | 要查的渠道：`npm`、`pypi`、`crates`、`homebrew`、`github`、`smithery`、`claude-plugins`、`domain`（`--tlds` 裡的每個 TLD）或 `domain:<tld>` |
+| `--tlds <list>` | 要查的網域，任何 TLD 都可以（預設 `com,dev`）。沒有 RDAP 的 TLD，例如 `.io`、`.sh`、`.de`，會改用 whois                                     |
+| `--json`        | 輸出 JSON；輸出不是終端機時預設就是 JSON                                                                                                    |
+| `--refresh`     | 重新下載 registry 的名稱清單                                                                                                                |
+| `--clear-cache` | 刪除快取的名稱清單                                                                                                                          |
 
 有 `GITHUB_TOKEN`、`GH_TOKEN` 或 `gh auth token` 時，GitHub 查詢會使用它，以取得較高的 rate limit。
 
@@ -115,14 +117,16 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 
 `available` 會附上確定程度。**Confirmed** 代表這個 registry 所有能用公開資料查的規則都查過了。**Probable**（表格中的 `*`）代表有規則沒辦法查，`note` 會說是哪一條：GitHub 會隱藏被停權和保留的帳號、npm 的相似名稱規則沒辦法查遍所有拼法、registry 可能拒絕溢價或保留的網域，或名稱清單下載失敗。PyPI 有兩條規則依賴它沒有公開的資料，所以即使是 confirmed 的 PyPI 答案也涵蓋不到：管理員禁止的名稱，以及和被隔離專案相似的名稱。
 
-| 渠道      | 除了「查不到」之外還查了什麼                                                                                                                                 |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| npm       | npm 的命名規則和 Node.js 內建模組、去掉標點後相同的名稱、已 unpublish 的套件和 unpublish 後的 24 小時封鎖；查不到的 scoped 套件可能是私有的，所以是 probable |
-| PyPI      | PEP 508 名稱、標準函式庫名稱、相似名稱（`f1ask` = `flask`）、沒有任何 release 或被隔離的專案                                                                 |
-| crates.io | Cargo 的命名規則、保留名稱、最近刪除的名稱、`-` 和 `_` 視為相同                                                                                              |
-| Homebrew  | Formula 命名規則、formula 和 cask 的別名與舊名、homebrew-core 不允許的名稱                                                                                   |
-| GitHub    | 使用者和組織；隱藏的帳號讓「可用」只能是 probable                                                                                                            |
-| 網域      | 任何 TLD，透過 RDAP 或 whois；國際化網域名稱；registry 無法接受的 label                                                                                      |
+| 渠道           | 除了「查不到」之外還查了什麼                                                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| npm            | npm 的命名規則和 Node.js 內建模組、去掉標點後相同的名稱、已 unpublish 的套件和 unpublish 後的 24 小時封鎖；查不到的 scoped 套件可能是私有的，所以是 probable |
+| PyPI           | PEP 508 名稱、標準函式庫名稱、相似名稱（`f1ask` = `flask`）、沒有任何 release 或被隔離的專案                                                                 |
+| crates.io      | Cargo 的命名規則、保留名稱、最近刪除的名稱、`-` 和 `_` 視為相同                                                                                              |
+| Homebrew       | Formula 命名規則、formula 和 cask 的別名與舊名、homebrew-core 不允許的名稱                                                                                   |
+| GitHub         | 使用者和組織；隱藏的帳號讓「可用」只能是 probable                                                                                                            |
+| 網域           | 任何 TLD，透過 RDAP 或 whois；國際化網域名稱；registry 無法接受的 label                                                                                      |
+| Smithery       | Namespace 命名規則；沒有公開 server 的 namespace 看起來也是空的，所以「可用」只能是 probable                                                                 |
+| Claude plugins | Anthropic 官方 marketplace；plugin 命名規則，以及 `claude plugin validate` 保留給 Anthropic 的名稱                                                           |
 
 ### 名稱清單
 
@@ -162,14 +166,14 @@ PyPI、Homebrew 和 crates.io 的查詢會比對整個 registry 的清單：PyPI
 
 ## 預計加入的渠道
 
-Nameable 目前查詢 npm、PyPI、crates.io、Homebrew、GitHub 使用者和組織，以及網域。下列每個渠道在列出前都實際測試過：查詢一個名稱時，回應能分辨「已存在」和「不存在」。
+Nameable 目前查詢 npm、PyPI、crates.io、Homebrew、GitHub 使用者和組織、Smithery、Claude Code 官方 plugin marketplace，以及網域。下列每個渠道在列出前都實際測試過：查詢一個名稱時，回應能分辨「已存在」和「不存在」。
 
-| 類別          | 渠道                                                                            |
-| ------------- | ------------------------------------------------------------------------------- |
-| AI agent      | MCP Registry、Smithery、Claude Code plugin marketplace、Cursor、Gemini CLI 擴充 |
-| 套件 registry | Packagist、RubyGems、pub.dev、NuGet、Docker Hub                                 |
-| 編輯器擴充    | VS Code Marketplace、Open VSX、JetBrains Marketplace                            |
-| 社群帳號      | X、YouTube、TikTok                                                              |
+| 類別          | 渠道                                                 |
+| ------------- | ---------------------------------------------------- |
+| AI agent      | MCP Registry、Cursor、Gemini CLI 擴充                |
+| 套件 registry | Packagist、RubyGems、pub.dev、NuGet、Docker Hub      |
+| 編輯器擴充    | VS Code Marketplace、Open VSX、JetBrains Marketplace |
+| 社群帳號      | X、YouTube、TikTok                                   |
 
 不是每個渠道都有官方 API。Nameable 讀取公開網頁或沒有文件的端點時，網站隨時可能改版或擋掉請求：這些渠道的「可用」最多只會是 probable，被擋的請求則是 `unknown`。部分規則不公開的 registry（保留名稱、拼字相近的檢查）也一樣。
 

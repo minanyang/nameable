@@ -320,6 +320,55 @@ describe("github", () => {
   });
 });
 
+describe("smithery", () => {
+  const url = (ns: string) => `https://api.smithery.ai/servers?namespace=${ns}&pageSize=1`;
+
+  it("says how many servers the namespace holds", async () => {
+    const r = await one("smithery", "acme", {
+      [url("acme")]: [
+        200,
+        {
+          servers: [{ qualifiedName: "acme/weather", displayName: "Weather" }],
+          pagination: { totalCount: 3 },
+        },
+      ],
+    });
+    expect(r).toMatchObject({
+      status: "taken",
+      url: "https://smithery.ai/servers/acme/weather",
+      note: "3 servers in this namespace, such as Weather",
+    });
+  });
+
+  it("is unknown when Smithery asks for a key", async () => {
+    expect((await one("smithery", "acme", { [url("acme")]: 401 })).status).toBe("unknown");
+  });
+});
+
+describe("claude-plugins", () => {
+  const MARKETPLACE =
+    "https://raw.githubusercontent.com/anthropics/claude-plugins-official/main/.claude-plugin/marketplace.json";
+
+  it("passes on the warning for a name with claude as a whole word", async () => {
+    const r = await one("claude-plugins", "mcp-for-claude", {
+      [MARKETPLACE]: [200, { plugins: [{ name: "github" }] }],
+    });
+    expect(r).toMatchObject({
+      status: "available",
+      certainty: "confirmed",
+      note: expect.stringContaining("reads as one of Anthropic's own"),
+    });
+  });
+
+  it("is unknown when the marketplace is empty or unreadable", async () => {
+    for (const reply of [[200, { plugins: [] }], [200, {}], 404] as Reply[]) {
+      expect((await one("claude-plugins", "thing", { [MARKETPLACE]: reply })).status).toBe(
+        "unknown",
+      );
+    }
+  });
+});
+
 describe("domain", () => {
   it("looks up the TLD's RDAP server from the IANA bootstrap", async () => {
     const r = await one("domain:dev", "zz", {
@@ -561,6 +610,8 @@ describe("selectChannels", () => {
       "crates",
       "homebrew",
       "github",
+      "smithery",
+      "claude-plugins",
       "domain:com",
       "domain:dev",
     ]);

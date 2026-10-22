@@ -148,6 +148,31 @@ live("GitHub API", () => {
   });
 });
 
+live("Smithery", () => {
+  const list = (ns: string) => json(`https://api.smithery.ai/servers?namespace=${ns}&pageSize=1`);
+  it("filters servers by whole namespace, ignoring case, without a key", async () => {
+    const exa = await list("EXA");
+    expect(exa.servers[0].qualifiedName).toBe("exa");
+    expect(exa.pagination.totalCount).toBeGreaterThan(0);
+    expect((await list("ex")).pagination.totalCount).toBe(0);
+  });
+  it("serves a server page at the link the channel gives", async () => {
+    expect(await status("https://smithery.ai/servers/exa")).toBe(200);
+  });
+});
+
+live("Claude Code official marketplace", () => {
+  it("lists every plugin by name, and claude.com has a page for each", async () => {
+    const body = await json(
+      "https://raw.githubusercontent.com/anthropics/claude-plugins-official/main/.claude-plugin/marketplace.json",
+    );
+    const names: string[] = body.plugins.map((p: { name: string }) => p.name);
+    expect(names.length).toBeGreaterThan(100);
+    expect(names).toContain("github");
+    expect(await status("https://claude.com/plugins/github")).toBe(200);
+  });
+});
+
 live(
   "RDAP and whois",
   () => {

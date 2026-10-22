@@ -132,6 +132,17 @@ const npmFree = (searchHits: string[] = [], existing: string[] = []): Service =>
   whois: noWhois,
 });
 
+const smitheryFree = (
+  servers: { qualifiedName: string; displayName?: string }[] = [],
+): Service => ({
+  http: () => [200, { servers, pagination: { totalCount: servers.length } }],
+  whois: noWhois,
+});
+const claudeFree = (names: string[] = ["other"]): Service => ({
+  http: () => [200, { plugins: names.map((name) => ({ name, description: "held" })) }],
+  whois: noWhois,
+});
+
 export const FIXTURES: Fixture[] = [
   {
     channel: only("npm"),
@@ -327,6 +338,76 @@ export const FIXTURES: Fixture[] = [
     },
     maxLength: 39,
     refused: [],
+  },
+  {
+    channel: only("smithery"),
+    freeCertainty: "probable",
+    free: smitheryFree(),
+    taken: smitheryFree([{ qualifiedName: "nameable/server", displayName: "Held" }]),
+    // "lowercase alphanumeric with hyphens" (smithery.ai/docs/concepts/namespaces).
+    accepts: {
+      ...reject,
+      typical: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      single: true,
+      punycode: true,
+    },
+    refused: [],
+  },
+  {
+    channel: only("claude-plugins"),
+    freeCertainty: "confirmed",
+    free: claudeFree(),
+    taken: claudeFree(["nameable"]),
+    // plugins-reference: no spaces, @, :, path separators, control or bidirectional characters.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      dot: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      specialChars: true,
+      single: true,
+      unicode: true,
+      emoji: true,
+      punycode: true,
+    },
+    refused: [
+      { name: "claude-tools", why: "starts with claude-", expect: "unavailable" },
+      {
+        name: "Claude__Code",
+        why: "claude-code, ignoring case and separators",
+        expect: "unavailable",
+      },
+      { name: "official-claude-tools", why: "official beside claude", expect: "unavailable" },
+      { name: "cc_plugin_x", why: "starts with cc-plugin-", expect: "unavailable" },
+      { name: "anthropics", why: "reserved", expect: "unavailable" },
+      {
+        // Built from its code point: formatters write the escape back as the invisible character.
+        name: `rtl${String.fromCodePoint(0x202e)}name`,
+        why: "bidirectional formatting",
+        expect: "unavailable",
+      },
+      {
+        name: "GitHub",
+        why: "listed, compared ignoring case",
+        expect: "taken",
+        service: claudeFree(["github"]),
+      },
+    ],
   },
   // .dev goes through RDAP; .sh has no RDAP service, so it goes through whois.
   ...["domain:dev", "domain:sh"].map((id): Fixture => ({

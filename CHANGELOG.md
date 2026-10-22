@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New channels for agent tools: `smithery` (the Smithery namespace, which only one owner can hold) and `claude-plugins` (Anthropic's official Claude Code marketplace, including the names `claude plugin validate` reserves).
+
 ## 0.1.0 — 2026-10-21
 
 Initial release.

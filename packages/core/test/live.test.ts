@@ -19,6 +19,8 @@ const cases: [channel: string, taken: string][] = [
   ["crates", "serde"],
   ["homebrew", "wget"],
   ["github", "torvalds"],
+  ["smithery", "exa"],
+  ["claude-plugins", "github"],
   ["domain:com", "google"],
   ["domain:dev", "google"],
   // No RDAP: these go through whois.

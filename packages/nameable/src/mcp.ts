@@ -35,7 +35,7 @@ const output = z.object({
   reports: z.array(z.object({ name: z.string(), results: z.array(result) })),
 });
 
-const DESCRIPTION = `Check whether names are free on package registries, GitHub and domains.
+const DESCRIPTION = `Check whether names are free on package registries, GitHub, MCP and plugin directories, and domains.
 
 Each result has a status:
 - available: nobody holds it and the registry would accept it. certainty "confirmed" means every rule
