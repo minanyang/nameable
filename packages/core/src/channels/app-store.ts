@@ -63,14 +63,15 @@ export const appStore: Channel = defineChannel({
         );
       }
     }
-    // A title that only adds its maker's name does not hold this one, but users will confuse them.
-    const clash = similar
-      ? `; "${String(similar.trackName)}"${typeof similar.sellerName === "string" ? ` by ${similar.sellerName}` : ""} is a similar title`
-      : "";
+    const free = `no app with this name in ${storeNames(stores)}; unreleased apps are not listed`;
+    if (!similar) return { status: "available", certainty: "probable", note: free };
+    // A title that only adds a subtitle or its maker does not hold this one, but users will take them
+    // for the same app; clipped in the table, so the clash comes first.
+    const maker = typeof similar.sellerName === "string" ? ` by ${similar.sellerName}` : "";
     return {
       status: "available",
       certainty: "probable",
-      note: `no app with this name in ${storeNames(stores)}${clash}; unreleased apps are not listed`,
+      note: `clash, not a block: "${String(similar.trackName)}"${maker} goes by this name; ${free}`,
     };
   },
 });

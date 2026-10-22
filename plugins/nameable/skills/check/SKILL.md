@@ -84,7 +84,9 @@ project, check it with the tools you have (web search, the directory's own searc
 
 App store answers are never certain. An App Store name is reserved as soon as someone creates the app record, before
 release, and search does not show unreleased apps, so a free answer is only probable. Google Play titles are not
-unique, so a match there is a clash rather than a block.
+unique, so a match there is a clash rather than a block. On both stores, an `available` answer whose note starts with
+"clash, not a block" means a known app goes by the name with a subtitle ("Spotify: Music and Podcasts"): the exact
+title is free, but users will take the two for the same app. Treat it as a strong reason against the name.
 
 ## 3. Prior art
 

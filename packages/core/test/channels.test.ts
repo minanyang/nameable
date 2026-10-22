@@ -943,7 +943,7 @@ describe("app titles", () => {
         { results: [] },
       ],
     });
-    expect(r.note).toContain('"Todoist: To Do List" is a similar title');
+    expect(r.note).toContain('clash, not a block: "Todoist: To Do List" goes by this name;');
   });
 
   it("reports the App Store's plain-text rate limit as unknown", async () => {

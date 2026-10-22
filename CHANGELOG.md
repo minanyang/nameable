@@ -27,14 +27,15 @@ Sixteen new channels, channels picked from your project, and fixes from three ro
   JetBrains refuses in new plugin names).
 - App stores: `app-store` and `google-play` show whether an app already has the name, in the US store and, for
   Chinese, Japanese or Korean names, in those stores too. Only an exact title holds the name; one that adds a
-  subtitle or its maker ("Google Gemini") is noted as similar. A free answer there is always probable.
+  subtitle or its maker ("Google Gemini") is reported as a clash on an available answer. A free answer there is always probable.
 
 **Channels picked from your project**
 
 - Without `--only`, Nameable reads the project in the current directory, or its parents up to the repository root:
-  npm, PyPI, crates.io, RubyGems, Packagist, pub.dev and NuGet manifests (skipping private apps and unpublished
-  packages), Dockerfiles, Claude Code, Cursor, Gemini CLI, VS Code and JetBrains plugins, MCP SDK dependencies, and
-  Xcode, Android, Expo and Flutter apps. Outside a project it checks a general set. `--all` checks every channel.
+  npm, PyPI, crates.io, RubyGems, Packagist, pub.dev and NuGet manifests (skipping private apps, servers and
+  unpublished packages), Swift executables, Dockerfiles, Claude Code, Cursor, Gemini CLI, VS Code and JetBrains
+  plugins, MCP SDK dependencies, and Xcode, Android, Expo and Flutter apps; at a workspace root, every member's.
+  Outside a project it checks a general set. `--all` checks every channel.
 
 **Changes to existing channels and the CLI**
 

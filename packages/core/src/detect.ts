@@ -1,4 +1,4 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 
 /** The channels a project ships on, read from its manifests, and the files that said so. */
@@ -113,6 +113,63 @@ async function nugetPackage(dir: string, file: string, xml: string): Promise<boo
   return kinds.includes("package") || (kinds.includes("library") && !kinds.includes("app"));
 }
 
+/** The directories a workspace pattern such as `packages/*` names; `**` is read as one level. */
+async function expand(dir: string, pattern: string): Promise<string[]> {
+  let found = [""];
+  for (const segment of pattern.replace(/^\.\//, "").split("/").filter(Boolean)) {
+    if (!segment.includes("*")) {
+      found = found.map((f) => join(f, segment));
+      continue;
+    }
+    const match = new RegExp(
+      `^${segment.replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll(/\*+/g, "[^/]*")}$`,
+    );
+    const next: string[] = [];
+    for (const f of found) {
+      for (const e of await list(join(dir, f))) {
+        if (e.startsWith(".") || e === "node_modules" || !match.test(e)) continue;
+        const isDir = await stat(join(dir, f, e)).then(
+          (st) => st.isDirectory(),
+          () => false,
+        );
+        if (isDir) next.push(join(f, e));
+      }
+    }
+    found = next;
+  }
+  return found.filter((f) => f !== "");
+}
+
+/** The member directories a JavaScript or Cargo workspace root lists, or undefined when it is none. */
+async function workspaceMembers(
+  dir: string,
+  manifest: { workspaces?: unknown } | undefined,
+  cargo: string | undefined,
+): Promise<string[] | undefined> {
+  const patterns: string[] = [];
+  const add = (value: unknown) => {
+    if (Array.isArray(value)) for (const v of value) if (typeof v === "string") patterns.push(v);
+  };
+  const { workspaces } = manifest ?? {};
+  add(Array.isArray(workspaces) ? workspaces : (workspaces as { packages?: unknown })?.packages);
+  const pnpm = await text(dir, "pnpm-workspace.yaml");
+  // The `packages:` list, one `- "glob"` per line.
+  const block =
+    /^packages:\s*\n((?:[ \t]+-.*\n?|[ \t]*#.*\n?|[ \t]*\n)*)/m.exec(pnpm ?? "")?.[1] ?? "";
+  for (const m of block.matchAll(/^[ \t]+-\s*["']?([^"'#\n]+?)["']?\s*(?:#.*)?$/gm))
+    patterns.push(m[1]!);
+  add((await json(dir, "lerna.json"))?.packages);
+  const members = /^\s*members\s*=\s*\[([^\]]*)\]/m.exec(table(cargo ?? "", "workspace"))?.[1];
+  for (const m of members?.matchAll(/["']([^"']+)["']/g) ?? []) patterns.push(m[1]!);
+  if (!patterns.length && pnpm === undefined && !/^\[workspace\]/m.test(cargo ?? "")) {
+    return manifest?.workspaces || (await text(dir, "lerna.json")) !== undefined ? [] : undefined;
+  }
+  const found = await Promise.all(
+    patterns.filter((p) => !p.startsWith("!")).map((p) => expand(dir, p)),
+  );
+  return [...new Set(found.flat())];
+}
+
 /** Whether a Python manifest depends on an MCP SDK. */
 function pythonMcp(py: string): boolean {
   const lists = [...py.matchAll(/dependencies\s*=\s*\[([\s\S]*?)\]\s*$/gm)].map((m) => m[1]!);
@@ -128,7 +185,7 @@ function pythonMcp(py: string): boolean {
  * Reads the manifests in `dir` (not its subdirectories) and picks the channels the project would be
  * published on. GitHub and domains always apply. Returns undefined when no manifest is found.
  */
-export async function detectProject(dir: string): Promise<Detection | undefined> {
+export async function detectProject(dir: string, members = true): Promise<Detection | undefined> {
   let entries: string[];
   try {
     entries = await readdir(dir);
@@ -143,27 +200,49 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     if (!from.includes(file)) from.push(file);
   };
 
-  if (has("package.json")) {
+  const manifest = has("package.json")
+    ? (((await json(dir, "package.json")) ?? {}) as {
+        name?: unknown;
+        private?: unknown;
+        bin?: unknown;
+        workspaces?: unknown;
+        scripts?: unknown;
+        engines?: { vscode?: unknown };
+      })
+    : undefined;
+  const cargo = has("Cargo.toml") ? await text(dir, "Cargo.toml") : undefined;
+  // A workspace root publishes through its members, read as projects of their own.
+  const workspace = members ? await workspaceMembers(dir, manifest, cargo) : undefined;
+  // A private app keeps its images to itself, as it keeps its package off npm.
+  let privateApp = false;
+
+  if (manifest) {
     // Read even when unreadable: its presence alone says the project is JavaScript.
     const pkg = (await text(dir, "package.json")) ?? "";
-    const manifest = ((await json(dir, "package.json")) ?? {}) as {
-      name?: unknown;
-      private?: unknown;
-      bin?: unknown;
-      workspaces?: unknown;
-      engines?: { vscode?: unknown };
-    };
-    // A private package (an app) is not published, but still says what the project is. A private
-    // workspace root is the exception: its packages are what gets published.
-    const workspaceRoot =
-      Boolean(manifest.workspaces) || has("pnpm-workspace.yaml") || has("lerna.json");
     // npm publishes nothing without a name, such as a package.json that only sets "type": "module".
     // A manifest that is not JSON still counts as named: it is broken, not a stub.
     const named = typeof manifest.name === "string" || !parses(pkg);
+    // A package says what it publishes. A manifest that says nothing of the kind but starts, serves or
+    // deploys itself is a server or a site, even without "private".
+    const publishes = [
+      "files",
+      "exports",
+      "publishConfig",
+      "bin",
+      "types",
+      "typings",
+      "module",
+    ].some((key) => key in manifest);
+    const scripts =
+      manifest.scripts && typeof manifest.scripts === "object" ? Object.keys(manifest.scripts) : [];
+    const runs = !publishes && scripts.some((s) => /^(?:start|serve|deploy)(?::|$)/.test(s));
+    privateApp = manifest.private === true && !workspace;
     pick("package.json");
     // A VS Code extension is published to both extension marketplaces, not to npm.
     if (manifest.engines?.vscode) pick("package.json", "vscode", "open-vsx");
-    else if (workspaceRoot || (named && manifest.private !== true)) pick("package.json", "npm");
+    else if (named && manifest.private !== true && !runs) pick("package.json", "npm");
+    // A workspace whose members cannot be listed still publishes something.
+    else if (workspace?.length === 0) pick("package.json", "npm");
     if (manifest.bin && named) pick("package.json", "homebrew");
     if (MCP_PACKAGES.test(pkg)) pick("package.json", "mcp-registry", "smithery");
   }
@@ -183,11 +262,12 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     if (pythonMcp(py)) pick(file, "mcp-registry", "smithery");
   }
 
-  const cargo = has("Cargo.toml") ? await text(dir, "Cargo.toml") : undefined;
   if (cargo !== undefined) {
     pick("Cargo.toml");
-    // `publish = false` and `publish = []` (no registry) both keep a crate off crates.io.
-    if (!/^\s*publish\s*=\s*(?:false|\[\s*\])/m.test(cargo)) pick("Cargo.toml", "crates");
+    // `publish = false` and `publish = []` (no registry) both keep a crate off crates.io, and a
+    // workspace root without a [package] is no crate at all.
+    const crate = /^\[package\]/m.test(cargo) || !/^\[workspace\]/m.test(cargo);
+    if (crate && !/^\s*publish\s*=\s*(?:false|\[\s*\])/m.test(cargo)) pick("Cargo.toml", "crates");
     const binaries =
       /^\[\[bin\]\]/m.test(cargo) ||
       (await text(dir, "src/main.rs")) !== undefined ||
@@ -243,7 +323,7 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
   const container = entries.find((e) =>
     /^(?:Dockerfile|Containerfile)(?:\..+)?$|\.Dockerfile$/.test(e),
   );
-  if (container) pick(container, "docker");
+  if (container) pick(container, ...(privateApp ? [] : ["docker"]));
 
   if (has(".claude-plugin")) pick(".claude-plugin", "claude-plugins");
   if (has(".cursor-plugin")) pick(".cursor-plugin", "cursor");
@@ -278,6 +358,15 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
   const expoConfig = entries.find((e) => /^app\.config\.(?:js|ts|mjs|cjs)$/.test(e));
   if (expoConfig && /"expo"\s*:/.test((await text(dir, "package.json")) ?? "")) {
     pick(expoConfig, "app-store", "google-play");
+  }
+
+  for (const member of workspace ?? []) {
+    const found = await detectProject(join(dir, member), false);
+    const ids = found?.only.filter((id) => id !== "github" && id !== "domain") ?? [];
+    // Only members that ship somewhere are named, not every internal package.
+    if (!ids.length) continue;
+    for (const id of ids) only.add(id);
+    for (const file of found!.from) from.push(join(member, file));
   }
 
   if (!from.length) return undefined;

@@ -78,6 +78,9 @@ live("live channels", () => {
     ["pub", "providers", "unavailable", "too similar"],
     ["nuget", "Coinbase.Core", "unavailable", "deleted by the NuGet team"],
     ["docker", "postgres", "taken", "official image"],
+    // Well-known apps carry a subtitle, so the exact title is free but the name clashes.
+    ["app-store", "spotify", "available", '"Spotify: Music and Podcasts"'],
+    ["google-play", "spotify", "available", "clash, not a block"],
     // Every plain core module name is held on npm (mostly by placeholders), so the core-module rule is
     // covered by unit tests; this one is refused for a spelling that search does not return.
     ["npm", "worker_threads", "unavailable", '"worker-threads"'],

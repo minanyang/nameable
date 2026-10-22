@@ -89,10 +89,13 @@ export const googlePlay: Channel = defineChannel({
       const near = found.find((a) => appNameMatch(a.title, name, a.developer) === "similar");
       similar ??= near && `"${near.title}"${by(near)}`;
     }
+    const free = `no app with this title in search results of ${storeNames(stores)}; unreleased apps are not listed`;
+    if (!similar) return { status: "available", certainty: "probable", note: free };
+    // As on the App Store: not this title, but one users will take for it.
     return {
       status: "available",
       certainty: "probable",
-      note: `no app with this title in search results of ${storeNames(stores)}${similar ? `; ${similar} is a similar title` : ""}; unreleased apps are not listed`,
+      note: `clash, not a block: ${similar} goes by this name; ${free}`,
     };
   },
 });

@@ -44,9 +44,10 @@ Usage
 
   Channels are picked from the project files in the current directory, or its parents up to the
   repository root: package.json, pyproject.toml, setup.py, Cargo.toml, a .gemspec, composer.json,
-  pubspec.yaml, a .csproj or .sln, a Dockerfile, .claude-plugin, .cursor-plugin,
+  pubspec.yaml, a .csproj or .sln, Package.swift, a Dockerfile, .claude-plugin, .cursor-plugin,
   gemini-extension.json, a VS Code extension, a JetBrains plugin, an MCP SDK dependency, and an
-  Xcode, Android, Expo or Flutter app. Private apps and unpublished packages skip their registry.
+  Xcode, Android, Expo or Flutter app; at a workspace root, those of its members too. Private apps,
+  servers and unpublished packages skip their registry.
   Outside a project, a general set is checked.
 
 Options
@@ -201,7 +202,7 @@ export async function run(argv: string[], io: Io): Promise<number> {
       const detected = io.cwd ? await findProject(io.cwd, homedir()) : undefined;
       only = detected?.only ?? GENERAL_CHANNELS;
       picked = detected
-        ? `picked from ${detected.from.join(", ")}`
+        ? `picked from ${detected.from.length > 3 ? `${detected.from.slice(0, 3).join(", ")} and ${detected.from.length - 3} more` : detected.from.join(", ")}`
         : "no project files found: general set";
     }
     try {

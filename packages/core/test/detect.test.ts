@@ -67,6 +67,20 @@ describe("detectProject", () => {
     [{ "X.csproj": "<IsPackable>false</IsPackable>" }, ["github", "domain"]],
     [{ "X.csproj": "<IsTestProject>true</IsTestProject>" }, ["github", "domain"]],
     [{ Pipfile: "[packages]" }, ["github", "domain"]],
+    // A server or site: it starts or deploys itself and says nothing of what it would publish.
+    [{ "package.json": '{"name":"api","scripts":{"start":"node app.js"}}' }, ["github", "domain"]],
+    [
+      { "package.json": '{"name":"api","scripts":{"deploy:prod":"cdk deploy"}}' },
+      ["github", "domain"],
+    ],
+    [
+      { "package.json": '{"name":"x","files":["dist"],"scripts":{"start":"vite"}}' },
+      ["npm", "github", "domain"],
+    ],
+    // A private app's image is deployed, not published; a package's image may be.
+    [{ "package.json": '{"name":"web","private":true}', Dockerfile: "" }, ["github", "domain"]],
+    // A Cargo workspace root without a [package] is no crate.
+    [{ "Cargo.toml": '[workspace]\nmembers = ["crates/*"]' }, ["github", "domain"]],
     [{ "Dockerfile.prod": "" }, ["docker", "github", "domain"]],
     // A private workspace root publishes its packages.
     [
@@ -199,6 +213,41 @@ describe("detectProject", () => {
       project({ "package.json": '{"name":"x"}', Dockerfile: "" }),
     );
     expect(detected?.from).toEqual(["package.json", "Dockerfile"]);
+  });
+
+  it("picks the channels of a workspace's members at its root", async () => {
+    const detected = await detectProject(
+      project({
+        "package.json": '{"private":true}',
+        "pnpm-workspace.yaml": "packages:\n  - 'packages/*'\n  - \"tools/cli\" # the command\n",
+        "packages/core/package.json": '{"name":"core","private":true}',
+        "packages/server/package.json": '{"name":"server","dependencies":{"fastmcp":"1"}}',
+        "tools/cli/package.json": '{"name":"cli","bin":"cli.js"}',
+        "packages/notes.md": "",
+      }),
+    );
+    expect(detected).toEqual({
+      only: ["npm", "mcp-registry", "smithery", "homebrew", "github", "domain"],
+      from: [
+        "package.json",
+        join("packages", "server", "package.json"),
+        join("tools", "cli", "package.json"),
+      ],
+    });
+  });
+
+  it("reads npm and Cargo workspace members", async () => {
+    const npm = project({
+      "package.json": '{"private":true,"workspaces":{"packages":["libs/**"]}}',
+      "libs/a/package.json": '{"name":"a"}',
+    });
+    expect((await detectProject(npm))?.only).toEqual(["npm", "github", "domain"]);
+    const cargo = project({
+      "Cargo.toml": '[workspace]\nmembers = [\n  "tool",\n]',
+      "tool/Cargo.toml": "[package]",
+      "tool/src/main.rs": "",
+    });
+    expect((await detectProject(cargo))?.only).toEqual(["crates", "homebrew", "github", "domain"]);
   });
 
   it("counts a package.json it cannot read as a JavaScript project", async () => {
