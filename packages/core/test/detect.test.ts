@@ -54,6 +54,14 @@ describe("detectProject", () => {
     [{ "compose.yaml": "" }, ["docker", "github", "domain"]],
     [{ ".claude-plugin/plugin.json": "{}" }, ["claude-plugins", "github", "domain"]],
     [{ ".cursor-plugin/plugin.json": "{}" }, ["cursor", "github", "domain"]],
+    [
+      { "package.json": '{"engines":{"vscode":"^1.90.0"}}' },
+      ["vscode", "open-vsx", "github", "domain"],
+    ],
+    [
+      { "build.gradle.kts": 'plugins { id("org.jetbrains.intellij.platform") }' },
+      ["jetbrains", "github", "domain"],
+    ],
     [{ "gemini-extension.json": "{}" }, ["gemini", "github", "domain"]],
     [{ "App.xcodeproj/project.pbxproj": "" }, ["app-store", "github", "domain"]],
     [{ "app/src/main/AndroidManifest.xml": "" }, ["google-play", "github", "domain"]],

@@ -290,6 +290,64 @@ live("Google Play search", () => {
   });
 });
 
+live("VS Code Marketplace", () => {
+  const query = (criteria: { filterType: number; value: string }[]) =>
+    fetch("https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery", {
+      method: "POST",
+      headers: {
+        ...UA,
+        accept: "application/json;api-version=7.2-preview.1",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ filters: [{ criteria, pageSize: 1000 }], flags: 0 }),
+    }).then((r) => r.json() as Promise<any>);
+  it("finds extensions by text, with their name, display name and publisher", async () => {
+    const body = await query([
+      { filterType: 8, value: "Microsoft.VisualStudio.Code" },
+      { filterType: 10, value: "prettier" },
+    ]);
+    const hit = body.results[0].extensions.find((e: any) => e.extensionName === "prettier-vscode");
+    expect(hit).toMatchObject({
+      displayName: expect.any(String),
+      publisher: { publisherName: "esbenp" },
+    });
+  });
+  it("answers a publisher page 200, 301 to a renamed one, and 404", async () => {
+    const page = (id: string) =>
+      fetch(`https://marketplace.visualstudio.com/publishers/${id}`, {
+        headers: UA,
+        redirect: "manual",
+      }).then((r) => r.status);
+    expect(await page("esbenp")).toBe(200);
+    expect(await page("ms-python")).toBe(301);
+    expect(await page(fresh)).toBe(404);
+  });
+});
+
+live("Open VSX", () => {
+  it("answers 200 for a namespace and 404 for a missing one", async () => {
+    expect(await status("https://open-vsx.org/api/redhat")).toBe(200);
+    expect(await status(`https://open-vsx.org/api/${fresh}`)).toBe(404);
+  });
+  it("lists search results with their namespace", async () => {
+    const body = await json("https://open-vsx.org/api/-/search?query=yaml&size=100");
+    expect(body.extensions.some((e: any) => e.namespace === "redhat")).toBe(true);
+  });
+});
+
+live("JetBrains Marketplace", () => {
+  it("answers a plugin ID 200 or 404, and searches by name", async () => {
+    expect(await status("https://plugins.jetbrains.com/api/plugins/intellij/org.rust.lang")).toBe(
+      200,
+    );
+    expect(await status(`https://plugins.jetbrains.com/api/plugins/intellij/${fresh}`)).toBe(404);
+    const body = await json("https://plugins.jetbrains.com/api/searchPlugins?search=rust&max=20");
+    expect(body.plugins.some((p: any) => p.name === "Rust" && typeof p.link === "string")).toBe(
+      true,
+    );
+  });
+});
+
 live("Smithery", () => {
   const list = (ns: string) => json(`https://api.smithery.ai/servers?namespace=${ns}&pageSize=1`);
   it("filters servers by whole namespace, ignoring case, without a key", async () => {

@@ -212,6 +212,42 @@ const playFree = (titles: string[] = []): Service => ({
   http: () => playPage(titles),
   whois: noWhois,
 });
+const vscodeFree = (
+  extensions: { extensionName: string; displayName?: string }[] = [{ extensionName: "other" }],
+  publisher: Reply = 404,
+): Service => ({
+  http: (u) =>
+    u.endsWith("/extensionquery")
+      ? [
+          200,
+          {
+            results: [
+              {
+                extensions: extensions.map((e) => ({ ...e, publisher: { publisherName: "pub" } })),
+              },
+            ],
+          },
+        ]
+      : publisher,
+  whois: noWhois,
+});
+const openVsxFree = (namespaces: string[] = ["redhat"]): Service => ({
+  http: (u) =>
+    u.includes("/-/search?")
+      ? [200, { extensions: namespaces.map((namespace) => ({ namespace, name: "x" })) }]
+      : 404,
+  whois: noWhois,
+});
+const jetbrainsFree = (names: string[] = ["Other"]): Service => ({
+  http: (u) =>
+    u.includes("/searchPlugins?")
+      ? [
+          200,
+          { plugins: names.map((name, i) => ({ name, xmlId: `x${i}`, link: `/plugin/${i}-x` })) },
+        ]
+      : 404,
+  whois: noWhois,
+});
 const NUGET_DELETED = "<p>This package has been deleted from the gallery.</p>";
 const PUB_NAMES = "https://pub.dev/api/package-names";
 const pubFree = (names: string[] = ["http"]): Service => ({
@@ -755,6 +791,110 @@ export const FIXTURES: Fixture[] = [
         why: "listed, compared ignoring case",
         expect: "taken",
         service: geminiFree(["github"]),
+      },
+    ],
+  },
+  {
+    channel: only("vscode"),
+    freeCertainty: "probable",
+    free: vscodeFree(),
+    taken: vscodeFree([{ extensionName: "nameable" }]),
+    // vsce src/validation.ts.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      trailingHyphen: true,
+      single: true,
+      punycode: true,
+    },
+    refused: [
+      {
+        name: "prettier",
+        why: "another publisher's display name; display names are unique",
+        expect: "taken",
+        service: vscodeFree([{ extensionName: "prettier-vscode", displayName: "Prettier" }]),
+      },
+      {
+        name: "esbenp",
+        why: "a publisher ID",
+        expect: "taken",
+        service: vscodeFree(undefined, [200, {}]),
+      },
+    ],
+  },
+  {
+    channel: only("open-vsx"),
+    freeCertainty: "probable",
+    free: openVsxFree(),
+    taken: { http: () => [200, { name: "nameable" }], whois: noWhois },
+    // openvsx ExtensionValidator: word characters and - + $ ~.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      single: true,
+      punycode: true,
+    },
+    maxLength: 255,
+    refused: [
+      {
+        name: "redhatt",
+        why: "within 20% of an existing namespace",
+        expect: "unavailable",
+        service: openVsxFree(["redhat"]),
+      },
+    ],
+  },
+  {
+    channel: only("jetbrains"),
+    freeCertainty: "probable",
+    free: jetbrainsFree(),
+    taken: {
+      http: () => [200, { name: "Nameable", link: "/plugin/1-nameable" }],
+      whois: noWhois,
+    },
+    // structure-base Validator.kt: ALLOWED_NAME_SYMBOLS, at most 64.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      dot: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      single: true,
+      space: true,
+      punycode: true,
+    },
+    maxLength: 64,
+    refused: [
+      { name: "Ideal Tools", why: "contains IDEA", expect: "unavailable" },
+      { name: "my-plugin", why: "contains plugin", expect: "unavailable" },
+      { name: "Demo", why: "a template name", expect: "unavailable" },
+      {
+        name: "rust",
+        why: "a plugin with this name; names must be unique",
+        expect: "taken",
+        service: jetbrainsFree(["Rust"]),
       },
     ],
   },

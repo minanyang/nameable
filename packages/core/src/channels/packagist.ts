@@ -1,5 +1,6 @@
 import { defineChannel, unexpected } from "../define.js";
 import { get } from "../http.js";
+import { levenshtein } from "../levenshtein.js";
 import type { Channel, Context } from "../types.js";
 
 const SITE = "https://packagist.org";
@@ -23,22 +24,6 @@ const BRANDS = /symfony|packagist|composer/;
 // TypoSquattersValidator blocks a package whose vendor is one edit from that of a package with the same
 // package name and at least a million downloads.
 const MIN_DOWNLOADS = 1_000_000;
-
-function levenshtein(a: string, b: string): number {
-  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= a.length; i++) {
-    const row = [i];
-    for (let j = 1; j <= b.length; j++) {
-      row[j] = Math.min(
-        prev[j]! + 1,
-        row[j - 1]! + 1,
-        prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1),
-      );
-    }
-    prev = row;
-  }
-  return prev[b.length]!;
-}
 
 const packageNames = async (ctx: Context, query: string) => {
   const res = await get(ctx, `${SITE}/packages/list.json?${query}`);

@@ -39,7 +39,7 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
 
   const pkg = await text(dir, "package.json");
   if (pkg !== undefined) {
-    let manifest: { private?: unknown; bin?: unknown } = {};
+    let manifest: { private?: unknown; bin?: unknown; engines?: { vscode?: unknown } } = {};
     try {
       manifest = (JSON.parse(pkg) ?? {}) as typeof manifest;
     } catch {
@@ -47,7 +47,9 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     }
     // A private package (an app, a monorepo root) is not published, but still says what the project is.
     pick("package.json");
-    if (manifest.private !== true) pick("package.json", "npm");
+    // A VS Code extension is published to both extension marketplaces, not to npm.
+    if (manifest.engines?.vscode) pick("package.json", "vscode", "open-vsx");
+    else if (manifest.private !== true) pick("package.json", "npm");
     if (manifest.bin) pick("package.json", "homebrew");
     if (MCP_PACKAGES.test(pkg)) pick("package.json", "smithery");
   }
@@ -101,6 +103,13 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
 
   if (has(".claude-plugin")) pick(".claude-plugin", "claude-plugins");
   if (has(".cursor-plugin")) pick(".cursor-plugin", "cursor");
+  // A JetBrains plugin: its descriptor, or the IntelliJ Platform Gradle plugin.
+  const descriptor = "src/main/resources/META-INF/plugin.xml";
+  const gradle = ["build.gradle.kts", "build.gradle"].find((f) => has(f));
+  if ((await text(dir, descriptor)) !== undefined) pick(descriptor, "jetbrains");
+  else if (gradle && /org\.jetbrains\.intellij/.test((await text(dir, gradle)) ?? "")) {
+    pick(gradle, "jetbrains");
+  }
   if (has("gemini-extension.json")) pick("gemini-extension.json", "gemini");
 
   // Mobile apps: an Xcode project, an Android app module, or an Expo app (app.json with "expo").

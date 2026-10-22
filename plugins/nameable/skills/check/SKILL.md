@@ -37,6 +37,8 @@ Check only what matters, and say which channels you picked and why.
 | MCP server                             | its package registry (`npm`, `pypi`), `smithery`, `github`, `domain` |
 | Claude Code plugin or skill            | `claude-plugins`, `npm` if it ships a package, `github`, `domain`    |
 | Cursor plugin or Gemini CLI extension  | `cursor` or `gemini`, `github`, `domain`                             |
+| VS Code extension                      | `vscode`, `open-vsx`, `github`, `domain`                             |
+| JetBrains plugin                       | `jetbrains`, `github`, `domain`                                      |
 | Mobile app                             | `app-store`, `google-play`, `domain` with `com` first, `github`      |
 | Consumer app or brand                  | `domain` with `com` first, `github`                                  |
 
@@ -67,8 +69,7 @@ Read each result exactly:
   ends (npm after an unpublish, crates.io after a deletion); then say when it frees.
 - `unknown`: the check failed. It is not free. Retry once, then report it as not checked.
 
-These channels are not checked by the tool yet: editor extension stores, the MCP Registry, social handles and
-trademarks. App store results only show whether an app with the name exists; app names are not reserved before
+These channels are not checked by the tool yet: the MCP Registry, social handles and trademarks. App store results only show whether an app with the name exists; app names are not reserved before
 release, so never report one as free for certain. When one matters for this project, check it with the tools you have (web search, the directory's own
 search) or list it under "not checked".
 

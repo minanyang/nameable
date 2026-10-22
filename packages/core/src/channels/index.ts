@@ -10,13 +10,16 @@ import { gemini } from "./gemini.js";
 import { github } from "./github.js";
 import { googlePlay } from "./google-play.js";
 import { homebrew } from "./homebrew.js";
+import { jetbrains } from "./jetbrains.js";
 import { npm } from "./npm.js";
 import { nuget } from "./nuget.js";
+import { openVsx } from "./open-vsx.js";
 import { pub } from "./pub.js";
 import { packagist } from "./packagist.js";
 import { pypi } from "./pypi.js";
 import { rubygems } from "./rubygems.js";
 import { smithery } from "./smithery.js";
+import { vscode } from "./vscode.js";
 
 export const DEFAULT_TLDS: string[] = ["com", "dev"];
 
@@ -35,6 +38,9 @@ const fixed = [
   claudePlugins,
   cursor,
   gemini,
+  vscode,
+  openVsx,
+  jetbrains,
   appStore,
   googlePlay,
 ];

@@ -9,6 +9,8 @@ export type RequestOptions = {
   timeoutMs?: number;
   /** "manual" returns a redirect itself, for services where the redirect is the answer. */
   redirect?: RequestRedirect;
+  /** Sends a POST with this body, for query APIs that only take one. Queries are safe to retry. */
+  body?: string;
 };
 
 function retryable(status: number): boolean {
@@ -33,6 +35,7 @@ export async function get(ctx: Context, url: string, opts: RequestOptions = {}):
         ctx.fetch(url, {
           headers: { "user-agent": USER_AGENT, ...opts.headers },
           redirect: opts.redirect,
+          ...(opts.body === undefined ? {} : { method: "POST", body: opts.body }),
           signal: AbortSignal.timeout(timeoutMs),
         }),
       );
