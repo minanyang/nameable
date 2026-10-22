@@ -84,7 +84,12 @@ export const jetbrains: Channel = defineChannel({
           typeof hit.link === "string"
             ? `https://plugins.jetbrains.com${hit.link}`
             : `https://plugins.jetbrains.com/search?search=${encodeURIComponent(name)}`,
-        note: "a plugin with this name; plugin names must be unique",
+        note:
+          typeof hit.name === "string" && hit.name.toLowerCase() === wanted
+            ? "a plugin with this name; plugin names must be unique"
+            : typeof hit.name === "string"
+              ? `the plugin ID of ${hit.name}`
+              : "a plugin ID",
       };
     }
     return {

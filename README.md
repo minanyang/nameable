@@ -41,12 +41,13 @@ be checked, the answer says "probably" and why, instead of "available". A failed
 Requires Node.js 22 or later (22.13 for the MCP Registry check). Run it in your project (or any folder under it, up to the
 repository root) and it checks the channels the project ships on, picked from its files:
 
-- `package.json` for npm (unless it is private and not a workspace root), Homebrew when it has a `bin`; with
+- `package.json` for npm (unless it has no `name`, or is private and not a workspace root), Homebrew when it has a `bin`; with
   `engines.vscode`, VS Code Marketplace and Open VSX instead of npm
 - `pyproject.toml`, `setup.py` or `setup.cfg` that describe a package for PyPI, Homebrew when they declare scripts
 - `Cargo.toml` for crates.io (unless `publish = false`), Homebrew when it builds a binary
 - a `.gemspec` for RubyGems, `composer.json` for Packagist (unless it is a project), `pubspec.yaml` for pub.dev
-  (unless `publish_to: none`), a `.csproj` or `.sln` for NuGet, a `Dockerfile` for Docker Hub
+  (unless `publish_to: none`), a `.csproj` or `.sln` for NuGet (unless it builds a web app, an executable or tests), a
+  `Dockerfile` for Docker Hub, a `Package.swift` with an executable for Homebrew
 - `.claude-plugin/`, `.cursor-plugin/` and `gemini-extension.json` for those directories, a `plugin.xml` or the
   IntelliJ Gradle plugin for JetBrains Marketplace, an MCP SDK dependency for the MCP Registry and Smithery
 - an Xcode project for the App Store, an Android app for Google Play, and an Expo or Flutter app for both

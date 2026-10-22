@@ -24,6 +24,16 @@ export type ChannelSpec = {
   lookup(name: string, ctx: Context): Promise<Finding>;
 };
 
+/**
+ * A note on one line. Descriptions and error messages arrive with line breaks, indentation, stray
+ * control characters and bidirectional controls that would reorder a terminal row.
+ */
+const clean = (note: string) =>
+  note
+    .replace(/[\p{Cc}\p{Bidi_Control}]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 /** Every channel is built with this, so validation, result shape and failure handling are uniform. */
 export function defineChannel(spec: ChannelSpec): Channel {
   return {
@@ -48,7 +58,11 @@ export function defineChannel(spec: ChannelSpec): Channel {
         if (!rule) throw err;
         const timedOut = err instanceof Error && err.name === "TimeoutError";
         const reason = timedOut ? "timed out" : err instanceof Error ? err.message : String(err);
-        return { ...base, status: "unknown", note: `${reason}; if nobody holds it, ${rule}` };
+        return {
+          ...base,
+          status: "unknown",
+          note: clean(`${reason}; if nobody holds it, ${rule}`),
+        };
       }
       const refused =
         result.status === "available" || result.status === "unknown"
@@ -65,14 +79,7 @@ export function defineChannel(spec: ChannelSpec): Channel {
         const value: unknown = result[key];
         if (typeof value !== "string" || !value.trim()) delete result[key];
       }
-      // Descriptions arrive with line breaks, indentation, stray control characters and bidirectional
-      // controls that would reorder a terminal row.
-      if (result.note) {
-        result.note = result.note
-          .replace(/[\p{Cc}\p{Bidi_Control}]/gu, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-      }
+      if (result.note) result.note = clean(result.note);
       return result;
     },
   };

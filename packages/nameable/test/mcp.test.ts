@@ -37,6 +37,17 @@ describe("nameable mcp", () => {
     expect(stdout()).toBe("");
   });
 
+  it("counts a TLD written two ways once, as the CLI does", async () => {
+    const { client } = await connect();
+    const tlds = [...Array.from({ length: 19 }, (_, i) => `t${i}`), "com", ".com"];
+    // Past the schema, the call fails on what it checks (no domain), not on the number of TLDs.
+    const r = await client.callTool({
+      name: "check_names",
+      arguments: { names: ["zz"], channels: ["crates"], tlds },
+    });
+    expect(JSON.stringify(r.content)).toContain("TLDs apply to domains");
+  });
+
   it("refuses TLDs for a call that checks no domain, as the CLI does", async () => {
     const { client } = await connect();
     const r = await client.callTool({
@@ -123,6 +134,10 @@ describe("nameable mcp", () => {
     // An empty list would check nothing, which an agent could read as "nothing is taken".
     [{ names: ["zz"], channels: [] }, "channels"],
     [{ names: ["zz"], channels: ["domain"], tlds: [] }, "tlds"],
+    [
+      { names: ["zz"], channels: ["domain"], tlds: Array.from({ length: 21 }, (_, i) => `t${i}`) },
+      "at most 20 TLDs",
+    ],
   ])("reports %j as a tool error the agent can read", async (args, message) => {
     const { client } = await connect();
     const r = await client.callTool({ name: "check_names", arguments: args });

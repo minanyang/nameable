@@ -65,12 +65,12 @@ describe("npm", () => {
       [`${NPM}/-/org/babel/package`]: [200, {}],
     });
     expect(org).toMatchObject({ status: "available", certainty: "probable" });
-    expect(org.note).toContain("@babel is an npm organization");
+    expect(org.note).toContain('@babel belongs to the npm user or organization "babel"');
     const user = await one("npm", "@zq/zz", {
       [`${NPM}/@zq%2fzz`]: 404,
       [`${NPM}/-/org/zq/package`]: 404,
     });
-    expect(user.note).toContain('only the npm user "zq" can publish under @zq');
+    expect(user.note).toContain('no npm user or organization is named "zq"');
   });
 
   it("does not count a 200 that is not the probed package's own document", async () => {
@@ -659,6 +659,27 @@ describe("check", () => {
     expect(Date.now() - started).toBeGreaterThanOrEqual(1900);
   });
 
+  it("reads a Retry-After in fractional seconds as seconds, not a date", async () => {
+    const fetch = fakeFetch({
+      "https://crates.io/api/v1/crates/serde": seq(
+        new Response("{}", { status: 429, headers: { "retry-after": "1.5" } }),
+        [200, { crate: { name: "serde" } }],
+      ),
+    });
+    const started = Date.now();
+    const [r] = await check("serde", selectChannels({ only: ["crates"] }), { fetch, backoffMs: 1 });
+    expect(r!.status).toBe("taken");
+    // Read as a date in 2001, it would retry at once; it is 1.5 seconds.
+    expect(Date.now() - started).toBeGreaterThanOrEqual(1400);
+  });
+
+  it("flattens the note of a failed lookup that breaks a new-name rule", async () => {
+    const r = await one("npm", "events", {
+      [`${NPM}/events`]: new TypeError(`boom${String.fromCodePoint(0x202e)}evil\nline`),
+    });
+    expect(r.note).toMatch(/^could not reach registry\.npmjs\.org \(boom evil line\); if nobody/);
+  });
+
   it("keeps a failed lookup unknown when the name breaks a new-name rule, since it may be held", async () => {
     const r = await one("npm", "events", { [`${NPM}/events`]: 503 });
     expect(r).toMatchObject({
@@ -911,6 +932,20 @@ describe("app titles", () => {
     expect(storefronts("nameable").map((s) => s.country)).toEqual(["us"]);
   });
 
+  it("names a similar title without a maker it was not given", async () => {
+    const r = await one("app-store", "todoist", {
+      "https://itunes.apple.com/search?term=todoist&entity=software&limit=200&country=us": [
+        200,
+        { results: [{ trackName: "Todoist: To Do List", trackViewUrl: "https://x" }] },
+      ],
+      "https://itunes.apple.com/search?term=todoist&entity=macSoftware&limit=200&country=us": [
+        200,
+        { results: [] },
+      ],
+    });
+    expect(r.note).toContain('"Todoist: To Do List" is a similar title');
+  });
+
   it("reports the App Store's plain-text rate limit as unknown", async () => {
     const r = await one("app-store", "thing", {
       "https://itunes.apple.com/search?term=thing&entity=software&limit=200&country=us":
@@ -977,6 +1012,22 @@ describe("names that exist despite a registry's rules for new names", () => {
       ],
     });
     expect(r.status).toBe("taken");
+  });
+
+  it("says a JetBrains match is a plugin ID when only the ID matches", async () => {
+    const r = await one("jetbrains", "sketch", {
+      "https://plugins.jetbrains.com/api/plugins/intellij/sketch": 404,
+      "https://plugins.jetbrains.com/api/searchPlugins?search=sketch&max=20": [
+        200,
+        { plugins: [{ name: "Sketch It!", xmlId: "sketch", link: "/plugin/1-sketch-it" }] },
+      ],
+    });
+    expect(r).toMatchObject({ status: "taken", note: "the plugin ID of Sketch It!" });
+  });
+
+  it("says why Gemini refuses a name with a tab", async () => {
+    const r = await one("gemini", "a\tb", {});
+    expect(r).toMatchObject({ status: "unavailable", note: expect.stringContaining("tabs") });
   });
 
   it("finds a JetBrains plugin whose name breaks the character rule", async () => {

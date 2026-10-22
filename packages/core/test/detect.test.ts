@@ -24,10 +24,12 @@ describe("detectProject", () => {
   });
 
   it.each([
-    [{ "package.json": "{}" }, ["npm", "github", "domain"]],
-    [{ "package.json": '{"bin":"cli.js"}' }, ["npm", "homebrew", "github", "domain"]],
+    [{ "package.json": '{"name":"x"}' }, ["npm", "github", "domain"]],
+    [{ "package.json": '{"name":"x","bin":"cli.js"}' }, ["npm", "homebrew", "github", "domain"]],
+    // Without a name there is nothing to publish: a stub that only sets the module type.
+    [{ "package.json": '{"type":"module","bin":"cli.js"}' }, ["github", "domain"]],
     [
-      { "package.json": '{"dependencies":{"@modelcontextprotocol/sdk":"1"}}' },
+      { "package.json": '{"name":"x","dependencies":{"@modelcontextprotocol/sdk":"1"}}' },
       ["npm", "mcp-registry", "smithery", "github", "domain"],
     ],
     // A private package is an app or a monorepo root: nothing to publish on npm.
@@ -55,7 +57,16 @@ describe("detectProject", () => {
     [{ "pubspec.yaml": "name: x" }, ["pub", "github", "domain"]],
     [{ "pubspec.yaml": "name: x\npublish_to: none" }, ["github", "domain"]],
     [{ "X.csproj": "" }, ["nuget", "github", "domain"]],
-    [{ "compose.yaml": "" }, ["github", "domain"]],
+    // Web apps, executables and test projects are not packages; a dotnet tool is.
+    [{ "X.csproj": '<Project Sdk="Microsoft.NET.Sdk.Web">' }, ["github", "domain"]],
+    [{ "X.csproj": "<OutputType>Exe</OutputType>" }, ["github", "domain"]],
+    [
+      { "X.csproj": "<OutputType>Exe</OutputType><PackAsTool>true</PackAsTool>" },
+      ["nuget", "github", "domain"],
+    ],
+    [{ "X.csproj": "<IsPackable>false</IsPackable>" }, ["github", "domain"]],
+    [{ "X.csproj": "<IsTestProject>true</IsTestProject>" }, ["github", "domain"]],
+    [{ Pipfile: "[packages]" }, ["github", "domain"]],
     [{ "Dockerfile.prod": "" }, ["docker", "github", "domain"]],
     // A private workspace root publishes its packages.
     [
@@ -103,7 +114,36 @@ describe("detectProject", () => {
     [{ "go.mod": "module x", "main.go": "package main" }, ["homebrew", "github", "domain"]],
     [{ "go.mod": "module x" }, ["github", "domain"]],
     [{ "Package.swift": "" }, ["github", "domain"]],
-    [{ "X.sln": "" }, ["nuget", "github", "domain"]],
+    [
+      { "Package.swift": 'products: [.executable(name: "x", targets: ["x"])]' },
+      ["homebrew", "github", "domain"],
+    ],
+    [{ "Package.swift": '.executableTarget(name: "x")' }, ["homebrew", "github", "domain"]],
+    // A solution of libraries is published; one that holds an app keeps plain libraries to itself.
+    [
+      {
+        "X.sln": 'Project("{G}") = "Lib", "Lib\\Lib.csproj", "{H}"',
+        "Lib/Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+      },
+      ["nuget", "github", "domain"],
+    ],
+    [
+      {
+        "X.sln":
+          'Project("{G}") = "Api", "Api\\Api.csproj", "{H}"\nProject("{G}") = "Lib", "Lib\\Lib.csproj", "{I}"',
+        "Api/Api.csproj": '<Project Sdk="Microsoft.NET.Sdk.Web">',
+        "Lib/Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+      },
+      ["github", "domain"],
+    ],
+    [
+      {
+        "X.slnx": '<Project Path="Api/Api.csproj" /><Project Path="Sdk/Sdk.csproj" />',
+        "Api/Api.csproj": '<Project Sdk="Microsoft.NET.Sdk.Web">',
+        "Sdk/Sdk.csproj": "<PackageId>X.Sdk</PackageId>",
+      },
+      ["nuget", "github", "domain"],
+    ],
     [
       { "composer.json": '{"type":"library","extra":{"x":{"type":"project"}}}' },
       ["packagist", "github", "domain"],
@@ -155,7 +195,9 @@ describe("detectProject", () => {
   });
 
   it("names every file that picked a channel", async () => {
-    const detected = await detectProject(project({ "package.json": "{}", Dockerfile: "" }));
+    const detected = await detectProject(
+      project({ "package.json": '{"name":"x"}', Dockerfile: "" }),
+    );
     expect(detected?.from).toEqual(["package.json", "Dockerfile"]);
   });
 
@@ -180,8 +222,13 @@ describe("findProject", () => {
     expect(await findProject(join(home, "projects", "x"), home)).toBeUndefined();
   });
 
+  it("walks past a folder that holds only a compose file", async () => {
+    const dir = project({ "package.json": '{"name":"x"}', "docker/compose.yaml": "" });
+    expect((await findProject(join(dir, "docker")))?.only).toEqual(["npm", "github", "domain"]);
+  });
+
   it("stops at the repository root", async () => {
-    const outer = project({ "package.json": "{}" });
+    const outer = project({ "package.json": '{"name":"x"}' });
     const repo = join(outer, "repo");
     mkdirSync(join(repo, ".git", "x"), { recursive: true });
     mkdirSync(join(repo, "docs"));

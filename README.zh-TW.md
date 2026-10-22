@@ -35,10 +35,10 @@ Nameable 套用每個 registry 自己的規則（直接取自它們的原始碼�
 
 需要 Node.js 22 以上（MCP Registry 需要 22.13 以上）。在專案資料夾（或它底下到 repo 根目錄為止的任何資料夾）裡執行時，會依專案檔案挑出它會發佈的管道：
 
-- `package.json` 查 npm（private 且不是 workspace 根目錄時不查），有 `bin` 時加查 Homebrew；有 `engines.vscode` 時改查 VS Code Marketplace 和 Open VSX，不查 npm
+- `package.json` 查 npm（沒有 `name`，或 private 且不是 workspace 根目錄時不查），有 `bin` 時加查 Homebrew；有 `engines.vscode` 時改查 VS Code Marketplace 和 Open VSX，不查 npm
 - 描述套件的 `pyproject.toml`、`setup.py` 或 `setup.cfg` 查 PyPI，有宣告 scripts 時加查 Homebrew
 - `Cargo.toml` 查 crates.io（`publish = false` 時不查），會建置出執行檔時加查 Homebrew
-- `.gemspec` 查 RubyGems、`composer.json` 查 Packagist（project 類型不查）、`pubspec.yaml` 查 pub.dev（`publish_to: none` 時不查）、`.csproj` 或 `.sln` 查 NuGet、`Dockerfile` 查 Docker Hub
+- `.gemspec` 查 RubyGems、`composer.json` 查 Packagist（project 類型不查）、`pubspec.yaml` 查 pub.dev（`publish_to: none` 時不查）、`.csproj` 或 `.sln` 查 NuGet（建置 web app、執行檔或測試時不查）、`Dockerfile` 查 Docker Hub、有執行檔的 `Package.swift` 查 Homebrew
 - `.claude-plugin/`、`.cursor-plugin/` 和 `gemini-extension.json` 查對應的目錄，`plugin.xml` 或 IntelliJ Gradle plugin 查 JetBrains Marketplace，依賴 MCP SDK 時查 MCP Registry 和 Smithery
 - Xcode 專案查 App Store、Android app 查 Google Play，Expo 或 Flutter app 兩個都查
 

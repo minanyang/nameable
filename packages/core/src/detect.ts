@@ -31,6 +31,15 @@ async function json(dir: string, file: string): Promise<Record<string, unknown> 
   }
 }
 
+function parses(raw: string): boolean {
+  try {
+    JSON.parse(raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function list(dir: string): Promise<string[]> {
   try {
     return await readdir(dir);
@@ -58,6 +67,50 @@ function pythonPackage(file: string, py: string): boolean {
   if (/^\[tool\.poetry\]/m.test(py)) return true;
   // A [project] with no build backend is an application (what `uv init` writes): nothing to upload.
   return /^\[project\]/m.test(py) && /^\[build-system\]/m.test(py);
+}
+
+type DotnetProject = "package" | "library" | "app";
+
+/**
+ * What a .NET project builds. An app: a web project, an executable that is not a `dotnet tool`, a
+ * test project, or one marked not packable. A package: one that declares package metadata. A plain
+ * library is packable by default, so NuGet takes it unless something says otherwise.
+ */
+function dotnetProject(xml: string): DotnetProject {
+  const prop = (name: string) =>
+    new RegExp(`<${name}>\\s*([^<]*?)\\s*</${name}>`, "i").exec(xml)?.[1]?.toLowerCase();
+  if (prop("PackAsTool") === "true") return "package";
+  if (
+    /Sdk\s*=\s*"Microsoft\.NET\.Sdk\.Web"/i.test(xml) ||
+    prop("IsPackable") === "false" ||
+    prop("IsTestProject") === "true" ||
+    /^(?:winexe|exe)$/.test(prop("OutputType") ?? "")
+  ) {
+    return "app";
+  }
+  if (
+    prop("IsPackable") === "true" ||
+    prop("PackageId") ||
+    prop("GeneratePackageOnBuild") === "true"
+  ) {
+    return "package";
+  }
+  return "library";
+}
+
+/**
+ * Whether a .NET project or solution is published to NuGet. A solution that holds an application
+ * keeps its plain libraries to itself; only projects that declare package metadata count there.
+ */
+async function nugetPackage(dir: string, file: string, xml: string): Promise<boolean> {
+  if (!/\.slnx?$/.test(file)) return dotnetProject(xml) !== "app";
+  const paths = [...xml.matchAll(/"([^"]+\.(?:cs|fs|vb)proj)"/g)].map((m) =>
+    m[1]!.replaceAll("\\", "/"),
+  );
+  const kinds = await Promise.all(
+    paths.map(async (path) => dotnetProject((await text(dir, path)) ?? "")),
+  );
+  return kinds.includes("package") || (kinds.includes("library") && !kinds.includes("app"));
 }
 
 /** Whether a Python manifest depends on an MCP SDK. */
@@ -94,6 +147,7 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     // Read even when unreadable: its presence alone says the project is JavaScript.
     const pkg = (await text(dir, "package.json")) ?? "";
     const manifest = ((await json(dir, "package.json")) ?? {}) as {
+      name?: unknown;
       private?: unknown;
       bin?: unknown;
       workspaces?: unknown;
@@ -103,14 +157,19 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     // workspace root is the exception: its packages are what gets published.
     const workspaceRoot =
       Boolean(manifest.workspaces) || has("pnpm-workspace.yaml") || has("lerna.json");
+    // npm publishes nothing without a name, such as a package.json that only sets "type": "module".
+    // A manifest that is not JSON still counts as named: it is broken, not a stub.
+    const named = typeof manifest.name === "string" || !parses(pkg);
     pick("package.json");
     // A VS Code extension is published to both extension marketplaces, not to npm.
     if (manifest.engines?.vscode) pick("package.json", "vscode", "open-vsx");
-    else if (manifest.private !== true || workspaceRoot) pick("package.json", "npm");
-    if (manifest.bin) pick("package.json", "homebrew");
+    else if (workspaceRoot || (named && manifest.private !== true)) pick("package.json", "npm");
+    if (manifest.bin && named) pick("package.json", "homebrew");
     if (MCP_PACKAGES.test(pkg)) pick("package.json", "mcp-registry", "smithery");
   }
 
+  // A Pipfile manages an application's dependencies; Pipenv builds no package.
+  if (has("Pipfile")) pick("Pipfile");
   for (const file of ["pyproject.toml", "setup.py", "setup.cfg"]) {
     const py = has(file) ? await text(dir, file) : undefined;
     if (py === undefined) continue;
@@ -152,7 +211,11 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     if ((main !== undefined && /^package main\b/m.test(main)) || has("cmd"))
       pick("go.mod", "homebrew");
   }
-  if (has("Package.swift")) pick("Package.swift");
+  const swift = has("Package.swift") ? await text(dir, "Package.swift") : undefined;
+  if (swift !== undefined) {
+    pick("Package.swift");
+    if (/\.executable(?:Target)?\s*\(/.test(swift)) pick("Package.swift", "homebrew");
+  }
 
   const composer = await json(dir, "composer.json");
   // An application (type "project", publish_to: none) is not published, as with a private package.json.
@@ -170,15 +233,17 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
   }
 
   const dotnet = entries.find((e) => /\.(?:(?:cs|fs|vb)proj|slnx?)$/.test(e));
-  if (dotnet) pick(dotnet, "nuget");
+  if (dotnet) {
+    pick(dotnet);
+    if (await nugetPackage(dir, dotnet, (await text(dir, dotnet)) ?? "")) pick(dotnet, "nuget");
+  }
 
-  // An image is built from a Dockerfile; a compose file alone usually runs other people's images.
+  // An image is built from a Dockerfile. A compose file runs other people's images, and a compose file
+  // alone (a docker/ folder in a project) is not a project to stop at.
   const container = entries.find((e) =>
     /^(?:Dockerfile|Containerfile)(?:\..+)?$|\.Dockerfile$/.test(e),
   );
   if (container) pick(container, "docker");
-  const compose = entries.find((e) => /^(?:docker-)?compose\.ya?ml$/.test(e));
-  if (compose) pick(compose);
 
   if (has(".claude-plugin")) pick(".claude-plugin", "claude-plugins");
   if (has(".cursor-plugin")) pick(".cursor-plugin", "cursor");

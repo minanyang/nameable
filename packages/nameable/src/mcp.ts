@@ -81,9 +81,9 @@ export function createMcpServer(deps: McpDeps): McpServer {
         tlds: z
           .array(z.string())
           .min(1)
-          .max(MAX_TLDS)
           .optional()
-          .describe(`TLDs for "domain" (default: ${DEFAULT_TLDS.join(", ")})`),
+          // The limit is counted after "com" and ".com" are taken as one, as the CLI counts it.
+          .describe(`TLDs for "domain", at most ${MAX_TLDS} (default: ${DEFAULT_TLDS.join(", ")})`),
         refresh: z
           .boolean()
           .optional()

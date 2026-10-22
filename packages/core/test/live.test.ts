@@ -82,7 +82,12 @@ live("live channels", () => {
     // covered by unit tests; this one is refused for a spelling that search does not return.
     ["npm", "worker_threads", "unavailable", '"worker-threads"'],
     ["npm", "test-unpublish", "reclaimable", "anyone can publish it again"],
-    ["npm", "@babel/zq-not-a-real-pkg", "available", "@babel is an npm organization"],
+    [
+      "npm",
+      "@babel/zq-not-a-real-pkg",
+      "available",
+      '@babel belongs to the npm user or organization "babel"',
+    ],
   ];
   for (const [channel, name, status, note] of refused) {
     it(`${channel}: "${name}" is ${status} (${note})`, async () => {

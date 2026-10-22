@@ -21,8 +21,9 @@ function retryAfter(res: Response): number | undefined {
   // Number(null) and Number("") are 0, which would read a missing header as "retry at once".
   const header = res.headers.get("retry-after")?.trim();
   if (!header) return undefined;
-  // Either seconds or an HTTP date.
-  const at = /^\d+$/.test(header) ? undefined : Date.parse(header);
+  // Either seconds or an HTTP date, which has a weekday and month in letters. Anything else ("1.5")
+  // is neither, and Date.parse would read it as some date anyway.
+  const at = /[a-z]/i.test(header) ? Date.parse(header) : undefined;
   if (at !== undefined) return Number.isNaN(at) ? undefined : Math.max(0, at - Date.now());
   const seconds = Number(header);
   return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : undefined;

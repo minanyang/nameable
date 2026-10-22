@@ -65,7 +65,7 @@ export const appStore: Channel = defineChannel({
     }
     // A title that only adds its maker's name does not hold this one, but users will confuse them.
     const clash = similar
-      ? `; "${String(similar.trackName)}" by ${String(similar.sellerName)} is a similar title`
+      ? `; "${String(similar.trackName)}"${typeof similar.sellerName === "string" ? ` by ${similar.sellerName}` : ""} is a similar title`
       : "";
     return {
       status: "available",

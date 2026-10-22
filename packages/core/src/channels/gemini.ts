@@ -36,16 +36,19 @@ export const gemini: Channel = defineChannel({
   // only the valid ones, so that rule applies once nobody holds the name.
   rules: (name) =>
     // The list is tab- and line-separated; anything else, spaces and slashes included, is looked up.
-    name.trim() && !/[\t\r\n]/.test(name)
-      ? undefined
-      : "Gemini CLI extension names cannot be empty",
+    !name.trim()
+      ? "Gemini CLI extension names cannot be empty"
+      : /[\t\r\n]/.test(name)
+        ? "Gemini CLI extension names cannot contain tabs or line breaks"
+        : undefined,
   refuses: (name) =>
     /^[a-zA-Z0-9-]+$/.test(name)
       ? undefined
       : "Gemini CLI extension names are letters, digits and dashes",
   async lookup(name, ctx) {
     const list = await cachedList(ctx, "gemini-extensions", () => extensionList(ctx));
-    const repos = linesFor(list.text, name.toLowerCase()).map(([url]) => url!);
+    // The gallery list keeps names trimmed.
+    const repos = linesFor(list.text, name.trim().toLowerCase()).map(([url]) => url!);
     if (repos.length) {
       return {
         status: "taken",

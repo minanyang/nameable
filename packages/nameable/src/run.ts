@@ -125,7 +125,8 @@ function parse(argv: string[]) {
     // Node's own wording ("… place it at the end of the command after '--', as in '-- \"--x\"") is
     // longer than the mistake; say it plainly, per kind of mistake.
     const { code, message } = err as Error & { code?: string };
-    const option = /'(-[^' ]*)/.exec(message)?.[1];
+    // An option with a short form is named both ways ("'-h, --help'"); the long form is the one to show.
+    const option = /'(?:-\w, )?(-[^' ]*)/.exec(message)?.[1];
     if (code === "ERR_PARSE_ARGS_UNKNOWN_OPTION" && option)
       throw new UsageError(`unknown option ${option}`);
     if (code === "ERR_PARSE_ARGS_INVALID_OPTION_VALUE" && option) {

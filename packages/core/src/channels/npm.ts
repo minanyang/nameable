@@ -110,10 +110,11 @@ async function scopeNote(ctx: Context, scope: string): Promise<string> {
   const res = await get(ctx, `${REGISTRY}/-/org/${encodeURIComponent(scope)}/package`).catch(
     () => undefined,
   );
+  // The endpoint answers 200 for a user's scope as well as an organization's, and 404 for neither.
   if (res?.status === 200)
-    return `@${scope} is an npm organization; only its members can publish under it`;
+    return `@${scope} belongs to the npm user or organization "${scope}"; only they can publish under it`;
   if (res?.status === 404) {
-    return `only the npm user "${scope}" can publish under @${scope}; if nobody has that name, you can create it as an organization`;
+    return `no npm user or organization is named "${scope}"; create the organization to publish under @${scope}`;
   }
   return `only the owner of @${scope} can publish under it; whether that is you could not be checked`;
 }
