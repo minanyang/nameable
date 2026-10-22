@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
-import { detectProject } from "../src/index.js";
+import { detectProject, findProject } from "../src/index.js";
 
 function project(files: Record<string, string>): string {
   const dir = mkdtempSync(join(tmpdir(), "nameable-detect-"));
@@ -33,10 +33,14 @@ describe("detectProject", () => {
     // A private package is an app or a monorepo root: nothing to publish on npm.
     [{ "package.json": '{"private":true}' }, ["github", "domain"]],
     [{ "package.json": "not json" }, ["npm", "github", "domain"]],
-    [{ "pyproject.toml": '[project]\nname = "x"' }, ["pypi", "github", "domain"]],
+    [
+      { "pyproject.toml": '[project]\nname = "x"\n[build-system]\nrequires = ["hatchling"]' },
+      ["pypi", "github", "domain"],
+    ],
     [
       {
-        "pyproject.toml": '[project]\ndependencies = ["mcp>=1.2"]\n[project.scripts]\nx = "x:main"',
+        "pyproject.toml":
+          '[project]\ndependencies = ["mcp>=1.2"]\n[project.scripts]\nx = "x:main"\n[build-system]\nrequires = ["hatchling"]',
       },
       ["pypi", "homebrew", "mcp-registry", "smithery", "github", "domain"],
     ],
@@ -75,12 +79,15 @@ describe("detectProject", () => {
     [
       {
         "pyproject.toml":
-          '[project]\nname = "x"\nkeywords = ["mcp", "llm"]\ndependencies = ["httpx"]',
+          '[project]\nname = "x"\nkeywords = ["mcp", "llm"]\ndependencies = ["httpx"]\n[build-system]\nrequires = ["hatchling"]',
       },
       ["pypi", "github", "domain"],
     ],
     [
-      { "pyproject.toml": '[project]\nname = "x"\ndependencies = [\n  "mcp[cli]>=1.2",\n]' },
+      {
+        "pyproject.toml":
+          '[project]\nname = "x"\ndependencies = [\n  "mcp[cli]>=1.2",\n]\n[build-system]\nrequires = ["hatchling"]',
+      },
       ["pypi", "mcp-registry", "smithery", "github", "domain"],
     ],
     [
@@ -103,7 +110,28 @@ describe("detectProject", () => {
     ],
     [{ "ios/App.xcodeproj/project.pbxproj": "" }, ["app-store", "github", "domain"]],
     [{ "android/app/src/main/AndroidManifest.xml": "" }, ["google-play", "github", "domain"]],
-    [{ "app.config.ts": "export default {}" }, ["app-store", "google-play", "github", "domain"]],
+    [
+      {
+        "app.config.ts": "export default {}",
+        "package.json": '{"private":true,"dependencies":{"expo":"~52"}}',
+      },
+      ["app-store", "google-play", "github", "domain"],
+    ],
+    // Nuxt names its config app.config.ts too.
+    [
+      { "app.config.ts": "", "package.json": '{"private":true,"dependencies":{"nuxt":"3"}}' },
+      ["github", "domain"],
+    ],
+    [
+      {
+        "pyproject.toml":
+          '[project]\nname = "x"\n[tool.uv]\ndev-dependencies = [\n  "pytest",\n]\npackage = false',
+      },
+      ["github", "domain"],
+    ],
+    // What `uv init` writes for an application: no build backend.
+    [{ "pyproject.toml": '[project]\nname = "x"\nversion = "0.1.0"' }, ["github", "domain"]],
+    [{ "Cargo.toml": "[package]\npublish = []" }, ["github", "domain"]],
     [{ ".claude-plugin/plugin.json": "{}" }, ["claude-plugins", "github", "domain"]],
     [{ ".cursor-plugin/plugin.json": "{}" }, ["cursor", "github", "domain"]],
     [
@@ -129,5 +157,28 @@ describe("detectProject", () => {
   it("names every file that picked a channel", async () => {
     const detected = await detectProject(project({ "package.json": "{}", Dockerfile: "" }));
     expect(detected?.from).toEqual(["package.json", "Dockerfile"]);
+  });
+
+  it("counts a package.json it cannot read as a JavaScript project", async () => {
+    const dir = project({ "package.json/": "" });
+    expect((await detectProject(dir))?.from).toEqual(["package.json"]);
+  });
+});
+
+describe("findProject", () => {
+  it("finds the project from a subdirectory and names its files from there", async () => {
+    const dir = project({ "Cargo.toml": "[package]", "src/lib.rs": "", ".git/": "" });
+    expect(await findProject(join(dir, "src"))).toEqual({
+      only: ["crates", "github", "domain"],
+      from: [join("..", "Cargo.toml")],
+    });
+  });
+
+  it("stops at the repository root", async () => {
+    const outer = project({ "package.json": "{}" });
+    const repo = join(outer, "repo");
+    mkdirSync(join(repo, ".git", "x"), { recursive: true });
+    mkdirSync(join(repo, "docs"));
+    expect(await findProject(join(repo, "docs"))).toBeUndefined();
   });
 });

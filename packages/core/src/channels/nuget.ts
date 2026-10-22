@@ -30,6 +30,9 @@ export const nuget: Channel = defineChannel({
     );
     if (reg.status === 200) {
       const body = (await reg.json()) as Registration | null;
+      if (!Array.isArray(body?.items)) {
+        return { status: "unknown", note: "NuGet returned something other than a registration" };
+      }
       // Small packages inline their versions; larger ones page them, without a description here.
       const entry = body?.items?.at(-1)?.items?.at(-1)?.catalogEntry;
       return { status: "taken", url, note: entry?.description };

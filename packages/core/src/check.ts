@@ -12,6 +12,11 @@ export type CheckOptions = {
   /** Download name lists even when the stored copy is fresh. */
   refresh?: boolean;
   now?: () => number;
+  /**
+   * Lookups and per-host limits to share with checks running at the same time (an MCP server handling
+   * several calls), so they download each list once and pace each host together.
+   */
+  shared?: Pick<Context, "cache" | "gates">;
   /** Called as each channel finishes for a name, so a UI can stream results. */
   onResult?: (name: string, result: CheckResult) => void;
 };
@@ -21,8 +26,8 @@ function createContext(opts: CheckOptions): Context {
     fetch: opts.fetch ?? fetch,
     whois: opts.whois ?? tcpWhois,
     githubToken: opts.githubToken,
-    cache: new Map(),
-    gates: new Map(),
+    cache: opts.shared?.cache ?? new Map(),
+    gates: opts.shared?.gates ?? new Map(),
     backoffMs: opts.backoffMs,
     store: opts.store,
     refresh: opts.refresh,

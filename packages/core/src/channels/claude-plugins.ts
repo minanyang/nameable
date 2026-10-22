@@ -9,8 +9,9 @@ const MARKETPLACE_PAGE =
   "https://github.com/anthropics/claude-plugins-official/blob/main/.claude-plugin/marketplace.json";
 
 // `claude plugin validate`: a marketplace can list a plugin only under a name of ASCII letters, digits,
-// `.`, `_` and `-` (anything else "cannot install"); uppercase, `.` and `_` only draw a kebab-case warning.
-const INSTALLABLE = /^[A-Za-z0-9._-]+$/;
+// `.`, `_` and `-` that starts with a letter or digit (anything else "cannot install"); uppercase, `.` and
+// `_` elsewhere only draw a kebab-case warning.
+const INSTALLABLE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 // `claude plugin validate` refuses names that pass as Anthropic's own: words are runs of letters and
 // digits, compared lowercase and joined without separators. Checked against Claude Code's validator.
@@ -62,7 +63,7 @@ export const claudePlugins: Channel = defineChannel({
   rules: (name) =>
     INSTALLABLE.test(name)
       ? undefined
-      : "Claude Code installs plugins from a marketplace only under names of letters, digits, . _ and -",
+      : "Claude Code installs plugins from a marketplace only under names of letters, digits, . _ and -, starting with a letter or digit",
   // Anthropic's own plugins carry these names.
   refuses: (name) =>
     reserved(name)

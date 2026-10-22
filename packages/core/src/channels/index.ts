@@ -65,14 +65,20 @@ function domainFor(raw: string): Channel {
     throw new Error(`"${display}" has several labels; only top-level domains are supported`);
   }
   const ascii = domainToASCII(display);
-  if (!ascii) throw new Error(`"${display}" is not a valid TLD`);
+  // A TLD is one DNS label: letters and digits with inner hyphens (punycode included).
+  if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(ascii))
+    throw new Error(`"${display}" is not a valid TLD`);
   return domain(ascii, display);
 }
 
 const unique = (channels: Channel[]) =>
   channels.filter((c, i) => channels.findIndex((p) => p.id === c.id) === i);
 
+/** The most TLDs one check takes: each is one more channel per name, and whois servers allow one query at a time. */
+export const MAX_TLDS = 20;
+
 export function selectChannels({ only, tlds = DEFAULT_TLDS }: Selection = {}): Channel[] {
+  if (tlds.length > MAX_TLDS) throw new Error(`at most ${MAX_TLDS} TLDs at a time`);
   const all = unique([...fixed, ...tlds.map(domainFor)]);
   if (!only?.length) return all;
 
@@ -90,5 +96,10 @@ export function selectChannels({ only, tlds = DEFAULT_TLDS }: Selection = {}): C
       picked.push(channel);
     }
   }
-  return unique(picked);
+  const chosen = unique(picked);
+  // TLDs given for a check that looks up no domain would be silently ignored.
+  if (tlds !== DEFAULT_TLDS && !chosen.some((c) => c.category === "domain")) {
+    throw new Error("TLDs apply to domains; add domain to the channels");
+  }
+  return chosen;
 }

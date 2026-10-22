@@ -8,8 +8,8 @@ const EXCLUDED = new Set(["node_modules", "favicon.ico"]);
 const SCOPED = /^(?:@([^/]+?)[/])?([^/]+?)$/;
 
 /**
- * validate-npm-package-name's `validForNewPackages` (lib/index.js, v7): a new package must have no
- * errors and no warnings. Returns the first reason, in the validator's order.
+ * validate-npm-package-name (lib/index.js, v7): errors make a name invalid for any package. Returns the
+ * first reason, in the validator's order.
  */
 function problem(name: string): string | undefined {
   // Errors.
@@ -19,11 +19,6 @@ function problem(name: string): string | undefined {
   if (name.startsWith("_")) return "npm names cannot start with an underscore";
   if (name.trim() !== name) return "npm names cannot have leading or trailing spaces";
   if (EXCLUDED.has(name.toLowerCase())) return `${name} is not a valid npm name`;
-  // Warnings, which also rule out new packages.
-  if (builtinModules.includes(name.toLowerCase())) return "npm reserves Node.js core module names";
-  if (name.length > 214) return "npm names are at most 214 characters";
-  if (name.toLowerCase() !== name) return "npm names must be lowercase";
-  if (/[~'!()*]/.test(name.split("/").at(-1)!)) return "npm names cannot contain ~ ' ! ( ) *";
   if (encodeURIComponent(name) !== name) {
     const match = SCOPED.exec(name);
     const [user, pkg] = [match?.[1], match?.[2]];
@@ -32,6 +27,18 @@ function problem(name: string): string | undefined {
     if (!(match && urlSafe(user) && urlSafe(pkg)))
       return "npm names may only contain URL-safe characters";
   }
+  return undefined;
+}
+
+/**
+ * The validator's warnings: names old packages may have (`events`, `JSONStream`) but `validForNewPackages`
+ * rules out, so they apply only once nobody holds the name.
+ */
+function newOnly(name: string): string | undefined {
+  if (builtinModules.includes(name.toLowerCase())) return "npm reserves Node.js core module names";
+  if (name.length > 214) return "npm names are at most 214 characters";
+  if (name.toLowerCase() !== name) return "npm names must be lowercase";
+  if (/[~'!()*]/.test(name.split("/").at(-1)!)) return "npm names cannot contain ~ ' ! ( ) *";
   return undefined;
 }
 
@@ -97,16 +104,22 @@ export const npm: Channel = defineChannel({
   label: "npm",
   category: "package",
   rules: problem,
+  refuses: newOnly,
   async lookup(name, ctx) {
     const url = `https://www.npmjs.com/package/${name}`;
     const res = await get(ctx, `${REGISTRY}/${name.replace("/", "%2f")}`);
     if (res.status === 200) {
       const doc = (await res.json()) as {
+        name?: unknown;
         versions?: Record<string, unknown>;
         description?: string;
         "dist-tags"?: { latest?: string };
         time?: { modified?: string; unpublished?: { time: string } };
       };
+      // A 200 that is not a package document (a captive portal, a proxy page) proves nothing.
+      if (typeof doc?.name !== "string") {
+        return { status: "unknown", note: "npm returned something other than a package document" };
+      }
       if (!doc.versions && doc.time?.unpublished) {
         const at = doc.time.unpublished.time;
         // npm's unpublish policy: after every version is unpublished, the name is blocked for 24 hours.

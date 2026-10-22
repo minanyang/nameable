@@ -110,10 +110,15 @@ export const pub: Channel = defineChannel({
     const url = `https://pub.dev/packages/${name}`;
     const res = await get(ctx, `https://pub.dev/api/packages/${name}`);
     if (res.status === 200) {
-      const { isDiscontinued, latest } = (await res.json()) as {
+      const doc = (await res.json()) as {
+        name?: unknown;
         isDiscontinued?: boolean;
         latest?: { pubspec?: { description?: string } };
-      };
+      } | null;
+      if (typeof doc?.name !== "string") {
+        return { status: "unknown", note: "pub.dev returned something other than a package" };
+      }
+      const { isDiscontinued, latest } = doc;
       return {
         status: "taken",
         url,

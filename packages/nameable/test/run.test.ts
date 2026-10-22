@@ -59,7 +59,10 @@ describe("usage", () => {
     [["foo", "--bogus"], "Unknown option"],
     [["mcp", "--only", "npm"], "`mcp` takes no options"],
     [["foo", "--only", "npm", "--all"], "--only and --all cannot be combined"],
-    [["foo", "--only", "npm", "--tlds", "io"], "--tlds applies to domains"],
+    [["foo", "--only", "npm", "--tlds", "io"], "TLDs apply to domains"],
+    [["foo", "--tlds", Array.from({ length: 21 }, (_, i) => `t${i}`).join(",")], "at most 20 TLDs"],
+    [["foo", "--only", "domain:-"], "not a valid TLD"],
+    [["foo", "--clear-cache"], "--clear-cache takes no names or other options"],
   ])("exits 64 for %j", async (argv, message) => {
     const r = await cli(argv);
     expect(r.code).toBe(64);
@@ -75,6 +78,20 @@ describe("cache", () => {
     const r = await cli(["--clear-cache"], {}, { cacheDir: dir });
     expect(r).toMatchObject({ code: 0, stdout: `Cleared ${dir}\n` });
     expect(existsSync(dir)).toBe(false);
+  });
+
+  it("says why the cache could not be cleared, without a stack trace", async () => {
+    const file = join(await mkdtemp(join(tmpdir(), "nameable-")), "not-a-dir");
+    await writeFile(file, "x");
+    const r = await cli(["--clear-cache"], {}, { cacheDir: file });
+    expect(r.code).toBe(1);
+    expect(r.stderr).toMatch(/^nameable: could not clear .*not-a-dir: /);
+  });
+
+  it("reports the cleared directory as JSON with --json", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "nameable-"));
+    const r = await cli(["--clear-cache", "--json"], {}, { cacheDir: dir });
+    expect(JSON.parse(r.stdout)).toEqual({ cleared: dir });
   });
 
   it("leaves anything it did not save when the cache directory points somewhere shared", async () => {
@@ -238,6 +255,33 @@ describe("terminal output", () => {
     expect(text).toMatch(/aa\s+bb/);
     expect(text).toMatch(/crates\.io\s+✓\s+✗/);
     expect(text).toMatch(/free\s+1\/1\s+0\/1/);
+  });
+
+  it("prints a table wider than the terminal once, since wrapped rows cannot be redrawn", async () => {
+    let stdout = "";
+    await run(["zz", "--only", "pypi,crates"], {
+      stdout: { write: (s: string) => (stdout += s), columns: 20, rows: 50 },
+      stderr: { write: () => undefined },
+      interactive: true,
+      color: false,
+      fetch: fakeFetch({ ...LISTS, [PYPI("zz")]: 404, [CRATES("zz")]: 404 }),
+    });
+    // oxlint-disable-next-line no-control-regex
+    expect(stdout).not.toMatch(/\x1b\[\d+A/);
+    expect(stdout.match(/PyPI/g)).toHaveLength(1);
+  });
+
+  it("keeps bidirectional controls in a name out of the terminal", async () => {
+    let stdout = "";
+    const name = `zz${String.fromCodePoint(0x202e)}x`;
+    await run([name, "--only", "crates"], {
+      stdout: { write: (s: string) => (stdout += s), columns: 100 },
+      stderr: { write: () => undefined },
+      interactive: true,
+      color: false,
+      fetch: fakeFetch({ ...LISTS }),
+    });
+    expect(stdout).not.toContain(String.fromCodePoint(0x202e));
   });
 
   it("prints a table taller than the terminal once, since it cannot be redrawn in place", async () => {

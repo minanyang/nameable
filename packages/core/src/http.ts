@@ -13,6 +13,15 @@ export type RequestOptions = {
   body?: string;
 };
 
+/** The longest `Retry-After` honored; a service asking for more is reported as rate limited instead. */
+const MAX_RETRY_AFTER_MS = 10_000;
+
+/** How long a 429 or 503 asks to wait, from its `Retry-After` header in seconds, when it says. */
+function retryAfter(res: Response): number | undefined {
+  const seconds = Number(res.headers.get("retry-after"));
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1000 : undefined;
+}
+
 function retryable(status: number): boolean {
   return status === 429 || status >= 500;
 }
@@ -25,21 +34,45 @@ function retryable(status: number): boolean {
 export async function get(ctx: Context, url: string, opts: RequestOptions = {}): Promise<Response> {
   const { retries = 2, timeoutMs = 10_000 } = opts;
   const backoffMs = ctx.backoffMs ?? 500;
-  const gate = gateFor(ctx.gates, new URL(url).host);
+  const host = new URL(url).host;
+  // Tests that set backoffMs to 0 fake every service, so nothing needs pacing.
+  const gate = gateFor(ctx.gates, host, undefined, ctx.backoffMs !== 0);
+  // A host that already timed out in this run is not waited on again: every request queued behind it
+  // would otherwise take its full timeout too, and a run with many names would take minutes.
+  const down = `down:${host}`;
   let lastError: unknown;
+  let wait = 0;
   for (let attempt = 0; attempt <= retries; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, backoffMs * 2 ** (attempt - 1)));
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, Math.max(wait, backoffMs * 2 ** (attempt - 1))));
+    }
     try {
       // The timeout starts once a slot is free, so queueing behind other requests never counts against it.
-      const res = await gate.run(() =>
-        ctx.fetch(url, {
-          headers: { "user-agent": USER_AGENT, ...opts.headers },
-          redirect: opts.redirect,
-          ...(opts.body === undefined ? {} : { method: "POST", body: opts.body }),
-          signal: AbortSignal.timeout(timeoutMs),
-        }),
-      );
+      const res = await gate.run(() => {
+        if (ctx.cache.has(down)) {
+          throw Object.assign(new Error(`${host} did not respond`), { name: "TimeoutError" });
+        }
+        return ctx
+          .fetch(url, {
+            headers: { "user-agent": USER_AGENT, ...opts.headers },
+            redirect: opts.redirect,
+            ...(opts.body === undefined ? {} : { method: "POST", body: opts.body }),
+            signal: AbortSignal.timeout(timeoutMs),
+          })
+          .catch((err: unknown) => {
+            // Marked before the slot passes to the next request in line, so that one sees it.
+            if (err instanceof Error && err.name === "TimeoutError")
+              ctx.cache.set(down, Promise.resolve());
+            throw err;
+          });
+      });
       if (!retryable(res.status) || attempt === retries) return res;
+      // Honor a short Retry-After; waiting longer than a check should take is not worth it.
+      const asked = retryAfter(res);
+      if (asked !== undefined && asked > MAX_RETRY_AFTER_MS) return res;
+      // A 429 without Retry-After still asks to slow down: wait longer than for a server error.
+      const slowDown = res.status === 429 ? 2000 * 2 ** attempt : 0;
+      wait = ctx.backoffMs === 0 ? 0 : (asked ?? slowDown);
       lastError = new Error(`HTTP ${res.status}`);
     } catch (err) {
       // A slow service rarely answers faster on a second try; retrying would only multiply the wait.

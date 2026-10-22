@@ -158,9 +158,10 @@ export const crates: Channel = defineChannel({
     if (!VALID.test(name)) {
       return "crate names start with a letter and use letters, digits, - and _ (max 64)";
     }
-    if (RESERVED.has(canon(name))) return "crates.io reserves this name";
     return undefined;
   },
+  // A crate published before its name was reserved keeps it.
+  refuses: (name) => (RESERVED.has(canon(name)) ? "crates.io reserves this name" : undefined),
   async lookup(name, ctx) {
     // crates.io treats `-` and `_` and letter case as the same name, and the API resolves either spelling.
     const res = await get(ctx, `https://crates.io/api/v1/crates/${name}`);

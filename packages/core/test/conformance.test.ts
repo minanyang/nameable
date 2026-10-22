@@ -74,7 +74,7 @@ describe.each(FIXTURES.map((f) => [f.channel.id, f] as const))("%s", (_id, fixtu
         const over = await runOn(channel, "a".repeat(max + 1), fixture.free);
         expect(at.result.status, JSON.stringify(at.result)).toBe("available");
         expect(over.result.status, JSON.stringify(over.result)).toBe("unavailable");
-        expect(over.requests).toEqual([]);
+        if (!fixture.lengthRefusedAfterLookup) expect(over.requests).toEqual([]);
       });
     }
   });
@@ -132,6 +132,25 @@ describe.each(FIXTURES.map((f) => [f.channel.id, f] as const))("%s", (_id, fixtu
       }
     }
   });
+
+  // A captive portal or a misconfigured proxy answers 200 with something that is not the registry's
+  // answer; that must never read as someone holding the name, nor as a confirmed free one.
+  it.each([
+    ["an empty object", () => [200, {}] as Reply],
+    ["an empty list", () => [200, []] as Reply],
+    ["an HTML page", () => new Response("<html><body>Sign in to the network</body></html>")],
+  ])(
+    "is neither taken nor confirmed free when every request answers 200 with %s",
+    async (_, reply) => {
+      const { result } = await runOn(channel, INPUTS.typical, {
+        ...fixture.free,
+        http: () => reply(),
+      });
+      expectWellFormed(result, channel);
+      expect(result.status, JSON.stringify(result)).not.toBe("taken");
+      expect(confirmedFree(result), JSON.stringify(result)).toBe(false);
+    },
+  );
 
   it("holds its invariants for any name and any mix of responses", async () => {
     const reply = fc.oneof(

@@ -30,12 +30,35 @@ async function projectList(ctx: Context): Promise<string> {
     timeoutMs: 120_000,
   });
   if (!res.ok) throw new Error(`PyPI simple index returned HTTP ${res.status}`);
-  const { projects } = (await res.json()) as { projects: { name: string }[] };
-  // An index in an unexpected shape must fail the check, not read as "no similar projects".
-  if (!Array.isArray(projects) || !projects.length || typeof projects[0]?.name !== "string") {
-    throw new Error("PyPI simple index is not in the expected shape");
+  // The index is large (about 45 MB of JSON for 900,000 projects): names are read from the stream as it
+  // arrives, so memory holds the list being built rather than the whole document.
+  if (!res.body) throw new Error("PyPI simple index has no body");
+  const NAME = /"name"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+  // One string per chunk, joined from an array: a million small strings, or a string grown with `+=`
+  // (which V8 keeps as a rope of every piece), weigh several times their text.
+  const parts: string[] = [];
+  let count = 0;
+  let projects = false;
+  let carry = "";
+  for await (const chunk of res.body.pipeThrough(new TextDecoderStream())) {
+    const text = carry + chunk;
+    projects ||= /"projects"\s*:\s*\[/.test(text);
+    let end = 0;
+    const found: string[] = [];
+    NAME.lastIndex = 0;
+    for (let m = NAME.exec(text); m; m = NAME.exec(text)) {
+      const name = m[1]!.includes("\\") ? (JSON.parse(`"${m[1]}"`) as string) : m[1]!;
+      found.push(`${ultranormalizePypi(name)}\t${name}`);
+      end = NAME.lastIndex;
+    }
+    count += found.length;
+    if (found.length) parts.push(`\n${found.join("\n")}`);
+    // A match can straddle two chunks; keep the tail after the last one, which is never long.
+    carry = text.slice(Math.max(end, text.length - 1024));
   }
-  return `\n${projects.map((p) => `${ultranormalizePypi(p.name)}\t${p.name}`).join("\n")}\n`;
+  // An index in an unexpected shape must fail the check, not read as "no similar projects".
+  if (!projects || !count) throw new Error("PyPI simple index is not in the expected shape");
+  return `${parts.join("")}\n`;
 }
 
 // The rules are Warehouse's check_project_name (warehouse/packaging/services.py), except its
@@ -46,9 +69,13 @@ export const pypi: Channel = defineChannel({
   category: "package",
   rules: (name) => {
     if (!VALID.test(name)) return "PyPI names are letters, digits, and inner . _ -";
-    if (PYPI_STDLIB.has(normalizePypi(name))) return "PyPI reserves Python standard library names";
     return undefined;
   },
+  // Projects registered before the rule (asyncio, typing) keep their names.
+  refuses: (name) =>
+    PYPI_STDLIB.has(normalizePypi(name))
+      ? "PyPI reserves Python standard library names"
+      : undefined,
   async lookup(name, ctx) {
     const normalized = normalizePypi(name);
     const url = `https://pypi.org/project/${normalized}/`;

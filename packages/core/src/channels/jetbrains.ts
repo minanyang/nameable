@@ -44,6 +44,12 @@ export const jetbrains: Channel = defineChannel({
     const byId = asId ? await get(ctx, `${API}/plugins/intellij/${name}`) : undefined;
     if (byId?.status === 200) {
       const plugin = (await byId.json()) as Plugin | null;
+      if (typeof plugin?.xmlId !== "string") {
+        return {
+          status: "unknown",
+          note: "JetBrains Marketplace returned something other than a plugin",
+        };
+      }
       return {
         status: "taken",
         url: `https://plugins.jetbrains.com${typeof plugin?.link === "string" ? plugin.link : ""}`,

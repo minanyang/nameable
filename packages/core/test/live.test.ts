@@ -15,6 +15,9 @@ const opts = { githubToken: process.env.GITHUB_TOKEN, store };
 
 const cases: [channel: string, taken: string][] = [
   ["npm", "react"],
+  // Names the rules keep from new packages, held by packages published before them.
+  ["npm", "events"],
+  ["pypi", "asyncio"],
   ["pypi", "requests"],
   ["crates", "serde"],
   ["homebrew", "wget"],
@@ -75,7 +78,8 @@ live("live channels", () => {
     ["pub", "providers", "unavailable", "too similar"],
     ["nuget", "Coinbase.Core", "unavailable", "deleted by the NuGet team"],
     ["docker", "postgres", "taken", "official image"],
-    ["npm", "fs", "unavailable", "core module"],
+    // Most core module names are held on npm by placeholders; this one is not.
+    ["npm", "worker_threads", "unavailable", "core module"],
     ["npm", "test-unpublish", "reclaimable", "anyone can publish it again"],
     ["npm", "@babel/zq-not-a-real-pkg", "available", "@babel is an npm organization"],
   ];

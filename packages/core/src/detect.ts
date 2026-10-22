@@ -1,5 +1,5 @@
 import { readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join, relative } from "node:path";
 
 /** The channels a project ships on, read from its manifests, and the files that said so. */
 export type Detection = { only: string[]; from: string[] };
@@ -39,14 +39,25 @@ async function list(dir: string): Promise<string[]> {
   }
 }
 
+/** The body of one TOML table, up to the next table header. */
+function table(toml: string, name: string): string {
+  const start = toml.search(new RegExp(`^\\[${name.replaceAll(".", "\\.")}\\]\\s*$`, "m"));
+  if (start < 0) return "";
+  const rest = toml.slice(start).split("\n").slice(1);
+  const end = rest.findIndex((line) => /^\[[^\]]+\]\s*$/.test(line));
+  return (end < 0 ? rest : rest.slice(0, end)).join("\n");
+}
+
 /** Whether a Python manifest describes a package to publish, not an app or a tool's settings. */
 function pythonPackage(file: string, py: string): boolean {
   if (file === "setup.py") return /\bsetup\s*\(/.test(py);
   if (file === "setup.cfg") return /^\[metadata\]/m.test(py);
   // uv and Poetry both mark applications that are never built as packages.
-  if (/^\[tool\.uv\][^[]*^\s*package\s*=\s*false/m.test(py)) return false;
+  if (/^\s*package\s*=\s*false/m.test(table(py, "tool.uv"))) return false;
   if (/^\s*package-mode\s*=\s*false/m.test(py)) return false;
-  return /^\[(?:project|tool\.poetry)\]/m.test(py);
+  if (/^\[tool\.poetry\]/m.test(py)) return true;
+  // A [project] with no build backend is an application (what `uv init` writes): nothing to upload.
+  return /^\[project\]/m.test(py) && /^\[build-system\]/m.test(py);
 }
 
 /** Whether a Python manifest depends on an MCP SDK. */
@@ -79,8 +90,9 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
     if (!from.includes(file)) from.push(file);
   };
 
-  const pkg = await text(dir, "package.json");
-  if (pkg !== undefined) {
+  if (has("package.json")) {
+    // Read even when unreadable: its presence alone says the project is JavaScript.
+    const pkg = (await text(dir, "package.json")) ?? "";
     const manifest = ((await json(dir, "package.json")) ?? {}) as {
       private?: unknown;
       bin?: unknown;
@@ -115,7 +127,8 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
   const cargo = has("Cargo.toml") ? await text(dir, "Cargo.toml") : undefined;
   if (cargo !== undefined) {
     pick("Cargo.toml");
-    if (!/^\s*publish\s*=\s*false/m.test(cargo)) pick("Cargo.toml", "crates");
+    // `publish = false` and `publish = []` (no registry) both keep a crate off crates.io.
+    if (!/^\s*publish\s*=\s*(?:false|\[\s*\])/m.test(cargo)) pick("Cargo.toml", "crates");
     const binaries =
       /^\[\[bin\]\]/m.test(cargo) ||
       (await text(dir, "src/main.rs")) !== undefined ||
@@ -196,9 +209,25 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
   }
   const expo = await json(dir, "app.json");
   if (expo?.expo) pick("app.json", "app-store", "google-play");
+  // app.config.ts is Expo's only with Expo installed; Nuxt and SolidStart use the same file name.
   const expoConfig = entries.find((e) => /^app\.config\.(?:js|ts|mjs|cjs)$/.test(e));
-  if (expoConfig) pick(expoConfig, "app-store", "google-play");
+  if (expoConfig && /"expo"\s*:/.test((await text(dir, "package.json")) ?? "")) {
+    pick(expoConfig, "app-store", "google-play");
+  }
 
   if (!from.length) return undefined;
   return { only: [...only, "github", "domain"], from };
+}
+
+/**
+ * Detects the project `start` is in: the directory itself, or the nearest parent with manifests, up to
+ * the repository root (a directory with `.git`) or the home directory. Files are named relative to `start`.
+ */
+export async function findProject(start: string, home?: string): Promise<Detection | undefined> {
+  for (let dir = start; ; dir = dirname(dir)) {
+    const found = await detectProject(dir);
+    if (found) return { ...found, from: found.from.map((f) => relative(start, join(dir, f)) || f) };
+    const entries = await list(dir);
+    if (entries.includes(".git") || dir === home || dirname(dir) === dir) return undefined;
+  }
 }

@@ -80,8 +80,13 @@ export const homebrew: Channel = defineChannel({
   id: "homebrew",
   label: "Homebrew",
   category: "package",
-  rules: (name) => {
-    if (!name) return "Homebrew names cannot be empty";
+  // Only what can be looked up: casks hold names a new formula may not (1password, firefox@beta).
+  rules: (name) =>
+    /^[A-Za-z0-9@._+-]+$/.test(name)
+      ? undefined
+      : "Homebrew names are letters, digits and @ . _ + -",
+  // A new formula's rules; a formula, cask or alias that already has the name is taken, not refused.
+  refuses: (name) => {
     const problem = auditorProblem(name);
     if (problem) return `Homebrew names must not contain ${problem}`;
     if (!CONSTANT.test(formulaClass(name))) {
@@ -101,7 +106,14 @@ export const homebrew: Channel = defineChannel({
       ["cask", cask],
     ] as const) {
       if (res.status === 200) {
-        const { desc } = (await res.json()) as { desc?: string };
+        const found = (await res.json()) as {
+          name?: unknown;
+          token?: unknown;
+          desc?: string;
+        } | null;
+        // A formula has a name and a cask a token; anything else is not Homebrew's answer.
+        if (typeof found?.name !== "string" && typeof found?.token !== "string") continue;
+        const { desc } = found;
         return {
           status: "taken",
           url: `https://formulae.brew.sh/${kind}/${name}`,
@@ -110,6 +122,7 @@ export const homebrew: Channel = defineChannel({
         };
       }
     }
+    // Anything but 404 from both, including a 200 that was not Homebrew's answer, leaves it unknown.
     if (formula.status !== 404 || cask.status !== 404) {
       return {
         status: "unknown",

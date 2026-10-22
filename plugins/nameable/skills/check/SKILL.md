@@ -63,15 +63,21 @@ Read each result exactly:
 - `available` + `probable`: likely free, but `note` names what could not be checked (GitHub hides suspended
   accounts, npm's similar-name rule, premium domains). Say so; never present it as certain.
 - `reclaimable`: released and can be taken again.
-- `taken`: held. Open `url` or read `note` to see by whom and whether it is active.
+- `taken`: held. Open `url` or read `note` to see by whom and whether it is active. Where names are not
+  exclusive, `taken` means another entry already uses the name, and `note` says it does not block you: the MCP
+  Registry (another namespace's server), Google Play (titles are not unique) and the Gemini CLI gallery. Treat
+  these as a risk of confusion to weigh, not as a reason to drop the name on their own.
 - `unavailable`: nobody holds it exactly, but the registry refuses it; `note` says why (reserved, too similar to an
   existing name, blocked after a recent deletion). Treat it like taken, unless `note` gives a date when the block
   ends (npm after an unpublish, crates.io after a deletion); then say when it frees.
 - `unknown`: the check failed. It is not free. Retry once, then report it as not checked.
 
-These channels are not checked by the tool yet: social handles and trademarks. App store results only show whether an app with the name exists; app names are not reserved before
-release, so never report one as free for certain. When one matters for this project, check it with the tools you have (web search, the directory's own
-search) or list it under "not checked".
+These channels are not checked by the tool yet: social handles and trademarks. When one matters for this
+project, check it with the tools you have (web search, the directory's own search) or list it under "not checked".
+
+App store answers are never certain. An App Store name is reserved as soon as someone creates the app record, before
+release, and search does not show unreleased apps, so a free answer is only probable. Google Play titles are not
+unique, so a match there is a clash rather than a block.
 
 ## 3. Prior art
 

@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { homedir } from "node:os";
 import { parseArgs } from "node:util";
 import type { Transport } from "@modelcontextprotocol/server";
 import {
@@ -6,7 +7,7 @@ import {
   checkMany,
   clearStore,
   DEFAULT_TLDS,
-  detectProject,
+  findProject,
   GENERAL_CHANNELS,
   fileStore,
   selectChannels,
@@ -30,8 +31,8 @@ Usage
   One name shows each channel with its evidence; several names show a comparison grid.
   Channels are picked from the project files in the current directory (package.json, pyproject.toml,
   Cargo.toml, a .gemspec, composer.json, pubspec.yaml, a .csproj or .sln, a Dockerfile, .claude-plugin,
-  .cursor-plugin, gemini-extension.json, a VS Code or JetBrains extension, an Xcode, Android or Expo
-  app); private apps and unpublished packages skip their registry. Without any, a general set is checked.
+  .cursor-plugin, gemini-extension.json, a VS Code or JetBrains extension, an Xcode, Android, Expo
+  or Flutter app); private apps and unpublished packages skip their registry. Without any, a general set is checked.
   \`mcp\` serves the same checks to AI agents as an MCP server over stdio.
 
 Options
@@ -138,7 +139,21 @@ export async function run(argv: string[], io: Io): Promise<number> {
       return 0;
     }
     if (values["clear-cache"]) {
-      if (io.cacheDir) await clearStore(io.cacheDir);
+      // Clearing checks nothing, so names or channel options would silently do nothing.
+      const extra = names.length || values.only || values.all || values.tlds || values.refresh;
+      if (extra) throw new UsageError("--clear-cache takes no names or other options");
+      if (io.cacheDir) {
+        try {
+          await clearStore(io.cacheDir);
+        } catch (err) {
+          io.stderr.write(`nameable: could not clear ${io.cacheDir}: ${(err as Error).message}\n`);
+          return 1;
+        }
+      }
+      if (values.json) {
+        io.stdout.write(`${JSON.stringify({ cleared: io.cacheDir ?? null })}\n`);
+        return 0;
+      }
       return (io.stdout.write(`Cleared ${io.cacheDir ?? "nothing (no cache directory)"}\n`), 0);
     }
     if (!names.length) throw new UsageError("missing <name>");
@@ -153,7 +168,7 @@ export async function run(argv: string[], io: Io): Promise<number> {
     }
     let only = split(values.only);
     if (!only && !values.all) {
-      const detected = io.cwd ? await detectProject(io.cwd) : undefined;
+      const detected = io.cwd ? await findProject(io.cwd, homedir()) : undefined;
       only = detected?.only ?? GENERAL_CHANNELS;
       picked = detected
         ? `picked from ${detected.from.join(", ")}`
@@ -163,9 +178,6 @@ export async function run(argv: string[], io: Io): Promise<number> {
       channels = selectChannels({ only, tlds: split(values.tlds) });
     } catch (err) {
       throw new UsageError((err as Error).message);
-    }
-    if (values.tlds !== undefined && !channels.some((c) => c.category === "domain")) {
-      throw new UsageError("--tlds applies to domains; add domain to --only");
     }
   } catch (err) {
     if (!(err instanceof UsageError)) throw err;

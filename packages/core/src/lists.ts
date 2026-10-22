@@ -14,6 +14,7 @@ export const LIST_KEYS = [
   "cursor-plugins",
   "gemini-extensions",
   "mcp-servers",
+  "openvsx-namespaces",
 ] as const;
 export type ListKey = (typeof LIST_KEYS)[number];
 
@@ -40,7 +41,8 @@ export function cachedList(
   key: ListKey,
   download: () => Promise<string>,
 ): Promise<List> {
-  return memo(ctx, `list:${key}`, async () => {
+  // A refreshing check must not reuse a copy another check read from the store.
+  return memo(ctx, `list:${key}${ctx.refresh ? ":refresh" : ""}`, async () => {
     const now = ctx.now?.() ?? Date.now();
     const stored = await ctx.store?.read(key);
     const saved = stored?.text.startsWith(listHeader(key))

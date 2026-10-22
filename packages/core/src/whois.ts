@@ -6,7 +6,21 @@ const IANA = "whois.iana.org";
 
 /** One query, at most one at a time per server: whois servers ban bursts. */
 export function whoisQuery(ctx: Context, server: string, query: string): Promise<string> {
-  return gateFor(ctx.gates, `whois:${server}`, WHOIS_LIMIT).run(() => ctx.whois(server, query));
+  // Queries to a server are sent one at a time, so one that stopped answering is skipped from then on
+  // rather than waited on for every name behind it.
+  const down = `down:whois:${server}`;
+  return gateFor(ctx.gates, `whois:${server}`, WHOIS_LIMIT).run(() => {
+    if (ctx.cache.has(down)) {
+      return Promise.reject(
+        Object.assign(new Error(`whois ${server} did not respond`), { name: "TimeoutError" }),
+      );
+    }
+    return ctx.whois(server, query).catch((err: unknown) => {
+      if (err instanceof Error && err.name === "TimeoutError")
+        ctx.cache.set(down, Promise.resolve());
+      throw err;
+    });
+  });
 }
 
 /** The registry's whois server for a TLD, as IANA refers it, or undefined when it lists none. */

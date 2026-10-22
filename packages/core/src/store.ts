@@ -1,4 +1,5 @@
 import { mkdir, readdir, readFile, rename, rm, rmdir, stat, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { join, posix, win32 } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
@@ -47,7 +48,8 @@ export function fileStore(dir: string): Store {
     async write(key, text) {
       await mkdir(dir, { recursive: true });
       // Written whole and then renamed, so another run never reads a half-written file.
-      const partial = `${path(key)}.${process.pid}.partial`;
+      // Unique per write: two checks in one process (the MCP server) can save the same list at once.
+      const partial = `${path(key)}.${process.pid}.${randomUUID()}.partial`;
       await writeFile(partial, gzipSync(text));
       await rename(partial, path(key));
     },

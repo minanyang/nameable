@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineChannel } from "../define.js";
@@ -44,36 +44,77 @@ function sqlite(): Promise<typeof import("node:sqlite")> {
   return loading;
 }
 
-/** Every server in the mirror, one `name part\tfull name\tstatus` line each. */
-async function serverList(ctx: Context): Promise<string> {
+const TEMP_PREFIX = "nameable-mcp-";
+
+/** Temporary copies older than an hour were left by a run that was interrupted (Ctrl-C) mid-read. */
+async function sweepTemp(): Promise<void> {
+  const entries = await readdir(tmpdir()).catch(() => [] as string[]);
+  await Promise.all(
+    entries
+      .filter((e) => e.startsWith(TEMP_PREFIX))
+      .map(async (e) => {
+        const path = join(tmpdir(), e);
+        const { mtimeMs } = await stat(path).catch(() => ({ mtimeMs: Date.now() }));
+        if (Date.now() - mtimeMs > 60 * 60 * 1000) await rm(path, { recursive: true, force: true });
+      }),
+  );
+}
+
+type Row = { entry_name?: unknown; status?: unknown };
+
+/** The servers in a copy of the mirror, and the newest update it holds (when the mirror was built). */
+async function readMirror(bytes: Uint8Array): Promise<{ rows: Row[]; newest: unknown }> {
   const { DatabaseSync } = await sqlite();
-  const res = await get(ctx, MIRROR, { timeoutMs: 120_000 });
-  if (!res.ok) throw new Error(`the MCP Registry mirror returned HTTP ${res.status}`);
-  // SQLite opens files, so the copy goes to a temporary one for as long as it is read.
-  const dir = await mkdtemp(join(tmpdir(), "nameable-mcp-"));
-  let rows: unknown[];
+  const read = (db: InstanceType<typeof DatabaseSync>) => ({
+    rows: db.prepare("SELECT entry_name, status FROM servers").all() as Row[],
+    newest: db.prepare("SELECT MAX(updated_at) AS newest FROM servers").get()?.newest,
+  });
+  // Node 24 can open a database from memory; Node 22 needs a file, kept only while it is read.
+  const memory = new DatabaseSync(":memory:");
+  if (typeof memory.deserialize === "function") {
+    try {
+      memory.deserialize(bytes);
+      return read(memory);
+    } finally {
+      memory.close();
+    }
+  }
+  memory.close();
+  await sweepTemp();
+  const dir = await mkdtemp(join(tmpdir(), TEMP_PREFIX));
   try {
     const file = join(dir, "registry.db");
-    await writeFile(file, Buffer.from(await res.arrayBuffer()));
+    await writeFile(file, bytes);
     const db = new DatabaseSync(file, { readOnly: true });
     try {
-      rows = db.prepare("SELECT entry_name, status FROM servers").all();
+      return read(db);
     } finally {
       db.close();
     }
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+}
+
+/**
+ * Every server in the mirror, one `name part\tfull name\tstatus` line each, then `#asof\t<date>`: the
+ * newest update in the copy, which dates the mirror itself.
+ */
+async function serverList(ctx: Context): Promise<string> {
+  await sqlite();
+  const res = await get(ctx, MIRROR, { timeoutMs: 120_000 });
+  if (!res.ok) throw new Error(`the MCP Registry mirror returned HTTP ${res.status}`);
+  const { rows, newest } = await readMirror(new Uint8Array(await res.arrayBuffer()));
   // A copy in another shape must fail the check, not read as an empty registry.
-  const servers = rows as { entry_name?: unknown; status?: unknown }[];
-  if (servers.length < 1000 || !servers.every((s) => typeof s.entry_name === "string")) {
+  if (rows.length < 1000 || !rows.every((s) => typeof s.entry_name === "string")) {
     throw new Error("the MCP Registry mirror is not in the expected shape");
   }
-  const lines = (servers as { entry_name: string; status: unknown }[]).flatMap((s) => {
+  const lines = (rows as { entry_name: string; status: unknown }[]).flatMap((s) => {
     const part = s.entry_name.split("/")[1];
     return part ? [`${part.toLowerCase()}\t${s.entry_name}\t${String(s.status)}`] : [];
   });
-  return `\n${lines.join("\n")}\n`;
+  const asOf = typeof newest === "string" ? newest.slice(0, 10) : "";
+  return `\n${lines.join("\n")}\n#asof\t${asOf}\n`;
 }
 
 export const mcpRegistry: Channel = defineChannel({
@@ -111,7 +152,7 @@ export const mcpRegistry: Channel = defineChannel({
     return {
       status: "available",
       certainty: "probable",
-      note: `no server uses this name in a community mirror of the registry from ${asOf(list)}`,
+      note: `no server uses this name in a community mirror of the registry from ${linesFor(list.text, "#asof")[0]?.[0] || asOf(list)}`,
     };
   },
 });

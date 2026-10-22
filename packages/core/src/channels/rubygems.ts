@@ -30,6 +30,12 @@ async function nameList(ctx: Context): Promise<string> {
   return `\n${names.map((n) => `${typoKey(n)}\t${n}`).join("\n")}\n`;
 }
 
+/** The API serves `info` HTML-escaped ("Gender &amp; Ethnicity"). */
+const unescape = (text: string) =>
+  text.replace(/&(?:amp|lt|gt|quot|#39|#x27);/g, (e) =>
+    e === "&amp;" ? "&" : e === "&lt;" ? "<" : e === "&gt;" ? ">" : e === "&quot;" ? '"' : "'",
+  );
+
 type Gem = { name: string; info?: string; downloads?: number; version_created_at?: string };
 
 const fetchGem = (ctx: Context, name: string) => get(ctx, `${SITE}/api/v1/gems/${name}.json`);
@@ -83,7 +89,11 @@ export const rubygems: Channel = defineChannel({
       const gem = (await res.json()) as Gem | null;
       if (typeof gem?.name !== "string")
         return { status: "unknown", note: "RubyGems returned an unexpected gem" };
-      return { status: "taken", url: `${SITE}/gems/${gem.name}`, note: gem.info };
+      return {
+        status: "taken",
+        url: `${SITE}/gems/${gem.name}`,
+        note: typeof gem.info === "string" ? unescape(gem.info) : undefined,
+      };
     }
     if (res.status !== 404) return unexpected("RubyGems", res);
 

@@ -1,6 +1,6 @@
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { accessSync, constants, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -30,6 +30,23 @@ dist("packed CLI", () => {
     expect(pkg.bin.nameable).toBe("./dist/cli.mjs");
     expect(() => accessSync(cli, constants.X_OK)).not.toThrow();
     expect(readFileSync(cli, "utf8").startsWith("#!/usr/bin/env node\n")).toBe(true);
+  });
+
+  it("answers lines that are not JSON-RPC messages with JSON-RPC errors", async () => {
+    const child = spawn(cli, ["mcp"], { stdio: ["pipe", "pipe", "ignore"] });
+    let out = "";
+    child.stdout.on("data", (d: Buffer) => (out += d.toString()));
+    child.stdin.end('{bad json\n42\n{"jsonrpc":"2.0","id":7,"method":"ping"}\n');
+    await new Promise((resolve) => child.on("exit", resolve));
+    const replies = out
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l));
+    expect(replies).toEqual([
+      { jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } },
+      { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } },
+      { jsonrpc: "2.0", id: 7, result: {} },
+    ]);
   });
 
   it("reports the package version", async () => {

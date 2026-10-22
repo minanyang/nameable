@@ -37,6 +37,34 @@ describe("nameable mcp", () => {
     expect(stdout()).toBe("");
   });
 
+  it("refuses TLDs for a call that checks no domain, as the CLI does", async () => {
+    const { client } = await connect();
+    const r = await client.callTool({
+      name: "check_names",
+      arguments: { names: ["zz"], channels: ["crates"], tlds: ["io"] },
+    });
+    expect(r.isError).toBe(true);
+    expect(JSON.stringify(r.content)).toContain("TLDs apply to domains");
+  });
+
+  it("downloads a list once for calls running at the same time, and again after they finish", async () => {
+    const routes = { [CRATES("aa")]: 404, [CRATES("bb")]: 404 };
+    const call = (client: Client, name: string) =>
+      client.callTool({ name: "check_names", arguments: { names: [name], channels: ["crates"] } });
+    const dump = (calls: string[]) => calls.filter((u) => u === CRATES_DUMP).length;
+
+    const alone = await connect(routes);
+    await call(alone.client, "aa");
+    const once = dump(alone.fetch.calls);
+
+    const { client, fetch } = await connect(routes);
+    await Promise.all([call(client, "aa"), call(client, "bb")]);
+    expect(dump(fetch.calls)).toBe(once);
+    // No cache directory here, so a later call reads the list again rather than keeping it forever.
+    await call(client, "aa");
+    expect(dump(fetch.calls)).toBe(2 * once);
+  });
+
   it("returns the CLI's JSON contract as structured content and as text", async () => {
     const { client } = await connect({
       [CRATES("zz")]: 404,

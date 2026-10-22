@@ -39,7 +39,11 @@ export function defineChannel(spec: ChannelSpec): Channel {
       const problem = spec.rules(name);
       if (problem) return { ...base, status: "unavailable", note: problem };
       const result: CheckResult = { ...base, ...(await spec.lookup(name, ctx)) };
-      const refused = result.status === "available" ? spec.refuses?.(name) : undefined;
+      // Also when the lookup could not tell: the name is then held or refused, never free.
+      const refused =
+        result.status === "available" || result.status === "unknown"
+          ? spec.refuses?.(name)
+          : undefined;
       if (refused) return { ...base, status: "unavailable", note: refused };
       // Registry text such as a package description can be null or empty; the result keeps its
       // documented shape, in which `url` and `note` are present only as text.
@@ -47,10 +51,11 @@ export function defineChannel(spec: ChannelSpec): Channel {
         const value: unknown = result[key];
         if (typeof value !== "string" || !value.trim()) delete result[key];
       }
-      // Descriptions arrive with line breaks, indentation and stray control characters.
+      // Descriptions arrive with line breaks, indentation, stray control characters and bidirectional
+      // controls that would reorder a terminal row.
       if (result.note) {
         result.note = result.note
-          .replace(/\p{Cc}/gu, " ")
+          .replace(/[\p{Cc}\p{Bidi_Control}]/gu, " ")
           .replace(/\s+/g, " ")
           .trim();
       }

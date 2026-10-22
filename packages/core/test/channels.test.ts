@@ -8,8 +8,9 @@ import {
   type CheckResult,
 } from "../src/index.js";
 import { Gate } from "../src/gate.js";
+import { sameAppName, storefronts } from "../src/channels/app-names.js";
 import { fakeFetch, fakeWhois, seq, zipArchive, rangeReply, type Reply } from "./fake-fetch.js";
-import { CRATES_DUMP, cratesDump, mcpDatabase } from "./fixtures.js";
+import { CRATES_DUMP, cratesDump, mcpDatabase, sqlite } from "./fixtures.js";
 
 const NPM = "https://registry.npmjs.org";
 const searchUrl = (name: string) => `${NPM}/-/v1/search?text=${name}&size=50`;
@@ -121,7 +122,7 @@ describe("npm", () => {
   });
 
   it("leaves out an empty description", async () => {
-    const doc = { versions: { "1.0.0": {} }, description: null };
+    const doc = { name: "zzname", versions: { "1.0.0": {} }, description: null };
     const r = await one("npm", "thing", { [`${NPM}/thing`]: [200, doc] });
     expect(r.status).toBe("taken");
     expect("note" in r).toBe(false);
@@ -129,6 +130,7 @@ describe("npm", () => {
 
   it("is taken when the package has versions", async () => {
     const doc = {
+      name: "thing",
       versions: { "1.0.0": {} },
       description: "A thing",
       "dist-tags": { latest: "1.0.0" },
@@ -140,9 +142,28 @@ describe("npm", () => {
   });
 
   it("rejects names npm would refuse without asking the registry", async () => {
-    for (const name of ["Upper", "_lead", "fs", "has space"]) {
+    for (const name of ["_lead", "has space", "node_modules"]) {
       expect((await one("npm", name, {})).status).toBe("unavailable");
     }
+  });
+
+  // validate-npm-package-name's warnings rule out new packages only: `events` and `JSONStream` exist.
+  it("reports an old package with a name new packages cannot have as taken", async () => {
+    for (const name of ["events", "JSONStream"]) {
+      const r = await one("npm", name, {
+        [`${NPM}/${name}`]: [200, { name, versions: { "1.0.0": {} } }],
+      });
+      expect(r, name).toMatchObject({ status: "taken" });
+    }
+  });
+
+  it("refuses a free core-module or uppercase name for a new package", async () => {
+    const r = await one("npm", "Upper", {
+      [`${NPM}/Upper`]: 404,
+      [searchUrl("Upper")]: searchHits(),
+      ...hyphenProbes("Upper"),
+    });
+    expect(r).toMatchObject({ status: "unavailable", note: "npm names must be lowercase" });
   });
 
   it("downgrades to probable when the similar-name search fails", async () => {
@@ -251,7 +272,7 @@ describe("homebrew", () => {
   it("accepts versioned and + names, which become valid class names", async () => {
     for (const name of ["python@3.12", "c++"]) {
       const r = await one("homebrew", name, {
-        [`${api}/formula/${name}.json`]: [200, { desc: "x" }],
+        [`${api}/formula/${name}.json`]: [200, { name, desc: "x" }],
         [`${api}/cask/${name}.json`]: 404,
       });
       expect(r.status).toBe("taken");
@@ -271,7 +292,7 @@ describe("homebrew", () => {
   it("is taken by a cask", async () => {
     const r = await one("homebrew", "thing", {
       [`${api}/formula/thing.json`]: 404,
-      [`${api}/cask/thing.json`]: [200, { desc: "App" }],
+      [`${api}/cask/thing.json`]: [200, { token: "thing", desc: "App" }],
     });
     expect(r).toMatchObject({ status: "taken", meta: { kind: "cask" } });
   });
@@ -331,6 +352,16 @@ describe("rubygems", () => {
     [`${GEMS}/gems/rail_s`]: 404,
     [`${GEMS}/names`]: () => names("rails"),
     [`${GEMS}/api/v1/gems/rails.json`]: gem,
+  });
+
+  it("unescapes the HTML entities the API puts in descriptions", async () => {
+    const r = await one("rubygems", "people", {
+      [`${GEMS}/api/v1/gems/people.json`]: [
+        200,
+        { name: "people", info: "Gender &amp; Ethnicity &lt;3" },
+      ],
+    });
+    expect(r.note).toBe("Gender & Ethnicity <3");
   });
 
   it("allows a name similar only to an old gem with few downloads", async () => {
@@ -543,11 +574,51 @@ describe("check", () => {
     expect(r.status).toBe("taken");
   });
 
+  it("gives up at once when Retry-After asks for longer than a check should take", async () => {
+    const limited = () => new Response("{}", { status: 429, headers: { "retry-after": "3600" } });
+    const fetch = fakeFetch({ "https://crates.io/api/v1/crates/serde": limited });
+    const [r] = await check("serde", selectChannels({ only: ["crates"] }), { fetch, backoffMs: 0 });
+    expect(r).toMatchObject({ status: "unknown", note: "crates.io returned HTTP 429" });
+    expect(fetch.calls).toHaveLength(1);
+  });
+
   it("turns repeated network failures into unknown, never available", async () => {
     const r = await one("crates", "serde", {
       "https://crates.io/api/v1/crates/serde": new TypeError("fetch failed"),
     });
     expect(r).toMatchObject({ status: "unknown", note: "request failed: fetch failed" });
+  });
+
+  it("stops asking a host that timed out, instead of waiting on it once per name", async () => {
+    const timeout = Object.assign(new Error("aborted"), { name: "TimeoutError" });
+    const names = Array.from({ length: 8 }, (_, i) => `zz${i}`);
+    const fetch = fakeFetch(
+      Object.fromEntries(names.map((n) => [`https://crates.io/api/v1/crates/${n}`, timeout])),
+    );
+    const reports = await checkMany(names, selectChannels({ only: ["crates"] }), {
+      fetch,
+      backoffMs: 0,
+    });
+    expect(reports.every((r) => r.results[0]!.status === "unknown")).toBe(true);
+    // crates.io takes 4 requests at once; the 4 names queued behind them are never sent.
+    expect(fetch.calls).toHaveLength(4);
+  });
+
+  it("stops querying a whois server that timed out", async () => {
+    const timeout = Object.assign(new Error("whois timed out"), { name: "TimeoutError" });
+    const names = ["aa", "bb", "cc"];
+    const whois = fakeWhois({
+      "whois.iana.org sh": "whois:        whois.nic.sh\n",
+      ...Object.fromEntries(names.map((n) => [`whois.nic.sh ${n}.sh`, timeout])),
+    });
+    const fetch = fakeFetch({ [BOOTSTRAP]: bootstrap });
+    const reports = await checkMany(names, selectChannels({ only: ["domain:sh"] }), {
+      fetch,
+      whois,
+      backoffMs: 0,
+    });
+    expect(reports.every((r) => r.results[0]!.status === "unknown")).toBe(true);
+    expect(whois.calls.filter((c) => c.startsWith("whois.nic.sh"))).toHaveLength(1);
   });
 
   it("does not retry a timeout and reports it as unknown", async () => {
@@ -610,6 +681,14 @@ describe("check", () => {
 });
 
 describe("Gate", () => {
+  it("spaces task starts by its interval", async () => {
+    const gate = new Gate(4, 40);
+    const starts: number[] = [];
+    await Promise.all([1, 2, 3].map(() => gate.run(async () => void starts.push(Date.now()))));
+    expect(starts[1]! - starts[0]!).toBeGreaterThanOrEqual(35);
+    expect(starts[2]! - starts[1]!).toBeGreaterThanOrEqual(35);
+  });
+
   it("never runs more than its limit and runs every task", async () => {
     const gate = new Gate(2);
     let active = 0;
@@ -670,7 +749,7 @@ describe("readWhois", () => {
   });
 });
 
-describe("mcp-registry", () => {
+describe.runIf(sqlite())("mcp-registry", () => {
   const MIRROR =
     "https://raw.githubusercontent.com/rosmur/official-mcp-registry-database/main/official_mcp_registry.db";
   it("puts the original emitWarning back, even with checks running at once", async () => {
@@ -698,13 +777,38 @@ describe("mcp-registry", () => {
     expect(r!.note).toMatch(/^ai\.old\/check and 2 more use this name/);
     expect(r!.meta).toMatchObject({ servers: 3 });
   });
+
+  it("dates a free answer by the newest update in the mirror, not by the download", async () => {
+    const db = mcpDatabase(["ai.new/check"]);
+    const [r] = await check("other", selectChannels({ only: ["mcp-registry"] }), {
+      fetch: fakeFetch({ [MIRROR]: () => new Response(new Uint8Array(db)) }),
+      whois: fakeWhois(),
+      backoffMs: 0,
+    });
+    expect(r!.note).toContain("mirror of the registry from 2026-10-21");
+  });
 });
 
 describe("open-vsx", () => {
   it("does not read the server's /api/version route as a namespace called version", async () => {
     const r = await one("open-vsx", "version", {
       "https://open-vsx.org/api/version": [200, { version: "v1.2.0", maxExtensionSize: 1 }],
-      "https://open-vsx.org/api/-/search?query=version&size=100": [200, { extensions: [] }],
+      "https://marketplace.visualstudio.com/publishers/version": 404,
+      ...Object.fromEntries(
+        ["asc", "desc"].map((order) => [
+          `https://open-vsx.org/api/-/search?size=1000&offset=0&sortBy=timestamp&sortOrder=${order}`,
+          [
+            200,
+            {
+              totalSize: 100,
+              extensions: Array.from({ length: 100 }, (_, i) => ({
+                namespace: `ns${i}`,
+                name: "x",
+              })),
+            },
+          ],
+        ]),
+      ),
     });
     expect(r).toMatchObject({ status: "available", certainty: "probable" });
   });
@@ -719,6 +823,40 @@ describe("jetbrains", () => {
       ],
     });
     expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
+});
+
+describe("app titles", () => {
+  it("drops the maker's name from the front of a title", () => {
+    expect(sameAppName("Google Gemini", "Gemini", "Google LLC")).toBe(true);
+    expect(sameAppName("Microsoft Copilot", "copilot", "Microsoft Corporation")).toBe(true);
+    // Only the maker's own name: another leading word still makes a different title.
+    expect(sameAppName("Google Gemini", "Gemini", "Someone Else")).toBe(false);
+    expect(sameAppName("Notion Calendar", "Calendar", "Notion Labs")).toBe(true);
+    expect(sameAppName("Claude by Anthropic", "Claude", "Anthropic PBC")).toBe(true);
+    // "by" that does not name the developer is part of the title.
+    for (const [title, name] of [
+      ["Stand by Me", "Stand"],
+      ["Side by Side", "Side"],
+      ["Step by Step: Habit Tracker", "Step"],
+    ]) {
+      expect(sameAppName(title!, name!, "Indie Dev"), title).toBe(false);
+    }
+  });
+
+  it("searches the stores a Chinese, Japanese or Korean name would be released in", () => {
+    expect(storefronts("微信").map((s) => s.country)).toEqual(["us", "cn", "tw"]);
+    expect(storefronts("ポケモン").map((s) => s.country)).toEqual(["us", "jp"]);
+    expect(storefronts("카카오톡").map((s) => s.country)).toEqual(["us", "kr"]);
+    expect(storefronts("nameable").map((s) => s.country)).toEqual(["us"]);
+  });
+
+  it("reports the App Store's plain-text rate limit as unknown", async () => {
+    const r = await one("app-store", "thing", {
+      "https://itunes.apple.com/search?term=thing&entity=software&limit=200&country=us":
+        new Response("Rate limit has been exceeded for: itunes-apple-com|general|192.0.2.1"),
+    });
+    expect(r).toMatchObject({ status: "unknown", note: expect.stringContaining("rate limited") });
   });
 });
 

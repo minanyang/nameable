@@ -6,6 +6,15 @@
 - A rule a registry applies only to new names (reserved words, names kept for its owners, newer formats) no longer hides a name published before it: such a name shows as taken, with its link.
 - RubyGems free answers are now probable: a yanked gem spelled with other capitals still holds the name and cannot be seen.
 - A table taller than the terminal is printed once instead of redrawn.
+- npm, PyPI, crates.io and Homebrew also apply their new-package-only rules after the lookup: `events`, `JSONStream`, `asyncio`, `1password` and `firefox@developer-edition` show as taken, not refused. A rule a registry would refuse a name by also applies when the lookup cannot tell.
+- App stores: a title that leads with its maker's name ("Google Gemini") or names it after "by" matches; names in Chinese, Japanese or Korean are also searched in those storefronts.
+- Open VSX: checks every namespace for the similar-name rule, and refuses a name a VS Code Marketplace publisher already has.
+- A host that stops answering is skipped for the rest of the run instead of being waited on for each name; requests to rate-limited hosts (Google's RDAP, the App Store) are paced, and a short `Retry-After` is honored.
+- The PyPI index is read as it streams in, using a fraction of the memory. MCP calls running at the same time share downloads.
+- `--tlds` takes at most 20 TLDs, and a TLD must be a valid DNS label. `--clear-cache` takes no names, reports errors in one line and supports `--json`.
+- `nameable mcp` answers lines that are not JSON-RPC messages with a JSON-RPC error instead of ignoring them.
+- Rows wider than the terminal, and bidirectional control characters in names or descriptions, no longer garble the table.
+- The published package no longer ships source maps.
 - New package registry channels: `rubygems` (case-insensitive uniqueness, reserved names, yanked gems held for 100 days, the typo rule against popular or recent gems), `packagist` (the name as a vendor, reserved vendors, the typo rule against well-downloaded packages), `pub` (Dart reserved words, names kept for the Dart and Flutter teams, pub.dev's similar-name rule), `nuget` (unlisted packages, IDs NuGet deleted but still holds) and `docker` (Docker Hub users and organizations, including accounts only a redirect reveals, and official images).
 - `mcp-registry`: servers in the official MCP Registry whose name part matches, read from a daily community mirror (rosmur/official-mcp-registry-database), because the registry's own search takes 30 seconds or more. Needs Node.js 22.13 or later; older versions report it as unknown.
 - Editor extension channels: `vscode` (extension name, display name and publisher, all unique in the VS Code Marketplace), `open-vsx` (the name as a namespace, with Open VSX's similar-namespace rule) and `jetbrains` (plugin ID and name, with the words JetBrains refuses in new plugin names).

@@ -23,7 +23,10 @@ export const github: Channel = defineChannel({
         type: string;
         public_repos: number;
         updated_at: string;
-      };
+      } | null;
+      if (typeof user?.login !== "string") {
+        return { status: "unknown", note: "GitHub returned something other than an account" };
+      }
       return {
         status: "taken",
         url: `https://github.com/${user.login}`,

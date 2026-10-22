@@ -31,8 +31,8 @@ export const displayWidth = (text: string): number =>
  * move the cursor, rewrite a row or break the in-place redraw with a newline.
  */
 export const printable = (text: string): string =>
-  // oxlint-disable-next-line no-control-regex
-  text.replace(/[\u0000-\u001f\u007f-\u009f]+/g, " ");
+  // Control characters, and bidirectional controls that would reorder the rest of the row.
+  text.replace(/[\p{Cc}\p{Bidi_Control}]+/gu, " ");
 const pad = (text: string, width: number) =>
   text + " ".repeat(Math.max(0, width - displayWidth(text)));
 
@@ -67,18 +67,19 @@ export function createRenderer(out: Output, color: boolean) {
    * `updates` changes. Rows must never wrap. A block taller than the terminal cannot be rewritten (the
    * cursor stops at the top of the screen), so it is printed once, after the last change.
    */
-  function block(rows: string[], updates: number) {
+  function block(rows: string[], updates: number, fits: boolean) {
     const draw = (redraw: boolean) =>
       out.write(
         `${redraw ? `\x1b[${rows.length}A` : ""}${rows.map((r) => `\r\x1b[2K${r}\n`).join("")}`,
       );
-    const live = !out.rows || rows.length < out.rows;
+    // A row wider than the terminal wraps, and the cursor moves would then miss lines.
+    const live = fits && (!out.rows || rows.length < out.rows);
     if (live) draw(false);
     let done = 0;
-    return () => {
+    return (changed = true) => {
       done++;
-      if (live) draw(true);
-      else if (done === updates) draw(false);
+      if (live && changed) draw(true);
+      else if (!live && done === updates) draw(false);
     };
   }
 
@@ -98,7 +99,9 @@ export function createRenderer(out: Output, color: boolean) {
     const rows = channels.map(
       (c) => `  ${paint("dim", "·")} ${pad(c.label, width)} ${paint("dim", "checking…")}`,
     );
-    const redraw = block(rows, channels.length);
+    // Every row fits once its note is clipped, unless the label and status alone do not.
+    const used = 2 + 1 + 1 + width + 1 + STATUS_WIDTH + 1;
+    const redraw = block(rows, channels.length, used < columns());
     return (_name: string, result: CheckResult) => {
       rows[channels.findIndex((c) => c.id === result.channel)] = line(result, width);
       redraw();
@@ -126,11 +129,16 @@ export function createRenderer(out: Output, color: boolean) {
       `  ${" ".repeat(width)}  ${shown.map((n) => pad(clip(printable(n), cell - 2), cell)).join("")}`,
       ...channels.map((_, i) => row(i)),
     ];
-    const redraw = block(rows, channels.length * names.length);
+    const redraw = block(
+      rows,
+      channels.length * names.length,
+      2 + width + 2 + cell * shown.length < columns(),
+    );
     return (name: string, result: CheckResult) => {
       const col = shown.indexOf(name);
       const i = channels.findIndex((c) => c.id === result.channel);
-      if (col < 0 || i < 0) return redraw();
+      // A name past the last column changes nothing on screen.
+      if (col < 0 || i < 0) return redraw(false);
       const look = LOOK[result.status];
       const mark = `${look.mark}${probable(result) ? "*" : ""}`;
       cells[i]![col] = { text: paint(look.style, mark), plain: mark.length };
@@ -145,7 +153,7 @@ export function createRenderer(out: Output, color: boolean) {
     const cell = cellWidth(channels, names);
     const counts = reports
       .slice(0, shown)
-      .map((r) => `${r.results.filter(free).length}/${r.results.length}`.padEnd(cell))
+      .map((r) => `${r.results.filter(free).length}/${r.results.length} `.padEnd(cell))
       .join("");
     const legend = ORDER.map((s) => `${paint(LOOK[s].style, LOOK[s].mark)} ${s}`).join("  ");
     const hidden = reports.length - shown;

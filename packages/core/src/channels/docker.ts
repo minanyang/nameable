@@ -25,21 +25,36 @@ export const docker: Channel = defineChannel({
       get(ctx, `${API}/namespaces/${name}/repositories/?page_size=1`),
       get(ctx, `${API}/repositories/library/${name}/`),
     ]);
-    const held = (res: Response) => res.status === 200 || res.status === 308;
+    // A 200 counts only with the account in it, so a captive portal's page proves nothing.
+    const account = async (res: Response, key: string) =>
+      res.status === 308 ||
+      (res.status === 200 &&
+        typeof ((await res.json()) as Record<string, unknown> | null)?.[key] === "string");
+    const [isUser, isOrg] = await Promise.all([account(user, "username"), account(org, "orgname")]);
+    const held = (res: Response) => (res === user ? isUser : isOrg);
     const count = repos.status === 200 ? await repoCount(repos) : undefined;
 
     // Any one signal of a holder is proof enough, even if another request failed.
     if (held(user) || held(org) || (count ?? 0) > 0) {
-      const kind = user.status === 200 ? "user" : org.status === 200 ? "organization" : "account";
-      const page = user.status === 200 || org.status === 200;
+      const kind =
+        isUser && user.status === 200
+          ? "user"
+          : isOrg && org.status === 200
+            ? "organization"
+            : "account";
+      const page = kind !== "account";
       return {
         status: "taken",
         url: page ? `https://hub.docker.com/u/${name}` : `${API}/namespaces/${name}/repositories/`,
-        note: count === undefined ? `Docker ${kind}` : `Docker ${kind}, ${plural(count)}`,
+        // A hidden account has no page on the site; the API listing of its repositories is the evidence.
+        note: `${count === undefined ? `Docker ${kind}` : `Docker ${kind}, ${plural(count)}`}${page ? "" : "; it has no profile page, the link lists its repositories"}`,
         meta: { kind, repositories: count },
       };
     }
-    if (official.status === 200) {
+    const image =
+      official.status === 200 &&
+      ((await official.json()) as { namespace?: unknown } | null)?.namespace === "library";
+    if (image) {
       return {
         status: "taken",
         url: `https://hub.docker.com/_/${name}`,
@@ -47,6 +62,7 @@ export const docker: Channel = defineChannel({
         meta: { kind: "official image" },
       };
     }
+    // Anything else, including a 200 that did not hold an account or image, leaves it unknown.
     if (user.status !== 404 || org.status !== 404 || count !== 0 || official.status !== 404) {
       const statuses = [user, org, repos, official].map((r) => r.status).join("/");
       return { status: "unknown", note: `Docker Hub returned HTTP ${statuses}` };

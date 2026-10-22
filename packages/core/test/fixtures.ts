@@ -1,5 +1,4 @@
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { selectChannels, type Channel, type Status } from "../src/index.js";
@@ -57,6 +56,8 @@ export type Fixture = {
    * keep it (`refuses` in define.ts). Every other rejected class must be refused without a request.
    */
   refusedAfterLookup?: InputClass[];
+  /** Whether a name over `maxLength` is refused only after a lookup, as with `refusedAfterLookup`. */
+  lengthRefusedAfterLookup?: boolean;
   /** Classes the channel cannot check at all, answered `unknown`: neither free nor refused. */
   unchecked?: InputClass[];
   /** The longest name the channel accepts, when it has a limit. */
@@ -138,7 +139,7 @@ const npmFree = (searchHits: string[] = [], existing: string[] = []): Service =>
       return [200, { objects: searchHits.map((name) => ({ package: { name } })) }];
     }
     const name = decodeURIComponent(u.slice("https://registry.npmjs.org/".length));
-    return existing.includes(name) ? [200, { versions: { "1.0.0": {} } }] : 404;
+    return existing.includes(name) ? [200, { name, versions: { "1.0.0": {} } }] : 404;
   },
   whois: noWhois,
 });
@@ -203,23 +204,27 @@ const appStoreFree = (trackName = "Nameable Pro Suite"): Service => ({
   whois: noWhois,
 });
 /** A Google Play search page: its results sit in an AF_initDataCallback call, as on the real page. */
-const playPage = (titles: string[]) => {
-  const items = titles.map((title, i) => {
+/** Each app is a title, or a title and its developer. */
+type PlayApp = string | [title: string, developer: string];
+const playPage = (titles: PlayApp[]) => {
+  const items = titles.map((entry, i) => {
+    const [title, developer] = typeof entry === "string" ? [entry, "Developer"] : entry;
     const app: unknown[] = [];
     app[0] = [`com.example.app${i}`];
     app[3] = title;
-    app[14] = "Developer";
+    app[14] = developer;
     return [app];
   });
   const section: unknown[] = [];
-  section[22] = [items];
+  if (items.length) section[22] = [items];
+  // With no results, Play sends one section whose token decodes to "zero_results_cluster".
+  else section[3] = [Buffer.from("\x12\x14zero_results_cluster").toString("base64")];
   const data = JSON.stringify([[null, [section]]]);
-  const empty = titles.length ? "" : "No results for";
   return new Response(
-    `<script>AF_initDataCallback({key: 'ds:4', hash: '1', data:${data}, sideChannel: {}});</script>${empty}`,
+    `<script>AF_initDataCallback({key: 'ds:4', hash: '1', data:${data}, sideChannel: {}});</script>`,
   );
 };
-const playFree = (titles: string[] = []): Service => ({
+const playFree = (titles: PlayApp[] = []): Service => ({
   http: () => playPage(titles),
   whois: noWhois,
 });
@@ -242,13 +247,27 @@ const vscodeFree = (
       : publisher,
   whois: noWhois,
 });
-const openVsxFree = (namespaces: string[] = ["redhat"]): Service => ({
-  http: (u) =>
-    u.includes("/-/search?")
-      ? [200, { extensions: namespaces.map((namespace) => ({ namespace, name: "x" })) }]
-      : 404,
-  whois: noWhois,
-});
+// Open VSX search pages list extensions with their namespace; the channel reads every namespace from them.
+const openVsxFree = (
+  namespaces: string[] = ["redhat"],
+  opts: { publisher?: Reply } = {},
+): Service => {
+  const all = [...Array.from({ length: 120 }, (_, i) => `publisher${i}`), ...namespaces];
+  return {
+    http: (u) => {
+      if (u.startsWith("https://marketplace.visualstudio.com/publishers/"))
+        return opts.publisher ?? 404;
+      if (u.includes("/-/search?")) {
+        return [
+          200,
+          { totalSize: all.length, extensions: all.map((namespace) => ({ namespace, name: "x" })) },
+        ];
+      }
+      return 404;
+    },
+    whois: noWhois,
+  };
+};
 const jetbrainsFree = (names: string[] = ["Other"]): Service => ({
   http: (u) =>
     u.includes("/searchPlugins?")
@@ -259,15 +278,26 @@ const jetbrainsFree = (names: string[] = ["Other"]): Service => ({
       : 404,
   whois: noWhois,
 });
+/** node:sqlite where this Node has it (22.13 and later); the MCP Registry channel needs it. */
+export const sqlite = () =>
+  process.getBuiltinModule?.("node:sqlite") as typeof import("node:sqlite") | undefined;
+
 /** A copy of the MCP Registry mirror's database, with the servers table the channel reads. */
 export function mcpDatabase(names: string[] = []): Buffer {
+  const { DatabaseSync } = sqlite()!;
   const dir = mkdtempSync(join(tmpdir(), "nameable-mcp-fixture-"));
   try {
     const db = new DatabaseSync(join(dir, "registry.db"));
-    db.exec("CREATE TABLE servers (id INTEGER PRIMARY KEY, entry_name TEXT NOT NULL, status TEXT)");
-    const insert = db.prepare("INSERT INTO servers (entry_name, status) VALUES (?, ?)");
-    for (let i = 0; i < 1000; i++) insert.run(`io.github.someone/server${i}`, "active");
-    for (const name of names) insert.run(name, "active");
+    db.exec(
+      "CREATE TABLE servers (id INTEGER PRIMARY KEY, entry_name TEXT NOT NULL, status TEXT, updated_at TEXT)",
+    );
+    const insert = db.prepare(
+      "INSERT INTO servers (entry_name, status, updated_at) VALUES (?, ?, ?)",
+    );
+    for (let i = 0; i < 1000; i++) {
+      insert.run(`io.github.someone/server${i}`, "active", "2026-10-20T00:00:00Z");
+    }
+    for (const name of names) insert.run(name, "active", "2026-10-21T08:00:00Z");
     db.close();
     return readFileSync(join(dir, "registry.db"));
   } finally {
@@ -275,8 +305,11 @@ export function mcpDatabase(names: string[] = []): Buffer {
   }
 }
 const mcpFree = (names: string[] = ["io.github.x/nameable-tools"]): Service => {
-  const bytes = mcpDatabase(names);
-  return { http: () => new Response(new Uint8Array(bytes)), whois: noWhois };
+  let bytes: Buffer | undefined;
+  return {
+    http: () => new Response(new Uint8Array((bytes ??= mcpDatabase(names)))),
+    whois: noWhois,
+  };
 };
 const NUGET_DELETED = "<p>This package has been deleted from the gallery.</p>";
 const PUB_NAMES = "https://pub.dev/api/package-names";
@@ -308,9 +341,12 @@ export const FIXTURES: Fixture[] = [
   {
     channel: only("npm"),
     freeCertainty: "probable",
+    // Old packages may have capitals, ~'!()* and more than 214 characters; new ones may not.
+    refusedAfterLookup: ["uppercase", "specialChars"],
+    lengthRefusedAfterLookup: true,
     free: npmFree(),
     taken: {
-      http: () => [200, { versions: { "1.0.0": {} }, description: "held" }],
+      http: () => [200, { name: "nameable", versions: { "1.0.0": {} }, description: "held" }],
       whois: noWhois,
     },
     // validate-npm-package-name v7, validForNewPackages.
@@ -438,10 +474,21 @@ export const FIXTURES: Fixture[] = [
     freeCertainty: "confirmed",
     free: brewFree(),
     taken: {
-      http: (u) => (u.includes("/formula/") ? [200, { desc: "held" }] : 404),
+      http: (u) => (u.includes("/formula/") ? [200, { name: "held", desc: "held" }] : 404),
       whois: noWhois,
     },
     // FormulaNameCaskTokenAuditor, and Formulary.class_s for the class name a formula loads as.
+    // Casks hold names a new formula may not have, so the formula rules apply after the lookup.
+    refusedAfterLookup: [
+      "uppercase",
+      "leadingDigit",
+      "doubleHyphen",
+      "reservedHyphens",
+      "leadingHyphen",
+      "trailingHyphen",
+      "trailingAt",
+      "punycode",
+    ],
     accepts: {
       ...reject,
       typical: true,
@@ -452,6 +499,18 @@ export const FIXTURES: Fixture[] = [
       single: true,
     },
     refused: [
+      {
+        name: "1password",
+        why: "a cask whose name a new formula could not have",
+        expect: "taken",
+        service: {
+          http: (u) =>
+            u.includes("/cask/1password.json")
+              ? [200, { token: "1password", desc: "Password manager" }]
+              : 404,
+          whois: noWhois,
+        },
+      },
       { name: "pip", why: "disallowed in homebrew/core", expect: "unavailable" },
       { name: "liblzma5", why: "disallowed (unanchored lzma pattern)", expect: "unavailable" },
       { name: "name@beta", why: "@ not before a version: no Ruby class", expect: "unavailable" },
@@ -525,6 +584,12 @@ export const FIXTURES: Fixture[] = [
     maxLength: 255,
     refused: [
       { name: "thing.gemspec", why: "ends with a file extension", expect: "unavailable" },
+      {
+        name: "foo.gem",
+        why: "refused by name even though its page answers 403, so the lookup cannot tell",
+        expect: "unavailable",
+        service: { http: (u) => (u.endsWith("/gems/foo.gem") ? 403 : 404), whois: noWhois },
+      },
       { name: "123", why: "no letter", expect: "unavailable" },
       {
         name: "rbconfig",
@@ -675,7 +740,7 @@ export const FIXTURES: Fixture[] = [
       http: (u) =>
         u === PUB_NAMES
           ? [200, { packages: ["nameable"], nextUrl: null }]
-          : [200, { latest: { pubspec: { description: "held" } } }],
+          : [200, { name: "nameable", latest: { pubspec: { description: "held" } } }],
       whois: noWhois,
     },
     // pub_package_reader: letters, digits and _, starting with a letter or _, lowercase for new names.
@@ -688,7 +753,7 @@ export const FIXTURES: Fixture[] = [
         why: "a mixed-case package from before the lowercase rule is taken, not refused",
         expect: "taken",
         service: {
-          http: (u) => (u.endsWith("/api/packages/Pong") ? [200, {}] : 404),
+          http: (u) => (u.endsWith("/api/packages/Pong") ? [200, { name: "Pong" }] : 404),
           whois: noWhois,
         },
       },
@@ -730,7 +795,7 @@ export const FIXTURES: Fixture[] = [
         name: "bitnami",
         why: "an organization, which /users redirects to /orgs",
         expect: "taken",
-        service: dockerFree({ users: 308, orgs: [200, {}] }),
+        service: dockerFree({ users: 308, orgs: [200, { orgname: "bitnami" }] }),
       },
       {
         name: "hiddenid",
@@ -743,37 +808,6 @@ export const FIXTURES: Fixture[] = [
         why: "an official image whose name no account holds",
         expect: "taken",
         service: dockerFree({ repositories: [200, { namespace: "library" }] }),
-      },
-    ],
-  },
-  {
-    channel: only("mcp-registry"),
-    freeCertainty: "probable",
-    free: mcpFree(),
-    taken: mcpFree(["io.github.someone/nameable"]),
-    // server.json: the name part of `namespace/name` is [a-zA-Z0-9._-]+.
-    accepts: {
-      ...reject,
-      typical: true,
-      uppercase: true,
-      digits: true,
-      leadingDigit: true,
-      hyphen: true,
-      doubleHyphen: true,
-      reservedHyphens: true,
-      underscore: true,
-      dot: true,
-      leadingHyphen: true,
-      trailingHyphen: true,
-      single: true,
-      punycode: true,
-    },
-    refused: [
-      {
-        name: "NameAble",
-        why: "another namespace's server, compared ignoring case",
-        expect: "taken",
-        service: mcpFree(["com.example/nameable"]),
       },
     ],
   },
@@ -815,7 +849,6 @@ export const FIXTURES: Fixture[] = [
       reservedHyphens: true,
       underscore: true,
       dot: true,
-      leadingHyphen: true,
       trailingHyphen: true,
       single: true,
       punycode: true,
@@ -964,6 +997,18 @@ export const FIXTURES: Fixture[] = [
         expect: "unavailable",
         service: openVsxFree(["redhat"]),
       },
+      {
+        name: "muhammadsammy",
+        why: "within 20% of a namespace that search for the name does not return",
+        expect: "unavailable",
+        service: openVsxFree(["muhammad-sammy"]),
+      },
+      {
+        name: "esbenp",
+        why: "a VS Code Marketplace publisher's name, which only its verified owner may use",
+        expect: "unavailable",
+        service: openVsxFree(undefined, { publisher: [200, {}] }),
+      },
     ],
   },
   {
@@ -971,7 +1016,7 @@ export const FIXTURES: Fixture[] = [
     freeCertainty: "probable",
     free: jetbrainsFree(),
     taken: {
-      http: () => [200, { name: "Nameable", link: "/plugin/1-nameable" }],
+      http: () => [200, { xmlId: "dev.nameable", name: "Nameable", link: "/plugin/1-nameable" }],
       whois: noWhois,
     },
     // structure-base Validator.kt: ALLOWED_NAME_SYMBOLS, at most 64.
@@ -1079,7 +1124,7 @@ export const FIXTURES: Fixture[] = [
         name: "claude",
         why: "a title that names its maker after 'by'",
         expect: "taken",
-        service: playFree(["Claude by Anthropic"]),
+        service: playFree([["Claude by Anthropic", "Anthropic PBC"]]),
       },
       {
         name: "todoist",
@@ -1125,3 +1170,38 @@ export const FIXTURES: Fixture[] = [
     ],
   })),
 ];
+
+// Without node:sqlite (Node before 22.13) the channel can only answer unknown, so it has no fixture.
+if (sqlite()) {
+  FIXTURES.push({
+    channel: only("mcp-registry"),
+    freeCertainty: "probable",
+    free: mcpFree(),
+    taken: mcpFree(["io.github.someone/nameable"]),
+    // server.json: the name part of `namespace/name` is [a-zA-Z0-9._-]+.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      dot: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      single: true,
+      punycode: true,
+    },
+    refused: [
+      {
+        name: "NameAble",
+        why: "another namespace's server, compared ignoring case",
+        expect: "taken",
+        service: mcpFree(["com.example/nameable"]),
+      },
+    ],
+  });
+}
