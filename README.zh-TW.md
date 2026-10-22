@@ -168,8 +168,8 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 | VS Code Marketplace   | 把名稱當成擴充名稱、顯示名稱和 publisher 查，三者在那裡都唯一；已移除的擴充仍保留名稱但看不到，所以「可用」只能是 probable                                                                                                          |
 | Open VSX              | 把名稱當成 namespace 查：Open VSX 對「與既有 namespace 差距在 20% 以內」的拒絕規則，以及「VS Code Marketplace 上已有的 publisher 名稱只有通過驗證的擁有者能用」的規則；沒有公開擴充的 namespace 看不到，所以「可用」只能是 probable |
 | JetBrains Marketplace | 把名稱當成 plugin ID 和 plugin 名稱查：JetBrains 不允許新名稱包含的字（`plugin`、`IDEA`、產品名稱），以及名稱必須唯一的審核規範；尚未核准的 plugin 看不到，所以「可用」只能是 probable                                              |
-| App Store             | 美區 iOS 和 macOS 搜尋中同名的 app（忽略大小寫、標點和副標題）；名稱在同一語系唯一，但看不到還沒上架的 app，所以「可用」只能是 probable                                                                                             |
-| Google Play           | 美區搜尋中同名的 app。標題不唯一，查到同名代表撞名但不會被擋，「可用」只能是 probable                                                                                                                                               |
+| App Store             | iOS 和 macOS 搜尋中名稱完全相同的 app（忽略大小寫和標點），查美區，中文、日文或韓文名稱也查對應地區；只多了副標題或開發者名稱的標題會註明為相似。名稱在同一語系唯一，但看不到還沒上架的 app，所以「可用」只能是 probable            |
+| Google Play           | 搜尋中標題完全相同的 app，查的地區同 App Store；只多了副標題或開發者名稱的標題會註明為相似。標題不唯一，查到同名代表撞名但不會被擋，「可用」只能是 probable                                                                         |
 | Claude plugins        | Anthropic 官方 marketplace；plugin 命名規則，以及 `claude plugin validate` 保留給 Anthropic 的名稱                                                                                                                                  |
 
 ### 名稱清單

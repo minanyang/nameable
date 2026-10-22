@@ -26,8 +26,8 @@ Sixteen new channels, channels picked from your project, and fixes from three ro
   with Open VSX's similar-namespace and VS Code publisher rules) and `jetbrains` (plugin ID and name, with the words
   JetBrains refuses in new plugin names).
 - App stores: `app-store` and `google-play` show whether an app already has the name, in the US store and, for
-  Chinese, Japanese or Korean names, in those stores too. A title that only adds its maker ("Google Gemini") is
-  noted as similar. A free answer there is always probable.
+  Chinese, Japanese or Korean names, in those stores too. Only an exact title holds the name; one that adds a
+  subtitle or its maker ("Google Gemini") is noted as similar. A free answer there is always probable.
 
 **Channels picked from your project**
 

@@ -7,17 +7,16 @@ const norm = (s: string) =>
     .normalize("NFKC")
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, "");
-// Store titles add a subtitle ("Todoist: To Do List").
 const head = (title: string) => title.split(/:| [-–—|] /)[0]!;
 
 /** Whether a name has letters or digits to compare at all ("🚀" and "!!" do not). */
 export const comparable = (name: string): boolean => norm(name) !== "";
 
 /**
- * How a store title relates to a name. "same": the title is the name, or the name followed by a subtitle
- * ("Todoist: To Do List"). "similar": the title only adds its maker, before the name ("Google Gemini" by
- * Google LLC) or after "by" ("Claude by Anthropic"); store names are unique by their exact title, so that
- * is a clash to weigh, not a holder of the name.
+ * How a store title relates to a name. "same": the title is the name, ignoring case and punctuation.
+ * "similar": the title adds a subtitle ("Todoist: To Do List") or its maker, before the name ("Google
+ * Gemini" by Google LLC) or after "by" ("Claude by Anthropic"). Store names are unique by their exact
+ * title, so a similar one is a clash to weigh, not a holder of the name.
  */
 export function appNameMatch(
   title: string,
@@ -26,19 +25,20 @@ export function appNameMatch(
 ): "same" | "similar" | undefined {
   const wanted = norm(name);
   if (wanted === "") return undefined;
-  const same = (t: string) => norm(t) === wanted || norm(head(t)) === wanted;
-  if (same(title)) return "same";
+  if (norm(title) === wanted) return "same";
+  const close = (t: string) => norm(t) === wanted || norm(head(t)) === wanted;
+  if (close(title)) return "similar";
   const maker =
     typeof developer === "string" ? developer.split(/[^\p{L}\p{N}]+/u).find(Boolean) : "";
   if (!maker) return undefined;
   if (
     title.toLowerCase().startsWith(`${maker.toLowerCase()} `) &&
-    same(title.slice(maker.length + 1))
+    close(title.slice(maker.length + 1))
   ) {
     return "similar";
   }
   const by = title.toLowerCase().lastIndexOf(" by ");
-  if (by > 0 && norm(title.slice(by + 4)).startsWith(norm(maker)) && same(title.slice(0, by))) {
+  if (by > 0 && norm(title.slice(by + 4)).startsWith(norm(maker)) && close(title.slice(0, by))) {
     return "similar";
   }
   return undefined;

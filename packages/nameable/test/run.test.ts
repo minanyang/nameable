@@ -57,6 +57,8 @@ describe("usage", () => {
     [["foo", "--tlds", " , "], "--tlds needs at least one value"],
     [["foo", "--only", "nope"], 'unknown channel "nope"'],
     [["foo", "--bogus"], "unknown option --bogus"],
+    [["foo", "--only"], "--only needs a value"],
+    [["foo", "--json=1"], "--json takes no value"],
     [["mcp", "--only", "npm"], "`mcp` takes no options"],
     [["foo", "--only", "npm", "--all"], "--only and --all cannot be combined"],
     [["foo", "--only", "npm", "--tlds", "io"], "--tlds needs domain in --only"],

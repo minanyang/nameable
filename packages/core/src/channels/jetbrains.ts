@@ -25,7 +25,12 @@ export const jetbrains: Channel = defineChannel({
   label: "JetBrains Marketplace",
   category: "editor",
   // Existing plugins predate the character rules ("Sketch It!"), so only an empty name is refused first.
-  rules: (name) => (name.trim() ? undefined : "JetBrains plugin names cannot be empty"),
+  rules: (name) =>
+    !name.trim()
+      ? "JetBrains plugin names cannot be empty"
+      : name.length > 255
+        ? "JetBrains plugin names and IDs are at most 255 characters"
+        : undefined,
   // Plugins published before these checks keep their names (PluginBeanValidator flags only new plugins).
   refuses: (name) => {
     if (!NAME_CHARS.test(name.trim())) {
@@ -65,7 +70,13 @@ export const jetbrains: Channel = defineChannel({
       return { status: "unknown", note: "JetBrains Marketplace returned an unexpected list" };
     }
     const wanted = name.trim().toLowerCase();
-    const hit = plugins.find((p) => typeof p?.name === "string" && p.name.toLowerCase() === wanted);
+    // A plugin ID can have spaces or belong to a TeamCity plugin, which the ID lookup does not serve;
+    // search returns those with their ID.
+    const hit = plugins.find(
+      (p) =>
+        (typeof p?.name === "string" && p.name.toLowerCase() === wanted) ||
+        (typeof p?.xmlId === "string" && p.xmlId.toLowerCase() === wanted),
+    );
     if (hit) {
       return {
         status: "taken",

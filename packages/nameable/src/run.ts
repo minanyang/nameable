@@ -123,9 +123,17 @@ function parse(argv: string[]) {
     });
   } catch (err) {
     // Node's own wording ("… place it at the end of the command after '--', as in '-- \"--x\"") is
-    // longer than the mistake; name the option instead.
-    const option = /'(-[^']*)'/.exec((err as Error).message)?.[1];
-    throw new UsageError(option ? `unknown option ${option}` : (err as Error).message);
+    // longer than the mistake; say it plainly, per kind of mistake.
+    const { code, message } = err as Error & { code?: string };
+    const option = /'(-[^' ]*)/.exec(message)?.[1];
+    if (code === "ERR_PARSE_ARGS_UNKNOWN_OPTION" && option)
+      throw new UsageError(`unknown option ${option}`);
+    if (code === "ERR_PARSE_ARGS_INVALID_OPTION_VALUE" && option) {
+      throw new UsageError(
+        message.includes("does not take") ? `${option} takes no value` : `${option} needs a value`,
+      );
+    }
+    throw new UsageError(message);
   }
   const { values, positionals } = parsed;
   // `check` is the subcommand only when names follow it; `nameable check` checks the name "check".

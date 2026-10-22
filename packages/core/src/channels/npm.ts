@@ -55,7 +55,9 @@ const squash = (s: string) => s.replace(/[-_.]/g, "");
  * cannot all be probed, so a name that passes is only probably free.
  */
 const SEARCH_LENGTH = { min: 2, max: 64 };
-const MAX_PROBED_LENGTH = 40;
+// Each probe is one request: a 40-letter name would send 40, enough to be rate limited when several
+// names are checked together. Longer names are rarely a hyphen away from another, and stay probable.
+const MAX_PROBED_LENGTH = 20;
 
 async function similar(ctx: Context, name: string): Promise<string | undefined> {
   const queries = [...new Set([name, squash(name)])].filter(
@@ -89,12 +91,15 @@ async function similar(ctx: Context, name: string): Promise<string | undefined> 
       .filter((v) => v !== name)
       .map(async (variant) => {
         // The abbreviated document is far smaller than the full one for popular packages.
-        const res = await get(ctx, `${REGISTRY}/${variant}`, {
+        const res = await get(ctx, `${REGISTRY}/${encodeURIComponent(variant)}`, {
           headers: { accept: "application/vnd.npm.install-v1+json" },
         });
         if (res.status !== 200 && res.status !== 404)
           throw new Error(`registry HTTP ${res.status}`);
-        return res.status === 200 ? variant : undefined;
+        if (res.status === 404) return undefined;
+        // Only a document for that very package counts: "." or ".." would resolve to the registry root.
+        const doc = (await res.json()) as { name?: unknown } | null;
+        return doc?.name === variant ? variant : undefined;
       }),
   );
   return probes.find(Boolean);
@@ -107,7 +112,10 @@ async function scopeNote(ctx: Context, scope: string): Promise<string> {
   );
   if (res?.status === 200)
     return `@${scope} is an npm organization; only its members can publish under it`;
-  return `only the npm user or organization "${scope}" can publish under @${scope}; if nobody has that name, you can create it`;
+  if (res?.status === 404) {
+    return `only the npm user "${scope}" can publish under @${scope}; if nobody has that name, you can create it as an organization`;
+  }
+  return `only the owner of @${scope} can publish under it; whether that is you could not be checked`;
 }
 
 export const npm: Channel = defineChannel({

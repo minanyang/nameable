@@ -5,7 +5,7 @@ import type { Channel } from "../types.js";
 // NuGetGallery.Core/Packaging/PackageIdValidator.cs: letters, digits and _, joined by single
 // . or -; NuGet's client caps IDs at 100 characters. IDs are compared ignoring case.
 // .NET's \w, which the validator's ^\w+([.-]\w+)*$ uses, matches letters of any script (Felsökning.Utilities).
-const VALID = /^[\p{L}\p{N}\p{Mn}\p{Pc}]+(?:[.-][\p{L}\p{N}\p{Mn}\p{Pc}]+)*$/u;
+const VALID = /^[\p{L}\p{Nd}\p{Mn}\p{Pc}]+(?:[.-][\p{L}\p{Nd}\p{Mn}\p{Pc}]+)*$/u;
 const MAX = 100;
 
 type Registration = {

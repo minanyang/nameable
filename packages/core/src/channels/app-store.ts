@@ -70,7 +70,6 @@ export const appStore: Channel = defineChannel({
     return {
       status: "available",
       certainty: "probable",
-      url: similar ? String(similar.trackViewUrl) : undefined,
       note: `no app with this name in ${storeNames(stores)}${clash}; unreleased apps are not listed`,
     };
   },

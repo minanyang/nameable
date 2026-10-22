@@ -70,14 +70,27 @@ describe("npm", () => {
       [`${NPM}/@zq%2fzz`]: 404,
       [`${NPM}/-/org/zq/package`]: 404,
     });
-    expect(user.note).toContain('only the npm user or organization "zq"');
+    expect(user.note).toContain('only the npm user "zq" can publish under @zq');
+  });
+
+  it("does not count a 200 that is not the probed package's own document", async () => {
+    // "-." swaps to "..", which resolves to the registry root and answers 200.
+    const r = await one("npm", "zz_y", {
+      [`${NPM}/zz_y`]: 404,
+      [searchUrl("zz_y")]: searchHits(),
+      [searchUrl("zzy")]: searchHits(),
+      [`${NPM}/zz-y`]: [200, { db_name: "registry" }],
+      [`${NPM}/zz.y`]: 404,
+      [`${NPM}/zzy`]: 404,
+    });
+    expect(r).toMatchObject({ status: "available" });
   });
 
   it("is unavailable when a hyphenated spelling exists that search does not surface", async () => {
     const r = await one("npm", "lodashes", {
       [`${NPM}/lodashes`]: 404,
       [searchUrl("lodashes")]: searchHits(),
-      ...hyphenProbes("lodashes", { "lodash-es": 200 }),
+      ...hyphenProbes("lodashes", { "lodash-es": [200, { name: "lodash-es" }] }),
     });
     expect(r).toMatchObject({
       status: "unavailable",
@@ -872,7 +885,8 @@ describe("jetbrains", () => {
 describe("app titles", () => {
   it("tells a title that is the name from one that only adds its maker", () => {
     expect(appNameMatch("Slack", "slack")).toBe("same");
-    expect(appNameMatch("Todoist: To Do List", "todoist")).toBe("same");
+    expect(appNameMatch("Todoist: To Do List", "todoist")).toBe("similar");
+    expect(appNameMatch("Claude | Field Guide", "Claude", "Someone Else")).toBe("similar");
     // Store names are unique by exact title, so these are clashes, not holders.
     expect(appNameMatch("Google Gemini", "Gemini", "Google LLC")).toBe("similar");
     expect(appNameMatch("Microsoft Translator", "translator", "Microsoft Corporation")).toBe(
@@ -947,6 +961,20 @@ describe("names that exist despite a registry's rules for new names", () => {
     const r = await one("homebrew", "Git", {
       [`${api}/formula/git.json`]: [200, { name: "git", desc: "Distributed revision control" }],
       [`${api}/cask/git.json`]: 404,
+    });
+    expect(r.status).toBe("taken");
+  });
+
+  it("finds a JetBrains plugin by an ID with spaces, which the ID lookup cannot take", async () => {
+    const r = await one("jetbrains", "String Manipulation", {
+      "https://plugins.jetbrains.com/api/searchPlugins?search=String+Manipulation&max=20": [
+        200,
+        {
+          plugins: [
+            { name: "StringManipulation", xmlId: "String Manipulation", link: "/plugin/2162" },
+          ],
+        },
+      ],
     });
     expect(r.status).toBe("taken");
   });
@@ -1035,6 +1063,17 @@ describe("selectChannels", () => {
     [["domain:co.uk"], "several labels"],
   ])("rejects %j", (only, message) => {
     expect(() => selectChannels({ only })).toThrow(message);
+  });
+
+  it("counts every domain channel against the TLD limit, once per TLD", () => {
+    const many = Array.from({ length: 21 }, (_, i) => `domain:t${i}`);
+    expect(() => selectChannels({ only: many })).toThrow("at most 20 TLDs");
+    const nineteen = Array.from({ length: 19 }, (_, i) => `t${i}`);
+    expect(
+      selectChannels({ tlds: [...nineteen, "рф", "xn--p1ai"] }).filter(
+        (c) => c.category === "domain",
+      ),
+    ).toHaveLength(20);
   });
 
   it("rejects unknown channel ids", () => {

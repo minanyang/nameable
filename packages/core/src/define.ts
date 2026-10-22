@@ -38,7 +38,18 @@ export function defineChannel(spec: ChannelSpec): Channel {
       }
       const problem = spec.rules(name);
       if (problem) return { ...base, status: "unavailable", note: problem };
-      const result: CheckResult = { ...base, ...(await spec.lookup(name, ctx)) };
+      let result: CheckResult;
+      try {
+        result = { ...base, ...(await spec.lookup(name, ctx)) };
+      } catch (err) {
+        // A lookup that throws (a network error, a list it could not download) is handled by the runner,
+        // unless a new-name rule applies: then the answer keeps both reasons, as below.
+        const rule = spec.refuses?.(name);
+        if (!rule) throw err;
+        const timedOut = err instanceof Error && err.name === "TimeoutError";
+        const reason = timedOut ? "timed out" : err instanceof Error ? err.message : String(err);
+        return { ...base, status: "unknown", note: `${reason}; if nobody holds it, ${rule}` };
+      }
       const refused =
         result.status === "available" || result.status === "unknown"
           ? spec.refuses?.(name)

@@ -1,5 +1,5 @@
 import { readdir, readFile } from "node:fs/promises";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
 /** The channels a project ships on, read from its manifests, and the files that said so. */
 export type Detection = { only: string[]; from: string[] };
@@ -224,9 +224,9 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
  * the repository root (a directory with `.git`) or the home directory. Files are named relative to `start`.
  */
 export async function findProject(start: string, home?: string): Promise<Detection | undefined> {
-  for (let dir = start; ; dir = dirname(dir)) {
+  for (let dir = resolve(start); ; dir = dirname(dir)) {
     // A package.json in the home directory (left by `npm install` there) is not a project.
-    if (dir === home) return undefined;
+    if (home && dir === resolve(home)) return undefined;
     const found = await detectProject(dir);
     if (found) return { ...found, from: found.from.map((f) => relative(start, join(dir, f)) || f) };
     const entries = await list(dir);

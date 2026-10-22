@@ -938,7 +938,17 @@ export const FIXTURES: Fixture[] = [
     taken: geminiFree(["nameable"]),
     // Gemini CLI's validateName: letters, digits and dashes.
     // Names that exist despite these rules are looked up first; the rules apply to new names.
-    refusedAfterLookup: ["dot", "emoji", "specialChars", "trailingAt", "underscore", "unicode"],
+    refusedAfterLookup: [
+      "dot",
+      "emoji",
+      "specialChars",
+      "trailingAt",
+      "underscore",
+      "unicode",
+      "space",
+      "scoped",
+      "scopedUnderscore",
+    ],
     accepts: {
       ...reject,
       typical: true,
@@ -1092,7 +1102,7 @@ export const FIXTURES: Fixture[] = [
     channel: only("app-store"),
     freeCertainty: "probable",
     free: appStoreFree(),
-    taken: appStoreFree("Nameable: Find a Name"),
+    taken: appStoreFree("Nameable"),
     // App Store Connect: 2 to 30 characters.
     accepts: {
       ...reject,
@@ -1119,8 +1129,8 @@ export const FIXTURES: Fixture[] = [
     refused: [
       {
         name: "slack",
-        why: "a title whose head before the subtitle matches",
-        expect: "taken",
+        why: "a title with a subtitle is a similar title, not this one",
+        expect: "available",
         service: appStoreFree("Slack - Team Chat"),
       },
     ],
@@ -1166,8 +1176,8 @@ export const FIXTURES: Fixture[] = [
       },
       {
         name: "todoist",
-        why: "a title with a subtitle after a colon",
-        expect: "taken",
+        why: "a title with a subtitle after a colon is a similar title, not this one",
+        expect: "available",
         service: playFree(["Notion", "Todoist: To-Do List & Planner"]),
       },
     ],

@@ -78,11 +78,13 @@ const unique = (channels: Channel[]) =>
 export const MAX_TLDS = 20;
 
 export function selectChannels({ only, tlds = DEFAULT_TLDS }: Selection = {}): Channel[] {
-  if (new Set(tlds.map((t) => t.trim().replace(/^\./, "").toLowerCase())).size > MAX_TLDS) {
-    throw new Error(`at most ${MAX_TLDS} TLDs at a time`);
-  }
   const all = unique([...fixed, ...tlds.map(domainFor)]);
-  if (!only?.length) return all;
+  if (!only?.length) {
+    if (all.filter((c) => c.category === "domain").length > MAX_TLDS) {
+      throw new Error(`at most ${MAX_TLDS} TLDs at a time`);
+    }
+    return all;
+  }
 
   const picked: Channel[] = [];
   for (const raw of only) {
@@ -99,6 +101,10 @@ export function selectChannels({ only, tlds = DEFAULT_TLDS }: Selection = {}): C
     }
   }
   const chosen = unique(picked);
+  // Counted once channels are resolved: `domain:` entries in --only count too, and рф is xn--p1ai.
+  if (chosen.filter((c) => c.category === "domain").length > MAX_TLDS) {
+    throw new Error(`at most ${MAX_TLDS} TLDs at a time`);
+  }
   // TLDs given for a check that looks up no domain would be silently ignored.
   if (tlds !== DEFAULT_TLDS && !chosen.some((c) => c.category === "domain")) {
     throw new Error("TLDs apply to domains; add domain to the channels");

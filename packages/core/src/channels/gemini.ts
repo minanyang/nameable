@@ -32,12 +32,13 @@ export const gemini: Channel = defineChannel({
   id: "gemini",
   label: "Gemini extensions",
   category: "agent",
-  // Gallery entries with other names exist (agent_manager_jp), so they are looked up; Gemini CLI loads
+  // Gallery entries with other names exist (agent_manager_jp, Call Me), so they are looked up; Gemini CLI loads
   // only the valid ones, so that rule applies once nobody holds the name.
   rules: (name) =>
-    /^[^\s/\\]+$/.test(name)
+    // The list is tab- and line-separated; anything else, spaces and slashes included, is looked up.
+    name.trim() && !/[\t\r\n]/.test(name)
       ? undefined
-      : "Gemini CLI extension names cannot contain spaces or slashes",
+      : "Gemini CLI extension names cannot be empty",
   refuses: (name) =>
     /^[a-zA-Z0-9-]+$/.test(name)
       ? undefined
