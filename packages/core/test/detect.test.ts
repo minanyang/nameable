@@ -53,6 +53,15 @@ describe("detectProject", () => {
     [{ "X.csproj": "" }, ["nuget", "github", "domain"]],
     [{ "compose.yaml": "" }, ["docker", "github", "domain"]],
     [{ ".claude-plugin/plugin.json": "{}" }, ["claude-plugins", "github", "domain"]],
+    [{ ".cursor-plugin/plugin.json": "{}" }, ["cursor", "github", "domain"]],
+    [{ "gemini-extension.json": "{}" }, ["gemini", "github", "domain"]],
+    [{ "App.xcodeproj/project.pbxproj": "" }, ["app-store", "github", "domain"]],
+    [{ "app/src/main/AndroidManifest.xml": "" }, ["google-play", "github", "domain"]],
+    [{ "app.json": '{"expo":{"name":"x"}}' }, ["app-store", "google-play", "github", "domain"]],
+    [
+      { "pubspec.yaml": "name: x\npublish_to: none\ndependencies:\n  flutter:\n    sdk: flutter" },
+      ["app-store", "google-play", "github", "domain"],
+    ],
   ])("picks channels from %j", async (files, only) => {
     expect((await detectProject(project(files)))?.only).toEqual(only);
   });

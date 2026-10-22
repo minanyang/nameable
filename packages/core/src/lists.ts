@@ -11,6 +11,8 @@ export const LIST_KEYS = [
   "crates-names",
   "pub-names",
   "rubygems-names",
+  "cursor-plugins",
+  "gemini-extensions",
 ] as const;
 export type ListKey = (typeof LIST_KEYS)[number];
 

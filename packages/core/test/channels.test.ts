@@ -685,6 +685,10 @@ describe("selectChannels", () => {
       "github",
       "smithery",
       "claude-plugins",
+      "cursor",
+      "gemini",
+      "app-store",
+      "google-play",
       "domain:com",
       "domain:dev",
     ]);

@@ -4,6 +4,7 @@
 
 - Without `--only`, the channels are picked from the project files in the current directory (`package.json`, `pyproject.toml`, `Cargo.toml`, a `.gemspec`, `composer.json`, `pubspec.yaml`, a `.csproj`, a `Dockerfile`, `.claude-plugin/`); outside a project, a general set is checked. `--all` checks every channel.
 - New package registry channels: `rubygems` (case-insensitive uniqueness, reserved names, yanked gems held for 100 days, the typo rule against popular or recent gems), `packagist` (the name as a vendor, reserved vendors, the typo rule against well-downloaded packages), `pub` (Dart reserved words, names kept for the Dart and Flutter teams, pub.dev's similar-name rule), `nuget` (unlisted packages, IDs NuGet deleted but still holds) and `docker` (Docker Hub users and organizations, including accounts only a redirect reveals, and official images).
+- New channels: `cursor` (Cursor's marketplace), `gemini` (the Gemini CLI extension gallery), `app-store` (US iOS and macOS search) and `google-play` (US search). App store matches ignore case, punctuation and a subtitle; a free answer there is always probable.
 - New channels for agent tools: `smithery` (the Smithery namespace, which only one owner can hold) and `claude-plugins` (Anthropic's official Claude Code marketplace, including the names `claude plugin validate` reserves).
 
 ## 0.1.0 — 2026-10-21

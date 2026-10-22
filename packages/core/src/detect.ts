@@ -87,6 +87,8 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
   if (pubspec !== undefined) {
     pick("pubspec.yaml");
     if (!/^publish_to:\s*["']?none/m.test(pubspec)) pick("pubspec.yaml", "pub");
+    // A Flutter app (not a package) ships to the app stores.
+    else if (/^\s+sdk:\s*flutter/m.test(pubspec)) pick("pubspec.yaml", "app-store", "google-play");
   }
 
   const dotnet = entries.find((e) => /\.(?:cs|fs|vb)proj$/.test(e));
@@ -98,6 +100,20 @@ export async function detectProject(dir: string): Promise<Detection | undefined>
   if (container) pick(container, "docker");
 
   if (has(".claude-plugin")) pick(".claude-plugin", "claude-plugins");
+  if (has(".cursor-plugin")) pick(".cursor-plugin", "cursor");
+  if (has("gemini-extension.json")) pick("gemini-extension.json", "gemini");
+
+  // Mobile apps: an Xcode project, an Android app module, or an Expo app (app.json with "expo").
+  const xcode = entries.find((e) => e.endsWith(".xcodeproj") || e.endsWith(".xcworkspace"));
+  if (xcode) pick(xcode, "app-store");
+  if (
+    has("AndroidManifest.xml") ||
+    (await text(dir, "app/src/main/AndroidManifest.xml")) !== undefined
+  ) {
+    pick("AndroidManifest.xml", "google-play");
+  }
+  const expo = has("app.json") ? await text(dir, "app.json") : undefined;
+  if (expo !== undefined && /"expo"\s*:/.test(expo)) pick("app.json", "app-store", "google-play");
 
   if (!from.length) return undefined;
   return { only: [...only, "github", "domain"], from };

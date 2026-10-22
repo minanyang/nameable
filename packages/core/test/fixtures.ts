@@ -159,6 +159,59 @@ const packagistFree = (
   },
   whois: noWhois,
 });
+// Cursor's marketplace page lists each plugin as "fullRef":"<name>" in its RSC payload.
+const cursorFree = (names: string[] = []): Service => ({
+  http: () =>
+    new Response(
+      [...Array.from({ length: 60 }, (_, i) => `plugin${i}`), ...names]
+        .map((n) => `{"fullRef":"${n}","lifecycleState":"PLUGIN_LIFECYCLE_STATE_PUBLIC_LISTED"}`)
+        .join(","),
+    ),
+  whois: noWhois,
+});
+const geminiFree = (names: string[] = []): Service => ({
+  http: () => [
+    200,
+    [...Array.from({ length: 60 }, (_, i) => `ext${i}`), ...names].map((n) => ({
+      extensionName: n,
+      url: `https://github.com/someone/${n}`,
+    })),
+  ],
+  whois: noWhois,
+});
+const appStoreFree = (trackName = "Nameable Pro Suite"): Service => ({
+  http: () => [
+    200,
+    {
+      resultCount: 1,
+      results: [
+        { trackName, sellerName: "Someone", trackViewUrl: "https://apps.apple.com/us/app/x/id1" },
+      ],
+    },
+  ],
+  whois: noWhois,
+});
+/** A Google Play search page: its results sit in an AF_initDataCallback call, as on the real page. */
+const playPage = (titles: string[]) => {
+  const items = titles.map((title, i) => {
+    const app: unknown[] = [];
+    app[0] = [`com.example.app${i}`];
+    app[3] = title;
+    app[14] = "Developer";
+    return [app];
+  });
+  const section: unknown[] = [];
+  section[22] = [items];
+  const data = JSON.stringify([[null, [section]]]);
+  const empty = titles.length ? "" : "No results for";
+  return new Response(
+    `<script>AF_initDataCallback({key: 'ds:4', hash: '1', data:${data}, sideChannel: {}});</script>${empty}`,
+  );
+};
+const playFree = (titles: string[] = []): Service => ({
+  http: () => playPage(titles),
+  whois: noWhois,
+});
 const NUGET_DELETED = "<p>This package has been deleted from the gallery.</p>";
 const PUB_NAMES = "https://pub.dev/api/package-names";
 const pubFree = (names: string[] = ["http"]): Service => ({
@@ -647,6 +700,137 @@ export const FIXTURES: Fixture[] = [
         why: "listed, compared ignoring case",
         expect: "taken",
         service: claudeFree(["github"]),
+      },
+    ],
+  },
+  {
+    channel: only("cursor"),
+    freeCertainty: "probable",
+    free: cursorFree(),
+    taken: cursorFree(["nameable"]),
+    // cursor.com/docs/reference/plugins: lowercase kebab-case, letters, digits, - and .
+    accepts: {
+      ...reject,
+      typical: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      dot: true,
+      single: true,
+      punycode: true,
+    },
+    refused: [],
+  },
+  {
+    channel: only("gemini"),
+    freeCertainty: "probable",
+    free: geminiFree(),
+    taken: geminiFree(["nameable"]),
+    // Nothing enforces the documented lowercase-and-dashes rule; a name is a directory name.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      dot: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      trailingAt: true,
+      specialChars: true,
+      single: true,
+      unicode: true,
+      emoji: true,
+      punycode: true,
+    },
+    refused: [
+      {
+        name: "GitHub",
+        why: "listed, compared ignoring case",
+        expect: "taken",
+        service: geminiFree(["github"]),
+      },
+    ],
+  },
+  {
+    channel: only("app-store"),
+    freeCertainty: "probable",
+    free: appStoreFree(),
+    taken: appStoreFree("Nameable: Find a Name"),
+    // App Store Connect: 2 to 30 characters.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      dot: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      trailingAt: true,
+      specialChars: true,
+      unicode: true,
+      space: true,
+      scoped: true,
+      scopedUnderscore: true,
+      punycode: true,
+    },
+    maxLength: 30,
+    refused: [
+      {
+        name: "slack",
+        why: "a title whose head before the subtitle matches",
+        expect: "taken",
+        service: appStoreFree("Slack - Team Chat"),
+      },
+    ],
+  },
+  {
+    channel: only("google-play"),
+    freeCertainty: "probable",
+    free: playFree(),
+    taken: playFree(["Nameable"]),
+    // Play Console: a title is at most 30 characters.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      dot: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      trailingAt: true,
+      specialChars: true,
+      single: true,
+      unicode: true,
+      emoji: true,
+      space: true,
+      scoped: true,
+      scopedUnderscore: true,
+      punycode: true,
+    },
+    maxLength: 30,
+    refused: [
+      {
+        name: "todoist",
+        why: "a title with a subtitle after a colon",
+        expect: "taken",
+        service: playFree(["Notion", "Todoist: To-Do List & Planner"]),
       },
     ],
   },

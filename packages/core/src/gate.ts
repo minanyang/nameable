@@ -19,7 +19,13 @@ export class Gate {
 }
 
 /** Concurrent requests allowed per host. Whois servers ban bursts, so they get one. */
-const LIMITS: Record<string, number> = { "registry.npmjs.org": 8, "api.github.com": 4 };
+// The App Store search allows about 20 calls a minute; Google Play has no published limit, so keep it gentle.
+const LIMITS: Record<string, number> = {
+  "registry.npmjs.org": 8,
+  "api.github.com": 4,
+  "itunes.apple.com": 2,
+  "play.google.com": 2,
+};
 const DEFAULT_LIMIT = 4;
 export const WHOIS_LIMIT = 1;
 

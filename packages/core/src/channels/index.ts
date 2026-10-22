@@ -1,10 +1,14 @@
 import { domainToASCII } from "node:url";
 import type { Channel } from "../types.js";
+import { appStore } from "./app-store.js";
 import { claudePlugins } from "./claude-plugins.js";
 import { crates } from "./crates.js";
+import { cursor } from "./cursor.js";
 import { docker } from "./docker.js";
 import { domain } from "./domain.js";
+import { gemini } from "./gemini.js";
 import { github } from "./github.js";
+import { googlePlay } from "./google-play.js";
 import { homebrew } from "./homebrew.js";
 import { npm } from "./npm.js";
 import { nuget } from "./nuget.js";
@@ -29,6 +33,10 @@ const fixed = [
   github,
   smithery,
   claudePlugins,
+  cursor,
+  gemini,
+  appStore,
+  googlePlay,
 ];
 
 export type Selection = {

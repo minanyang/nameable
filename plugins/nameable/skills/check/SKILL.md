@@ -36,6 +36,8 @@ Check only what matters, and say which channels you picked and why.
 | Server, service or self-hosted app     | its package registry, `docker`, `github`, `domain`                   |
 | MCP server                             | its package registry (`npm`, `pypi`), `smithery`, `github`, `domain` |
 | Claude Code plugin or skill            | `claude-plugins`, `npm` if it ships a package, `github`, `domain`    |
+| Cursor plugin or Gemini CLI extension  | `cursor` or `gemini`, `github`, `domain`                             |
+| Mobile app                             | `app-store`, `google-play`, `domain` with `com` first, `github`      |
 | Consumer app or brand                  | `domain` with `com` first, `github`                                  |
 
 Add TLDs the project would really use (`io`, `sh`, `app`, `ai`, a country code). Not every channel matters
@@ -65,9 +67,9 @@ Read each result exactly:
   ends (npm after an unpublish, crates.io after a deletion); then say when it frees.
 - `unknown`: the check failed. It is not free. Retry once, then report it as not checked.
 
-These channels are not checked by the tool yet: app stores, editor extension stores, agent directories other
-than Smithery and Claude Code's official marketplace (the MCP Registry among them), social handles and
-trademarks. When one matters for this project, check it with the tools you have (web search, the directory's own
+These channels are not checked by the tool yet: editor extension stores, the MCP Registry, social handles and
+trademarks. App store results only show whether an app with the name exists; app names are not reserved before
+release, so never report one as free for certain. When one matters for this project, check it with the tools you have (web search, the directory's own
 search) or list it under "not checked".
 
 ## 3. Prior art

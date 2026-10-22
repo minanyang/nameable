@@ -245,6 +245,51 @@ live("Docker Hub", () => {
   });
 });
 
+live("Cursor marketplace", () => {
+  it("lists every plugin's name as fullRef in the page's RSC payload", async () => {
+    const res = await fetch("https://cursor.com/marketplace", { headers: { ...UA, rsc: "1" } });
+    const names = [...(await res.text()).matchAll(/"fullRef":"([^"]+)"/g)].map((m) => m[1]);
+    expect(new Set(names).size).toBeGreaterThan(100);
+    expect(names).toContain("github");
+  });
+});
+
+live("Gemini CLI gallery", () => {
+  it("lists extensions with their name and repository", async () => {
+    const entries = (await json("https://geminicli.com/extensions.json")) as unknown as {
+      extensionName: string;
+      url: string;
+    }[];
+    expect(entries.length).toBeGreaterThan(100);
+    expect(entries.some((e) => e.extensionName === "superpowers")).toBe(true);
+    expect(entries.every((e) => typeof e.url === "string")).toBe(true);
+  });
+});
+
+live("App Store search", () => {
+  it("finds apps by title, iOS and macOS separately", async () => {
+    const search = (entity: string) =>
+      json(`https://itunes.apple.com/search?term=calculator&entity=${entity}&limit=200&country=us`);
+    const ios = await search("software");
+    expect(ios.results.some((r: any) => r.trackName === "Calculator" && r.trackViewUrl)).toBe(true);
+    const mac = await search("macSoftware");
+    // The macOS search also returns iPad apps that run on a Mac.
+    expect(mac.results.some((r: any) => r.kind === "mac-software")).toBe(true);
+  });
+});
+
+live("Google Play search", () => {
+  it("embeds results in the ds:4 callback, with a title and package per app", async () => {
+    const html = await (
+      await fetch("https://play.google.com/store/search?q=slack&c=apps&hl=en&gl=US", {
+        headers: UA,
+      })
+    ).text();
+    expect(html).toMatch(/AF_initDataCallback\(\{key: 'ds:4'/);
+    expect(html).toContain("com.Slack");
+  });
+});
+
 live("Smithery", () => {
   const list = (ns: string) => json(`https://api.smithery.ai/servers?namespace=${ns}&pageSize=1`);
   it("filters servers by whole namespace, ignoring case, without a key", async () => {

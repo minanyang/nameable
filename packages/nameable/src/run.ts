@@ -29,8 +29,9 @@ Usage
 
   One name shows each channel with its evidence; several names show a comparison grid.
   Channels are picked from the project files in the current directory (package.json, pyproject.toml,
-  Cargo.toml, a .gemspec, composer.json, pubspec.yaml, a .csproj, a Dockerfile, .claude-plugin);
-  without any, a general set is checked.
+  Cargo.toml, a .gemspec, composer.json, pubspec.yaml, a .csproj, a Dockerfile, .claude-plugin,
+  .cursor-plugin, gemini-extension.json, an Xcode or Android project, an Expo app.json); without any,
+  a general set is checked.
   \`mcp\` serves the same checks to AI agents as an MCP server over stdio.
 
 Options
