@@ -320,6 +320,74 @@ describe("github", () => {
   });
 });
 
+describe("rubygems", () => {
+  const GEMS = "https://rubygems.org";
+  const names = (...extra: string[]) =>
+    new Response(
+      ["---", ...Array.from({ length: 1000 }, (_, i) => `gem${i}`), ...extra].join("\n"),
+    );
+  const routes = (gem: Reply) => ({
+    [`${GEMS}/api/v1/gems/rail_s.json`]: 404,
+    [`${GEMS}/gems/rail_s`]: 404,
+    [`${GEMS}/names`]: () => names("rails"),
+    [`${GEMS}/api/v1/gems/rails.json`]: gem,
+  });
+
+  it("allows a name similar only to an old gem with few downloads", async () => {
+    const r = await one(
+      "rubygems",
+      "rail_s",
+      routes([200, { downloads: 9_999, version_created_at: "2015-01-01T00:00:00Z" }]),
+      {},
+      Date.parse("2026-10-22"),
+    );
+    expect(r).toMatchObject({ status: "available", certainty: "confirmed" });
+  });
+
+  it("is blocked by a similar gem released in the last five years", async () => {
+    const r = await one(
+      "rubygems",
+      "rail_s",
+      routes([200, { downloads: 10, version_created_at: "2024-01-01T00:00:00Z" }]),
+      {},
+      Date.parse("2026-10-22"),
+    );
+    expect(r).toMatchObject({ status: "unavailable", note: expect.stringContaining('"rails"') });
+  });
+});
+
+describe("packagist", () => {
+  const P = "https://packagist.org/packages";
+  it("lets a typo of a package with under a million downloads through", async () => {
+    const r = await one("packagist", "illuminat", {
+      [`${P}/list.json?vendor=illuminat`]: [200, { packageNames: [] }],
+      [`${P}/list.json?filter=*/illuminat`]: [
+        200,
+        { packageNames: ["illuminate/illuminat", "far-away/illuminat"] },
+      ],
+      [`${P}/illuminate/illuminat/stats.json`]: [200, { downloads: { total: 999_999 } }],
+    });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
+});
+
+describe("docker", () => {
+  it("names the kind of account and its public repositories", async () => {
+    const H = "https://hub.docker.com/v2";
+    const r = await one("docker", "jwilder", {
+      [`${H}/users/jwilder/`]: [200, { username: "jwilder" }],
+      [`${H}/orgs/jwilder/`]: 308,
+      [`${H}/namespaces/jwilder/repositories/?page_size=1`]: [200, { count: 11 }],
+      [`${H}/repositories/library/jwilder/`]: 404,
+    });
+    expect(r).toMatchObject({
+      status: "taken",
+      url: "https://hub.docker.com/u/jwilder",
+      note: "Docker user, 11 public repositories",
+    });
+  });
+});
+
 describe("smithery", () => {
   const url = (ns: string) => `https://api.smithery.ai/servers?namespace=${ns}&pageSize=1`;
 
@@ -609,6 +677,11 @@ describe("selectChannels", () => {
       "pypi",
       "crates",
       "homebrew",
+      "rubygems",
+      "packagist",
+      "pub",
+      "nuget",
+      "docker",
       "github",
       "smithery",
       "claude-plugins",

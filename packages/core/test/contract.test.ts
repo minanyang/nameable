@@ -148,6 +148,103 @@ live("GitHub API", () => {
   });
 });
 
+live("RubyGems", () => {
+  it("answers 404 for a missing gem and looks names up with case", async () => {
+    expect(await status(`https://rubygems.org/api/v1/gems/${fresh}.json`)).toBe(404);
+    expect(await status("https://rubygems.org/api/v1/gems/rails.json")).toBe(200);
+    expect(await status("https://rubygems.org/api/v1/gems/Rails.json")).toBe(404);
+  });
+  it("lists every indexed gem in /names, one per line after ---", async () => {
+    const text = await (await fetch("https://rubygems.org/names", { headers: UA })).text();
+    const [head, ...names] = text.split("\n");
+    expect(head).toBe("---");
+    expect(names).toContain("rails");
+  });
+  it("says on the gem page that a name is reserved, though the API answers 404", async () => {
+    expect(await status("https://rubygems.org/api/v1/gems/rbconfig.json")).toBe(404);
+    const page = await (await fetch("https://rubygems.org/gems/rbconfig", { headers: UA })).text();
+    expect(page).toContain("reserved by rubygems.org");
+    expect(await status(`https://rubygems.org/gems/${fresh}`)).toBe(404);
+  });
+  it("reports downloads and the latest release date", async () => {
+    const gem = await json("https://rubygems.org/api/v1/gems/rails.json");
+    expect(typeof gem.downloads).toBe("number");
+    expect(Number.isNaN(Date.parse(gem.version_created_at))).toBe(false);
+  });
+});
+
+live("Packagist", () => {
+  const list = (q: string) => json(`https://packagist.org/packages/list.json?${q}`);
+  it("lists a vendor's packages, ignoring case, and an empty list for a free vendor", async () => {
+    expect((await list("vendor=SYMFONY")).packageNames).toContain("symfony/console");
+    expect((await list(`vendor=${fresh}`)).packageNames).toEqual([]);
+  });
+  it("lists packages with one package name under every vendor", async () => {
+    const { packageNames } = await list("filter=*/console");
+    expect(packageNames).toContain("symfony/console");
+    expect(packageNames.every((n: string) => n.endsWith("/console"))).toBe(true);
+  });
+  it("reports total downloads", async () => {
+    const stats = await json("https://packagist.org/packages/symfony/console/stats.json");
+    expect(stats.downloads.total).toBeGreaterThan(1_000_000);
+  });
+});
+
+live("pub.dev", () => {
+  it("answers 404 for a missing package, even a reserved name", async () => {
+    expect(await status(`https://pub.dev/api/packages/${fresh}`)).toBe(404);
+    expect(await status("https://pub.dev/api/packages/dart")).toBe(404);
+    expect(await status("https://pub.dev/api/packages/http")).toBe(200);
+  });
+  it("lists every package name in one page", async () => {
+    const body = await json("https://pub.dev/api/package-names");
+    expect(body.packages.length).toBeGreaterThan(50_000);
+    expect(body.packages).toContain("http");
+    expect(body.nextUrl ?? null).toBeNull();
+  });
+});
+
+live("NuGet", () => {
+  const reg = (id: string) =>
+    status(`https://api.nuget.org/v3/registration5-gz-semver2/${id}/index.json`);
+  it("keeps unlisted packages in registration and 404s missing ones", async () => {
+    expect(await reg("newtonsoft.json")).toBe(200);
+    expect(await reg("entityframework.commands")).toBe(200);
+    expect(await reg(fresh)).toBe(404);
+  });
+  it("still shows a package the NuGet team deleted on the gallery", async () => {
+    expect(await reg("coinbase.core")).toBe(404);
+    const page = await (
+      await fetch("https://www.nuget.org/packages/Coinbase.Core", { headers: UA })
+    ).text();
+    expect(page).toContain("This package has been deleted from the gallery");
+    expect(await status(`https://www.nuget.org/packages/${fresh}`)).toBe(404);
+  });
+});
+
+live("Docker Hub", () => {
+  const H = "https://hub.docker.com/v2";
+  const raw = (url: string) =>
+    fetch(url, { headers: UA, redirect: "manual" }).then((r) => r.status);
+  it("answers users and organizations on their own endpoint and redirects from the other", async () => {
+    expect([await raw(`${H}/users/jwilder/`), await raw(`${H}/orgs/jwilder/`)]).toEqual([200, 308]);
+    expect([await raw(`${H}/users/bitnami/`), await raw(`${H}/orgs/bitnami/`)]).toEqual([308, 200]);
+    expect([await raw(`${H}/users/${fresh}/`), await raw(`${H}/orgs/${fresh}/`)]).toEqual([
+      404, 404,
+    ]);
+  });
+  it("counts a namespace's public repositories, 0 for a missing one", async () => {
+    expect((await json(`${H}/namespaces/bitnami/repositories/?page_size=1`)).count).toBeGreaterThan(
+      0,
+    );
+    expect((await json(`${H}/namespaces/${fresh}/repositories/?page_size=1`)).count).toBe(0);
+  });
+  it("serves official images under library", async () => {
+    expect(await status(`${H}/repositories/library/postgres/`)).toBe(200);
+    expect(await status(`${H}/repositories/library/${fresh}/`)).toBe(404);
+  });
+});
+
 live("Smithery", () => {
   const list = (ns: string) => json(`https://api.smithery.ai/servers?namespace=${ns}&pageSize=1`);
   it("filters servers by whole namespace, ignoring case, without a key", async () => {

@@ -7,6 +7,8 @@ export type RequestOptions = {
   headers?: Record<string, string>;
   retries?: number;
   timeoutMs?: number;
+  /** "manual" returns a redirect itself, for services where the redirect is the answer. */
+  redirect?: RequestRedirect;
 };
 
 function retryable(status: number): boolean {
@@ -30,6 +32,7 @@ export async function get(ctx: Context, url: string, opts: RequestOptions = {}):
       const res = await gate.run(() =>
         ctx.fetch(url, {
           headers: { "user-agent": USER_AGENT, ...opts.headers },
+          redirect: opts.redirect,
           signal: AbortSignal.timeout(timeoutMs),
         }),
       );

@@ -16,14 +16,18 @@ Nameable 會在套件 registry、GitHub、AI agent 目錄和網域上查一個�
 
 大部分的名稱檢查工具，只會問每個 registry「這個名字存在嗎」，查不到就當成可以用。但查不到只代表沒有人用了一模一樣的名字，registry 還是可能拒絕它：
 
-| 名稱           | Registry  | 查不到？ | Registry 實際的處理                     |
-| -------------- | --------- | -------- | --------------------------------------- |
-| `f1ask`        | PyPI      | 是       | 拒絕：和 `flask` 太像                   |
-| `first-one`    | npm       | 是       | 拒絕：去掉標點後和 `firstone` 相同      |
-| `golang`       | Homebrew  | 是       | 已被佔用：是 `go` 的別名                |
-| `rust`         | crates.io | 是       | 拒絕：crates.io 保留的名稱              |
-| `gh`           | crates.io | 是       | 拒絕到 2027 年：這個 crate 最近才被刪除 |
-| `xn--ls8h.dev` | 網域      | 是       | 無法註冊：它是 emoji 的 punycode        |
+| 名稱            | Registry   | 查不到？ | Registry 實際的處理                     |
+| --------------- | ---------- | -------- | --------------------------------------- |
+| `f1ask`         | PyPI       | 是       | 拒絕：和 `flask` 太像                   |
+| `first-one`     | npm        | 是       | 拒絕：去掉標點後和 `firstone` 相同      |
+| `golang`        | Homebrew   | 是       | 已被佔用：是 `go` 的別名                |
+| `rust`          | crates.io  | 是       | 拒絕：crates.io 保留的名稱              |
+| `gh`            | crates.io  | 是       | 拒絕到 2027 年：這個 crate 最近才被刪除 |
+| `providers`     | pub.dev    | 是       | 拒絕：是 `provider` 的複數              |
+| `rbconfig`      | RubyGems   | 是       | 拒絕：RubyGems.org 保留的名稱           |
+| `Coinbase.Core` | NuGet      | 是       | 拒絕：被 NuGet 刪除，但 ID 仍被保留     |
+| `postgres`      | Docker Hub | 是       | 已被佔用：官方 image                    |
+| `xn--ls8h.dev`  | 網域       | 是       | 無法註冊：它是 emoji 的 punycode        |
 
 Nameable 套用每個 registry 自己的規則（直接取自它們的原始碼），也會檢查這些規則需要的清單：相似名稱、保留名稱、別名和舊名、最近刪除的名稱、已 unpublish 的套件。有規則沒辦法查時，答案會標成「可能可用」並說明原因，而不是直接說「可用」。請求失敗一律是 `unknown`，絕不會當成可用。
 
@@ -36,12 +40,17 @@ npx nameable nameable --tlds com,dev,sh
 ```
 
 ```
-Checking "nameable" on 10 channels
+Checking "nameable" on 15 channels
 
   ✗ npm             taken              Find out if a name is free everywhere it matters for your p…
   ✓ PyPI            available
   ✓ crates.io       available
   ✓ Homebrew        available          no homebrew-core formula or cask
+  ✗ RubyGems        taken              A library that provides parsing and output of person names,…
+  ✓ Packagist       probably available no packages under this vendor; packages frozen for spam are…
+  ✓ pub.dev         probably available moderated packages and reserved names are not public and ca…
+  ✓ NuGet           probably available reserved ID prefixes and NuGet's typosquatting check are no…
+  ✓ Docker Hub      probably available no user or organization; deactivated or reserved Docker IDs…
   ✓ GitHub user/org probably available suspended, deleted or reserved accounts also look free; con…
   ✓ Smithery        probably available no public servers; a namespace with none, or with only unli…
   ✓ Claude plugins  available          not in the official marketplace
@@ -49,10 +58,11 @@ Checking "nameable" on 10 channels
   ✓ .dev            probably available not registered; premium or reserved names can still be refu…
   ✓ .sh             probably available not registered (whois); premium or reserved names can still…
 
-  npm   https://www.npmjs.com/package/nameable
-  .com  https://lookup.icann.org/en/lookup?name=nameable.com
+  npm       https://www.npmjs.com/package/nameable
+  RubyGems  https://rubygems.org/gems/nameable
+  .com      https://lookup.icann.org/en/lookup?name=nameable.com
 
-  8 available · 2 taken
+  12 available · 3 taken
 ```
 
 一次查好幾個名稱時，會用表格比較：
@@ -72,13 +82,13 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
   free             4/6       5/6       4/6
 ```
 
-| 選項            |                                                                                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--only <ids>`  | 要查的渠道：`npm`、`pypi`、`crates`、`homebrew`、`github`、`smithery`、`claude-plugins`、`domain`（`--tlds` 裡的每個 TLD）或 `domain:<tld>` |
-| `--tlds <list>` | 要查的網域，任何 TLD 都可以（預設 `com,dev`）。沒有 RDAP 的 TLD，例如 `.io`、`.sh`、`.de`，會改用 whois                                     |
-| `--json`        | 輸出 JSON；輸出不是終端機時預設就是 JSON                                                                                                    |
-| `--refresh`     | 重新下載 registry 的名稱清單                                                                                                                |
-| `--clear-cache` | 刪除快取的名稱清單                                                                                                                          |
+| 選項            |                                                                                                                                                                                                |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--only <ids>`  | 要查的渠道：`npm`、`pypi`、`crates`、`homebrew`、`rubygems`、`packagist`、`pub`、`nuget`、`docker`、`github`、`smithery`、`claude-plugins`、`domain`（`--tlds` 裡的每個 TLD）或 `domain:<tld>` |
+| `--tlds <list>` | 要查的網域，任何 TLD 都可以（預設 `com,dev`）。沒有 RDAP 的 TLD，例如 `.io`、`.sh`、`.de`，會改用 whois                                                                                        |
+| `--json`        | 輸出 JSON；輸出不是終端機時預設就是 JSON                                                                                                                                                       |
+| `--refresh`     | 重新下載 registry 的名稱清單                                                                                                                                                                   |
+| `--clear-cache` | 刪除快取的名稱清單                                                                                                                                                                             |
 
 有 `GITHUB_TOKEN`、`GH_TOKEN` 或 `gh auth token` 時，GitHub 查詢會使用它，以取得較高的 rate limit。
 
@@ -107,13 +117,13 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 
 ## 答案的意思
 
-| 狀態          | 意思                                                                                     |
-| ------------- | ---------------------------------------------------------------------------------------- |
-| `available`   | 沒有人用，registry 也會接受                                                              |
-| `reclaimable` | 以前有人用但已釋出（已 unpublish 的 npm 套件），任何人都可以再拿                         |
-| `taken`       | 已經有人用；`url` 會顯示是誰                                                             |
-| `unavailable` | 沒有人用一模一樣的名字，但 registry 會拒絕：格式不合、保留名稱、太相似，或刪除後暫時封鎖 |
-| `unknown`     | 沒有可信的答案：網路錯誤、rate limit、無法辨識的回應。絕對不要當成可用                   |
+| 狀態          | 意思                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| `available`   | 沒有人用，registry 也會接受                                                                |
+| `reclaimable` | 以前有人用但已釋出（已 unpublish 的 npm 套件、所有版本都 yank 掉的 gem），任何人都可以再拿 |
+| `taken`       | 已經有人用；`url` 會顯示是誰                                                               |
+| `unavailable` | 沒有人用一模一樣的名字，但 registry 會拒絕：格式不合、保留名稱、太相似，或刪除後暫時封鎖   |
+| `unknown`     | 沒有可信的答案：網路錯誤、rate limit、無法辨識的回應。絕對不要當成可用                     |
 
 `available` 會附上確定程度。**Confirmed** 代表這個 registry 所有能用公開資料查的規則都查過了。**Probable**（表格中的 `*`）代表有規則沒辦法查，`note` 會說是哪一條：GitHub 會隱藏被停權和保留的帳號、npm 的相似名稱規則沒辦法查遍所有拼法、registry 可能拒絕溢價或保留的網域，或名稱清單下載失敗。PyPI 有兩條規則依賴它沒有公開的資料，所以即使是 confirmed 的 PyPI 答案也涵蓋不到：管理員禁止的名稱，以及和被隔離專案相似的名稱。
 
@@ -123,6 +133,11 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 | PyPI           | PEP 508 名稱、標準函式庫名稱、相似名稱（`f1ask` = `flask`）、沒有任何 release 或被隔離的專案                                                                 |
 | crates.io      | Cargo 的命名規則、保留名稱、最近刪除的名稱、`-` 和 `_` 視為相同                                                                                              |
 | Homebrew       | Formula 命名規則、formula 和 cask 的別名與舊名、homebrew-core 不允許的名稱                                                                                   |
+| RubyGems       | Gem 命名規則、不分大小寫的唯一性、保留名稱、yank 後替原擁有者保留的名稱、去掉 `-` 和 `_` 後與熱門或近期 gem 相同的名稱                                       |
+| Packagist      | 把名稱當成 vendor：vendor 命名規則和保留的 vendor，以及對只差一個字元的 vendor 的 typo 規則；因垃圾訊息被凍結的套件看不到，所以「可用」只能是 probable       |
+| pub.dev        | Dart 命名規則和保留字、保留給 Dart 和 Flutter 團隊的名稱、相似名稱（去掉 `_`、單複數、`rn` 當成 `m`）；被管理員處理的套件看不到，所以「可用」只能是 probable |
+| NuGet          | ID 規則、unlisted 套件、NuGet 刪除但仍保留的 ID；保留前綴和 typosquatting 檢查不公開，所以「可用」只能是 probable                                            |
+| Docker Hub     | Docker ID 規則、使用者和組織（包括只有轉址才看得出來的帳號）、官方 image；停用的帳號看不到，所以「可用」只能是 probable                                      |
 | GitHub         | 使用者和組織；隱藏的帳號讓「可用」只能是 probable                                                                                                            |
 | 網域           | 任何 TLD，透過 RDAP 或 whois；國際化網域名稱；registry 無法接受的 label                                                                                      |
 | Smithery       | Namespace 命名規則；沒有公開 server 的 namespace 看起來也是空的，所以「可用」只能是 probable                                                                 |
@@ -130,7 +145,7 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 
 ### 名稱清單
 
-PyPI、Homebrew 和 crates.io 的查詢會比對整個 registry 的清單：PyPI 的所有專案、Homebrew 的所有別名和舊名，以及 crates.io 每日資料庫快照中保留和最近刪除的名稱（用 byte range 讀取，只下載 2 GB 檔案中不到 1 MB）。第一次需要時才會下載，總共約 10 MB，之後每天最多下載一次。清單會壓縮存放（約 8.5 MB），位置在 macOS 的 `~/Library/Caches/nameable`、Linux 的 `$XDG_CACHE_HOME/nameable`、Windows 的 `%LOCALAPPDATA%\nameable\Cache`，或 `NAMEABLE_CACHE_DIR`。
+PyPI、Homebrew、crates.io、pub.dev 和 RubyGems 的查詢會比對整個 registry 的清單：PyPI 的所有專案、Homebrew 的所有別名和舊名、crates.io 每日資料庫快照中保留和最近刪除的名稱（用 byte range 讀取，只下載 2 GB 檔案中不到 1 MB）、pub.dev 的所有套件，以及所有 gem。每份清單在第一次需要時才會下載，總共約 20 MB，之後每天最多下載一次。清單會壓縮存放（約 12 MB），位置在 macOS 的 `~/Library/Caches/nameable`、Linux 的 `$XDG_CACHE_HOME/nameable`、Windows 的 `%LOCALAPPDATA%\nameable\Cache`，或 `NAMEABLE_CACHE_DIR`。
 
 ### JSON
 
@@ -166,14 +181,13 @@ PyPI、Homebrew 和 crates.io 的查詢會比對整個 registry 的清單：PyPI
 
 ## 預計加入的渠道
 
-Nameable 目前查詢 npm、PyPI、crates.io、Homebrew、GitHub 使用者和組織、Smithery、Claude Code 官方 plugin marketplace，以及網域。下列每個渠道在列出前都實際測試過：查詢一個名稱時，回應能分辨「已存在」和「不存在」。
+Nameable 目前查詢 npm、PyPI、crates.io、Homebrew、RubyGems、Packagist、pub.dev、NuGet、Docker Hub、GitHub 使用者和組織、Smithery、Claude Code 官方 plugin marketplace，以及網域。下列每個渠道在列出前都實際測試過：查詢一個名稱時，回應能分辨「已存在」和「不存在」。
 
-| 類別          | 渠道                                                 |
-| ------------- | ---------------------------------------------------- |
-| AI agent      | MCP Registry、Cursor、Gemini CLI 擴充                |
-| 套件 registry | Packagist、RubyGems、pub.dev、NuGet、Docker Hub      |
-| 編輯器擴充    | VS Code Marketplace、Open VSX、JetBrains Marketplace |
-| 社群帳號      | X、YouTube、TikTok                                   |
+| 類別       | 渠道                                                 |
+| ---------- | ---------------------------------------------------- |
+| AI agent   | MCP Registry、Cursor、Gemini CLI 擴充                |
+| 編輯器擴充 | VS Code Marketplace、Open VSX、JetBrains Marketplace |
+| 社群帳號   | X、YouTube、TikTok                                   |
 
 不是每個渠道都有官方 API。Nameable 讀取公開網頁或沒有文件的端點時，網站隨時可能改版或擋掉請求：這些渠道的「可用」最多只會是 probable，被擋的請求則是 `unknown`。部分規則不公開的 registry（保留名稱、拼字相近的檢查）也一樣。
 

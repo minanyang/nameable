@@ -132,6 +132,48 @@ const npmFree = (searchHits: string[] = [], existing: string[] = []): Service =>
   whois: noWhois,
 });
 
+const GEMS = "https://rubygems.org";
+// /names is a YAML-ish list of every gem with an indexed version; a real one has about 200,000.
+const gemNames = (extra: string[]) =>
+  new Response(["---", ...Array.from({ length: 1000 }, (_, i) => `gem${i}`), ...extra].join("\n"));
+const rubyFree = (
+  opts: { names?: string[]; gems?: Record<string, Reply>; pages?: Record<string, string> } = {},
+): Service => ({
+  http: (u) => {
+    if (u === `${GEMS}/names`) return gemNames(opts.names ?? []);
+    const gem = /\/api\/v1\/gems\/(.+)\.json$/.exec(u)?.[1];
+    if (gem) return opts.gems?.[gem] ?? 404;
+    const page = opts.pages?.[u.slice(`${GEMS}/gems/`.length)];
+    return page === undefined ? 404 : new Response(page);
+  },
+  whois: noWhois,
+});
+const packagistFree = (
+  opts: { vendor?: string[]; twins?: string[]; downloads?: number } = {},
+): Service => ({
+  http: (u) => {
+    if (u.includes("list.json?vendor=")) return [200, { packageNames: opts.vendor ?? [] }];
+    if (u.includes("list.json?filter=")) return [200, { packageNames: opts.twins ?? [] }];
+    if (u.endsWith("/stats.json")) return [200, { downloads: { total: opts.downloads ?? 0 } }];
+    return 404;
+  },
+  whois: noWhois,
+});
+const NUGET_DELETED = "<p>This package has been deleted from the gallery.</p>";
+const PUB_NAMES = "https://pub.dev/api/package-names";
+const pubFree = (names: string[] = ["http"]): Service => ({
+  http: (u) => (u === PUB_NAMES ? [200, { packages: names, nextUrl: null }] : 404),
+  whois: noWhois,
+});
+const DOCKER = "https://hub.docker.com/v2";
+// Every endpoint answers for a missing namespace: 404 for accounts and images, an empty repository list.
+const dockerFree = (overrides: Record<string, Reply> = {}): Service => ({
+  http: (u) => {
+    const path = u.slice(DOCKER.length).split("/")[1]!;
+    return overrides[path] ?? (path === "namespaces" ? [200, { count: 0, results: [] }] : 404);
+  },
+  whois: noWhois,
+});
 const smitheryFree = (
   servers: { qualifiedName: string; displayName?: string }[] = [],
 ): Service => ({
@@ -338,6 +380,205 @@ export const FIXTURES: Fixture[] = [
     },
     maxLength: 39,
     refused: [],
+  },
+  {
+    channel: only("rubygems"),
+    freeCertainty: "confirmed",
+    free: rubyFree(),
+    taken: rubyFree({ gems: { nameable: [200, { name: "nameable", info: "held" }] } }),
+    // lib/name_format_validator.rb: letters, digits, . - _, a letter, no . - _ at either end.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      dot: true,
+      single: true,
+      punycode: true,
+    },
+    maxLength: 255,
+    refused: [
+      { name: "thing.gemspec", why: "ends with a file extension", expect: "unavailable" },
+      { name: "123", why: "no letter", expect: "unavailable" },
+      {
+        name: "rbconfig",
+        why: "reserved; the API answers 404",
+        expect: "unavailable",
+        service: rubyFree({ pages: { rbconfig: "This namespace is reserved by rubygems.org." } }),
+      },
+      {
+        name: "inbio",
+        why: "yanked, held for its owner",
+        expect: "unavailable",
+        service: rubyFree({
+          pages: { inbio: "The RubyGems.org team has reserved this gem name for 91 more days." },
+        }),
+      },
+      {
+        name: "web3-eth-utils",
+        why: "yanked and past the hold",
+        expect: "reclaimable",
+        service: rubyFree({
+          pages: { "web3-eth-utils": "This gem is not currently hosted on RubyGems.org." },
+        }),
+      },
+      {
+        name: "Rails",
+        why: "a case variant; names are unique ignoring case",
+        expect: "taken",
+        service: rubyFree({ names: ["rails"] }),
+      },
+      {
+        name: "rail_s",
+        why: "the same as a popular gem without - and _",
+        expect: "unavailable",
+        service: rubyFree({
+          names: ["rails"],
+          gems: { rails: [200, { downloads: 9e8, version_created_at: "2001-01-01T00:00:00Z" }] },
+        }),
+      },
+    ],
+  },
+  {
+    channel: only("nuget"),
+    freeCertainty: "probable",
+    free: { http: () => 404, whois: noWhois },
+    taken: {
+      http: () => [
+        200,
+        { items: [{ items: [{ catalogEntry: { id: "Nameable", description: "held" } }] }] },
+      ],
+      whois: noWhois,
+    },
+    // NuGetGallery PackageIdValidator: letters, digits and _, joined by single . or -.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      underscore: true,
+      dot: true,
+      single: true,
+    },
+    maxLength: 100,
+    refused: [
+      {
+        name: "Coinbase.Core",
+        why: "deleted by the NuGet team; gone from the API, the ID still held",
+        expect: "unavailable",
+        service: {
+          http: (u) => (u.startsWith("https://www.nuget.org/") ? new Response(NUGET_DELETED) : 404),
+          whois: noWhois,
+        },
+      },
+    ],
+  },
+  {
+    channel: only("packagist"),
+    freeCertainty: "probable",
+    free: packagistFree(),
+    taken: packagistFree({ vendor: ["nameable/held"] }),
+    // Package::PACKAGE_NAME_REGEX for the vendor part, lowercase only.
+    accepts: {
+      ...reject,
+      typical: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      underscore: true,
+      dot: true,
+      single: true,
+    },
+    maxLength: 191,
+    refused: [
+      { name: "php", why: "a reserved vendor", expect: "unavailable" },
+      { name: "con", why: "a Windows device name", expect: "unavailable" },
+      { name: "my-symfony", why: "contains symfony", expect: "unavailable" },
+      { name: "name.json", why: "ends in .json", expect: "unavailable" },
+      {
+        name: "illuminat",
+        why: "one edit from the vendor of a package with the same name and a million downloads",
+        expect: "unavailable",
+        service: packagistFree({ twins: ["illuminate/illuminat"], downloads: 5_000_000 }),
+      },
+    ],
+  },
+  {
+    channel: only("pub"),
+    freeCertainty: "probable",
+    free: pubFree(),
+    taken: {
+      http: (u) =>
+        u === PUB_NAMES
+          ? [200, { packages: ["nameable"], nextUrl: null }]
+          : [200, { latest: { pubspec: { description: "held" } } }],
+      whois: noWhois,
+    },
+    // pub_package_reader: letters, digits and _, starting with a letter or _, lowercase for new names.
+    accepts: { ...reject, typical: true, digits: true, underscore: true, single: true },
+    maxLength: 64,
+    refused: [
+      { name: "class", why: "a Dart reserved word", expect: "unavailable" },
+      { name: "c_lass", why: "a reserved word once _ is dropped", expect: "unavailable" },
+      { name: "pong", why: "lowercase twin of the older Pong", expect: "unavailable" },
+      { name: "flutter_test", why: "part of the Flutter SDK", expect: "unavailable" },
+      { name: "dart_", why: "kept for the Dart team, compared reduced", expect: "unavailable" },
+      {
+        name: "providers",
+        why: "plural of an existing package",
+        expect: "unavailable",
+        service: pubFree(["provider"]),
+      },
+      { name: "h_ttp", why: "equal to http without _", expect: "unavailable", service: pubFree() },
+      {
+        name: "rnath",
+        why: "rn for m: math, the singular of maths",
+        expect: "unavailable",
+        service: pubFree(["maths"]),
+      },
+    ],
+  },
+  {
+    channel: only("docker"),
+    freeCertainty: "probable",
+    free: dockerFree(),
+    taken: dockerFree({ users: [200, { username: "nameable" }] }),
+    // docs.docker.com/accounts/create-account: 4 to 30 letters and numbers, stored in lowercase.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+    },
+    maxLength: 30,
+    refused: [
+      {
+        name: "bitnami",
+        why: "an organization, which /users redirects to /orgs",
+        expect: "taken",
+        service: dockerFree({ users: 308, orgs: [200, {}] }),
+      },
+      {
+        name: "hiddenid",
+        why: "an account /users does not show, which /orgs still redirects and which owns repositories",
+        expect: "taken",
+        service: dockerFree({ users: 404, orgs: 308, namespaces: [200, { count: 8 }] }),
+      },
+      {
+        name: "postgres",
+        why: "an official image whose name no account holds",
+        expect: "taken",
+        service: dockerFree({ repositories: [200, { namespace: "library" }] }),
+      },
+    ],
   },
   {
     channel: only("smithery"),

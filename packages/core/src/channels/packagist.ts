@@ -1,0 +1,124 @@
+import { defineChannel, unexpected } from "../define.js";
+import { get } from "../http.js";
+import type { Channel, Context } from "../types.js";
+
+const SITE = "https://packagist.org";
+
+// Package::PACKAGE_NAME_REGEX for one part of `vendor/package`; ValidPackageRepositoryValidator also
+// refuses uppercase. The vendor column holds 191 characters.
+const VALID = /^[a-z0-9]+(?:[_.-]?[a-z0-9]+)*$/;
+const MAX = 191;
+
+// ValidPackageRepositoryValidator and NotReservedWordValidator::RESERVED_WORDS.
+const RESERVED_VENDORS = new Set(
+  "php packagist api sdk auth openai annotation authentication authorization dependency dependencies kernel namespace namespaces rfc routing standards standard token composer automation unknown admin create".split(
+    " ",
+  ),
+);
+const DEVICE_NAMES = /^(?:nul|con|prn|aux|com[1-9]|lpt[1-9])$/;
+// New vendors containing these are blocked; existing ones are already held. The spam-word patterns the
+// validator also applies change often and are not copied.
+const BRANDS = /symfony|packagist|composer/;
+
+// TypoSquattersValidator blocks a package whose vendor is one edit from that of a package with the same
+// package name and at least a million downloads.
+const MIN_DOWNLOADS = 1_000_000;
+
+function levenshtein(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(
+        prev[j]! + 1,
+        row[j - 1]! + 1,
+        prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    prev = row;
+  }
+  return prev[b.length]!;
+}
+
+const packageNames = async (ctx: Context, query: string) => {
+  const res = await get(ctx, `${SITE}/packages/list.json?${query}`);
+  if (res.status !== 200) return res;
+  const { packageNames: names } = ((await res.json()) ?? {}) as { packageNames?: unknown };
+  return Array.isArray(names) && names.every((n) => typeof n === "string")
+    ? (names as string[])
+    : undefined;
+};
+
+// The name is the vendor: Composer packages are `vendor/package`, and a vendor belongs to whoever
+// maintains its packages (VendorWritableValidator). The package would be `name/name`.
+export const packagist: Channel = defineChannel({
+  id: "packagist",
+  label: "Packagist",
+  category: "package",
+  rules: (name) => {
+    if (!VALID.test(name) || name.length > MAX) {
+      return "Packagist vendors are lowercase letters and digits, with single . _ or - between them";
+    }
+    if (RESERVED_VENDORS.has(name) || DEVICE_NAMES.test(name))
+      return "Packagist reserves this vendor name";
+    if (name.endsWith(".json")) return "Packagist names cannot end in .json";
+    return undefined;
+  },
+  async lookup(name, ctx) {
+    const owned = await packageNames(ctx, `vendor=${name}`);
+    if (owned instanceof Response) return unexpected("Packagist", owned);
+    if (!owned) return { status: "unknown", note: "Packagist returned an unexpected list" };
+    if (owned.length) {
+      return {
+        status: "taken",
+        url: `${SITE}/packages/${name}/`,
+        note: `vendor of ${owned.length} ${owned.length === 1 ? "package" : "packages"}, such as ${owned[0]}`,
+        meta: { packages: owned.length },
+      };
+    }
+
+    if (BRANDS.test(name)) {
+      return {
+        status: "unavailable",
+        note: "Packagist blocks new vendors containing symfony, packagist or composer",
+      };
+    }
+
+    const twins = await packageNames(ctx, `filter=*/${name}`);
+    if (!Array.isArray(twins)) {
+      return {
+        status: "available",
+        certainty: "probable",
+        note: `could not check Packagist's typosquatting rule for ${name}/${name}`,
+      };
+    }
+    for (const twin of twins) {
+      const vendor = twin.split("/")[0]!;
+      if (levenshtein(vendor, name) > 1) continue;
+      const res = await get(ctx, `${SITE}/packages/${twin}/stats.json`);
+      const total =
+        res.status === 200
+          ? ((await res.json()) as { downloads?: { total?: unknown } } | null)?.downloads?.total
+          : undefined;
+      if (typeof total !== "number") {
+        return {
+          status: "available",
+          certainty: "probable",
+          note: `could not check whether ${twin} blocks ${name}/${name} as a typo`,
+        };
+      }
+      if (total >= MIN_DOWNLOADS) {
+        return {
+          status: "unavailable",
+          url: `${SITE}/packages/${twin}`,
+          note: `Packagist rejects ${name}/${name} as too similar to ${twin}`,
+        };
+      }
+    }
+    return {
+      status: "available",
+      certainty: "probable",
+      note: "no packages under this vendor; packages frozen for spam are hidden and still hold it",
+    };
+  },
+});

@@ -2,16 +2,34 @@ import { domainToASCII } from "node:url";
 import type { Channel } from "../types.js";
 import { claudePlugins } from "./claude-plugins.js";
 import { crates } from "./crates.js";
+import { docker } from "./docker.js";
 import { domain } from "./domain.js";
 import { github } from "./github.js";
 import { homebrew } from "./homebrew.js";
 import { npm } from "./npm.js";
+import { nuget } from "./nuget.js";
+import { pub } from "./pub.js";
+import { packagist } from "./packagist.js";
 import { pypi } from "./pypi.js";
+import { rubygems } from "./rubygems.js";
 import { smithery } from "./smithery.js";
 
 export const DEFAULT_TLDS: string[] = ["com", "dev"];
 
-const fixed = [npm, pypi, crates, homebrew, github, smithery, claudePlugins];
+const fixed = [
+  npm,
+  pypi,
+  crates,
+  homebrew,
+  rubygems,
+  packagist,
+  pub,
+  nuget,
+  docker,
+  github,
+  smithery,
+  claudePlugins,
+];
 
 export type Selection = {
   /** Channel ids to keep: `npm`, `github`, `domain` (every TLD in `tlds`) or `domain:<tld>`. */

@@ -29,6 +29,11 @@ Check only what matters, and say which channels you picked and why.
 | TypeScript / JavaScript library or CLI | `npm`, `github`, `homebrew` (CLIs), `domain` with `com,dev`          |
 | Python library or CLI                  | `pypi`, `github`, `homebrew` (CLIs), `domain`                        |
 | Rust crate or CLI                      | `crates`, `github`, `homebrew` (CLIs), `domain`                      |
+| Ruby gem or CLI                        | `rubygems`, `github`, `homebrew` (CLIs), `domain`                    |
+| PHP package                            | `packagist`, `github`, `domain`                                      |
+| Dart or Flutter package                | `pub`, `github`, `domain`                                            |
+| .NET library or tool                   | `nuget`, `github`, `domain`                                          |
+| Server, service or self-hosted app     | its package registry, `docker`, `github`, `domain`                   |
 | MCP server                             | its package registry (`npm`, `pypi`), `smithery`, `github`, `domain` |
 | Claude Code plugin or skill            | `claude-plugins`, `npm` if it ships a package, `github`, `domain`    |
 | Consumer app or brand                  | `domain` with `com` first, `github`                                  |

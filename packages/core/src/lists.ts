@@ -5,7 +5,13 @@ import type { Context } from "./types.js";
 export const LIST_TTL_MS: number = 24 * 60 * 60 * 1000;
 
 /** Every list kept in the store, so clearing the cache removes exactly these files and nothing else. */
-export const LIST_KEYS = ["pypi-projects", "homebrew-names", "crates-names"] as const;
+export const LIST_KEYS = [
+  "pypi-projects",
+  "homebrew-names",
+  "crates-names",
+  "pub-names",
+  "rubygems-names",
+] as const;
 export type ListKey = (typeof LIST_KEYS)[number];
 
 // Bump when the line format of a list changes: a copy saved by another version, or a file this tool did

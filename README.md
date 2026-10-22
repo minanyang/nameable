@@ -19,14 +19,18 @@ looks for prior art and recommends which name to keep.
 Most availability checks ask each registry whether the name exists and read "not found" as free. Not found only
 means nobody holds that exact name. The registry may still refuse it:
 
-| Name           | Registry  | Not found? | What the registry does                                |
-| -------------- | --------- | ---------- | ----------------------------------------------------- |
-| `f1ask`        | PyPI      | yes        | Refuses it: too similar to `flask`                    |
-| `first-one`    | npm       | yes        | Refuses it: same as `firstone` without punctuation    |
-| `golang`       | Homebrew  | yes        | Already taken: an alias of `go`                       |
-| `rust`         | crates.io | yes        | Refuses it: reserved by crates.io                     |
-| `gh`           | crates.io | yes        | Refuses it until 2027: the crate was deleted recently |
-| `xn--ls8h.dev` | domains   | yes        | Cannot be registered: it is an emoji in punycode      |
+| Name            | Registry   | Not found? | What the registry does                                |
+| --------------- | ---------- | ---------- | ----------------------------------------------------- |
+| `f1ask`         | PyPI       | yes        | Refuses it: too similar to `flask`                    |
+| `first-one`     | npm        | yes        | Refuses it: same as `firstone` without punctuation    |
+| `golang`        | Homebrew   | yes        | Already taken: an alias of `go`                       |
+| `rust`          | crates.io  | yes        | Refuses it: reserved by crates.io                     |
+| `gh`            | crates.io  | yes        | Refuses it until 2027: the crate was deleted recently |
+| `providers`     | pub.dev    | yes        | Refuses it: the plural of `provider`                  |
+| `rbconfig`      | RubyGems   | yes        | Refuses it: reserved by RubyGems.org                  |
+| `Coinbase.Core` | NuGet      | yes        | Refuses it: deleted by NuGet, the ID still held       |
+| `postgres`      | Docker Hub | yes        | Already taken: an official image                      |
+| `xn--ls8h.dev`  | domains    | yes        | Cannot be registered: it is an emoji in punycode      |
 
 Nameable applies each registry's own rules, taken from its source code, and checks the lists those rules need:
 similar and reserved names, aliases and old names, recently deleted names, unpublished packages. When a rule cannot
@@ -41,12 +45,17 @@ npx nameable nameable --tlds com,dev,sh
 ```
 
 ```
-Checking "nameable" on 10 channels
+Checking "nameable" on 15 channels
 
   ✗ npm             taken              Find out if a name is free everywhere it matters for your p…
   ✓ PyPI            available
   ✓ crates.io       available
   ✓ Homebrew        available          no homebrew-core formula or cask
+  ✗ RubyGems        taken              A library that provides parsing and output of person names,…
+  ✓ Packagist       probably available no packages under this vendor; packages frozen for spam are…
+  ✓ pub.dev         probably available moderated packages and reserved names are not public and ca…
+  ✓ NuGet           probably available reserved ID prefixes and NuGet's typosquatting check are no…
+  ✓ Docker Hub      probably available no user or organization; deactivated or reserved Docker IDs…
   ✓ GitHub user/org probably available suspended, deleted or reserved accounts also look free; con…
   ✓ Smithery        probably available no public servers; a namespace with none, or with only unli…
   ✓ Claude plugins  available          not in the official marketplace
@@ -54,10 +63,11 @@ Checking "nameable" on 10 channels
   ✓ .dev            probably available not registered; premium or reserved names can still be refu…
   ✓ .sh             probably available not registered (whois); premium or reserved names can still…
 
-  npm   https://www.npmjs.com/package/nameable
-  .com  https://lookup.icann.org/en/lookup?name=nameable.com
+  npm       https://www.npmjs.com/package/nameable
+  RubyGems  https://rubygems.org/gems/nameable
+  .com      https://lookup.icann.org/en/lookup?name=nameable.com
 
-  8 available · 2 taken
+  12 available · 3 taken
 ```
 
 Several names show a grid to compare them:
@@ -77,13 +87,13 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
   free             4/6       5/6       4/6
 ```
 
-| Option          |                                                                                                                                                    |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--only <ids>`  | Channels to check: `npm`, `pypi`, `crates`, `homebrew`, `github`, `smithery`, `claude-plugins`, `domain` (every TLD in `--tlds`) or `domain:<tld>` |
-| `--tlds <list>` | Domains to check, any TLD (default `com,dev`). TLDs without RDAP, such as `.io`, `.sh` and `.de`, go through whois                                 |
-| `--json`        | Print JSON; also the default when the output is not a terminal                                                                                     |
-| `--refresh`     | Download the registry name lists again                                                                                                             |
-| `--clear-cache` | Delete the cached name lists                                                                                                                       |
+| Option          |                                                                                                                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--only <ids>`  | Channels to check: `npm`, `pypi`, `crates`, `homebrew`, `rubygems`, `packagist`, `pub`, `nuget`, `docker`, `github`, `smithery`, `claude-plugins`, `domain` (every TLD in `--tlds`) or `domain:<tld>` |
+| `--tlds <list>` | Domains to check, any TLD (default `com,dev`). TLDs without RDAP, such as `.io`, `.sh` and `.de`, go through whois                                                                                    |
+| `--json`        | Print JSON; also the default when the output is not a terminal                                                                                                                                        |
+| `--refresh`     | Download the registry name lists again                                                                                                                                                                |
+| `--clear-cache` | Delete the cached name lists                                                                                                                                                                          |
 
 GitHub checks use `GITHUB_TOKEN`, `GH_TOKEN` or `gh auth token` when one is available, for a higher rate limit.
 
@@ -118,7 +128,7 @@ with changes (a scope, another TLD, another GitHub owner), or drop it.
 | Status        | Meaning                                                                                                                        |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `available`   | Nobody holds it and the registry would accept it                                                                               |
-| `reclaimable` | It was held but released (an unpublished npm package); anyone can take it again                                                |
+| `reclaimable` | It was held but released (an unpublished npm package, a fully yanked gem); anyone can take it again                            |
 | `taken`       | Someone holds it; `url` shows who                                                                                              |
 | `unavailable` | Nobody holds it exactly, but the registry would refuse it: invalid, reserved, too similar, or blocked for now after a deletion |
 | `unknown`     | No trustworthy answer: a network error, a rate limit, an unrecognized reply. Never treat it as free                            |
@@ -135,6 +145,11 @@ confirmed PyPI answer cannot cover them: names its admins prohibited, and names 
 | PyPI           | PEP 508 names, standard library names, similar names (`f1ask` = `flask`), projects with no releases or in quarantine                                                                                  |
 | crates.io      | Cargo's name rules, reserved names, recently deleted names, `-` and `_` as one                                                                                                                        |
 | Homebrew       | Formula name rules, aliases and old names of formulae and casks, names homebrew-core disallows                                                                                                        |
+| RubyGems       | Gem name rules, names unique ignoring case, reserved names, yanked gems held for their owners, names equal to a popular or recent gem without `-` and `_`                                             |
+| Packagist      | The name as a vendor: vendor rules and reserved vendors, and the typo rule against vendors one edit away; packages frozen for spam are hidden, so a free answer is probable                           |
+| pub.dev        | Dart name rules and reserved words, names kept for the Dart and Flutter teams, similar names (`_` dropped, plurals, `rn` for `m`); moderated packages are hidden, so a free answer is probable        |
+| NuGet          | ID rules, unlisted packages, IDs NuGet deleted but still holds; reserved prefixes and the typosquatting check are private, so a free answer is probable                                               |
+| Docker Hub     | Docker ID rules, users and organizations (including ones only a redirect reveals), official images; deactivated IDs are hidden, so a free answer is probable                                          |
 | GitHub         | Users and organizations; hidden accounts make a free answer probable                                                                                                                                  |
 | Domains        | Any TLD through RDAP or whois, internationalized names, labels registries cannot accept                                                                                                               |
 | Smithery       | Namespace rules; a namespace with no public servers also looks free, so a free answer is probable                                                                                                     |
@@ -142,10 +157,10 @@ confirmed PyPI answer cannot cover them: names its admins prohibited, and names 
 
 ### Name lists
 
-PyPI, Homebrew and crates.io checks compare against registry-wide lists: every PyPI project, every Homebrew alias and
-old name, and the reserved and recently deleted names in crates.io's daily database dump (read by byte range, under
-1 MB of a 2 GB archive). They are downloaded the first time a check needs them, about 10 MB in all, and at most once a
-day after that. They are kept compressed (about 8.5 MB) in `~/Library/Caches/nameable` on macOS,
+PyPI, Homebrew, crates.io, pub.dev and RubyGems checks compare against registry-wide lists: every PyPI project, every
+Homebrew alias and old name, the reserved and recently deleted names in crates.io's daily database dump (read by byte
+range, under 1 MB of a 2 GB archive), every pub.dev package and every gem. Each is downloaded the first time a check
+needs it, about 20 MB in all, and at most once a day after that. They are kept compressed (about 12 MB) in `~/Library/Caches/nameable` on macOS,
 `$XDG_CACHE_HOME/nameable` on Linux, `%LOCALAPPDATA%\nameable\Cache` on Windows, or `NAMEABLE_CACHE_DIR`.
 
 ### JSON
@@ -183,17 +198,16 @@ Exit codes: `0` every channel is available or reclaimable for every name · `1` 
 
 ## Planned channels
 
-Nameable checks npm, PyPI, crates.io, Homebrew, GitHub users and organizations, Smithery, Claude Code's official plugin
-marketplace, and domains today. Each channel below
+Nameable checks npm, PyPI, crates.io, Homebrew, RubyGems, Packagist, pub.dev, NuGet, Docker Hub, GitHub users and
+organizations, Smithery, Claude Code's official plugin marketplace, and domains today. Each channel below
 was tested before it was listed: a request about a name gets an answer that tells an existing name apart from a missing
 one.
 
-| Group              | Channels                                             |
-| ------------------ | ---------------------------------------------------- |
-| AI agents          | MCP Registry, Cursor, Gemini CLI extensions          |
-| Package registries | Packagist, RubyGems, pub.dev, NuGet, Docker Hub      |
-| Editor extensions  | VS Code Marketplace, Open VSX, JetBrains Marketplace |
-| Social handles     | X, YouTube, TikTok                                   |
+| Group             | Channels                                             |
+| ----------------- | ---------------------------------------------------- |
+| AI agents         | MCP Registry, Cursor, Gemini CLI extensions          |
+| Editor extensions | VS Code Marketplace, Open VSX, JetBrains Marketplace |
+| Social handles    | X, YouTube, TikTok                                   |
 
 Not every channel has an official API. Where Nameable reads a public page or an undocumented endpoint, the site can
 change it or block requests at any time: a free answer there is probable at most, and a blocked request is `unknown`.
