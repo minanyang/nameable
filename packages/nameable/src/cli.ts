@@ -30,4 +30,5 @@ process.exitCode = await run(process.argv.slice(2), {
   color: process.stdout.isTTY === true && process.stdout.hasColors(),
   githubToken,
   cacheDir: defaultCacheDir(),
+  cwd: process.cwd(),
 });

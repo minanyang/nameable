@@ -58,6 +58,7 @@ describe("usage", () => {
     [["foo", "--only", "nope"], 'unknown channel "nope"'],
     [["foo", "--bogus"], "Unknown option"],
     [["mcp", "--only", "npm"], "`mcp` takes no options"],
+    [["foo", "--only", "npm", "--all"], "--only and --all cannot be combined"],
   ])("exits 64 for %j", async (argv, message) => {
     const r = await cli(argv);
     expect(r.code).toBe(64);
@@ -160,6 +161,48 @@ describe("JSON output", () => {
   it("accepts the check subcommand", async () => {
     const r = await cli(["check", "zz", "--only", "crates"], { [CRATES("zz")]: 404 });
     expect(JSON.parse(r.stdout).reports[0].name).toBe("zz");
+  });
+});
+
+describe("channel selection", () => {
+  const header = async (files: Record<string, string>, argv: string[] = []) => {
+    const dir = await mkdtemp(join(tmpdir(), "nameable-cwd-"));
+    for (const [file, content] of Object.entries(files)) await writeFile(join(dir, file), content);
+    let stdout = "";
+    await run(["zz", ...argv], {
+      stdout: { write: (s: string) => (stdout += s), columns: 120 },
+      stderr: { write: () => undefined },
+      interactive: true,
+      color: false,
+      cwd: dir,
+      // Every request answers 200, so whatever channels the run picks complete; only the header matters.
+      fetch: async () => Response.json({}),
+      whois: async () => "Domain Name: zz\n",
+    });
+    return screen(stdout)
+      .split("\n")
+      .find((l) => l.startsWith("Checking"))!;
+  };
+
+  it("picks channels from the project files in the current directory", async () => {
+    expect(await header({ "Cargo.toml": "[package]" })).toBe(
+      'Checking "zz" on 4 channels (picked from Cargo.toml; --all for every channel)',
+    );
+  });
+
+  it("checks a general set outside a project", async () => {
+    expect(await header({})).toBe(
+      'Checking "zz" on 7 channels (no project files here; the general set; --all for every channel)',
+    );
+  });
+
+  it("checks every channel with --all, and only the named ones with --only", async () => {
+    expect(await header({ "Cargo.toml": "" }, ["--all"])).toMatch(
+      /^Checking "zz" on \d{2} channels$/,
+    );
+    expect(await header({ "Cargo.toml": "" }, ["--only", "npm"])).toBe(
+      'Checking "zz" on 1 channels',
+    );
   });
 });
 

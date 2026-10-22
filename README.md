@@ -38,10 +38,14 @@ be checked, the answer says "probably" and why, instead of "available". A failed
 
 ## Use it from the terminal
 
-Requires Node.js 22 or later.
+Requires Node.js 22 or later. Run it in your project and it checks the channels the project ships on, picked from its
+files: `package.json` for npm (and Homebrew when it has a `bin`), `pyproject.toml` for PyPI, `Cargo.toml` for
+crates.io, a `.gemspec` for RubyGems, `composer.json` for Packagist, `pubspec.yaml` for pub.dev, a `.csproj` for NuGet,
+a `Dockerfile` for Docker Hub, `.claude-plugin/` for Claude plugins, an MCP SDK dependency for Smithery, and always
+GitHub and domains. Outside a project it checks a general set: npm, PyPI, crates.io, Homebrew, GitHub and domains.
 
 ```sh
-npx nameable nameable --tlds com,dev,sh
+npx nameable nameable --all --tlds com,dev,sh
 ```
 
 ```
@@ -89,6 +93,7 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 
 | Option          |                                                                                                                                                                                                       |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--all`         | Check every channel                                                                                                                                                                                   |
 | `--only <ids>`  | Channels to check: `npm`, `pypi`, `crates`, `homebrew`, `rubygems`, `packagist`, `pub`, `nuget`, `docker`, `github`, `smithery`, `claude-plugins`, `domain` (every TLD in `--tlds`) or `domain:<tld>` |
 | `--tlds <list>` | Domains to check, any TLD (default `com,dev`). TLDs without RDAP, such as `.io`, `.sh` and `.de`, go through whois                                                                                    |
 | `--json`        | Print JSON; also the default when the output is not a terminal                                                                                                                                        |

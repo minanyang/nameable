@@ -6,6 +6,8 @@ import {
   checkMany,
   clearStore,
   DEFAULT_TLDS,
+  detectProject,
+  GENERAL_CHANNELS,
   fileStore,
   selectChannels,
   type Channel,
@@ -26,10 +28,14 @@ Usage
   nameable mcp
 
   One name shows each channel with its evidence; several names show a comparison grid.
+  Channels are picked from the project files in the current directory (package.json, pyproject.toml,
+  Cargo.toml, a .gemspec, composer.json, pubspec.yaml, a .csproj, a Dockerfile, .claude-plugin);
+  without any, a general set is checked.
   \`mcp\` serves the same checks to AI agents as an MCP server over stdio.
 
 Options
   --only <ids>    Comma-separated channels: ${channelIds().join(", ")}
+  --all           Check every channel
   --tlds <list>   Domains to check (default: ${DEFAULT_TLDS.join(",")})
   --json          Print JSON (default when stdout is not a terminal)
   --refresh       Download the registry name lists even if the cached copy is fresh
@@ -59,6 +65,8 @@ export type Io = {
   whois?: Whois;
   /** Where name lists are cached; without one they are downloaded on every run. */
   cacheDir?: string;
+  /** The project whose manifests pick the channels when neither --only nor --all is given. */
+  cwd?: string;
   /** Where `nameable mcp` talks MCP; the process's stdin and stdout by default. */
   mcpTransport?: Transport;
 };
@@ -86,6 +94,7 @@ function parse(argv: string[]) {
       allowPositionals: true,
       options: {
         only: { type: "string" },
+        all: { type: "boolean" },
         tlds: { type: "string" },
         json: { type: "boolean" },
         refresh: { type: "boolean" },
@@ -111,6 +120,7 @@ export async function run(argv: string[], io: Io): Promise<number> {
   let names: string[];
   let mcp: boolean;
   let channels: Channel[];
+  let picked: string | undefined;
   try {
     ({ values, names, mcp } = parse(argv));
     if (values.help) return (io.stdout.write(HELP), 0);
@@ -137,8 +147,19 @@ export async function run(argv: string[], io: Io): Promise<number> {
         throw new UsageError(`--${flag} needs at least one value`);
       }
     }
+    if (values.only !== undefined && values.all) {
+      throw new UsageError("--only and --all cannot be combined");
+    }
+    let only = split(values.only);
+    if (!only && !values.all) {
+      const detected = io.cwd ? await detectProject(io.cwd) : undefined;
+      only = detected?.only ?? GENERAL_CHANNELS;
+      picked = detected
+        ? `picked from ${detected.from.join(", ")}`
+        : "no project files here; the general set";
+    }
     try {
-      channels = selectChannels({ only: split(values.only), tlds: split(values.tlds) });
+      channels = selectChannels({ only, tlds: split(values.tlds) });
     } catch (err) {
       throw new UsageError((err as Error).message);
     }
@@ -153,7 +174,8 @@ export async function run(argv: string[], io: Io): Promise<number> {
   const single = names.length === 1;
   if (!json) {
     const what = single ? `"${printable(names[0]!)}"` : `${names.length} names`;
-    io.stdout.write(`\nChecking ${what} on ${channels.length} channels\n\n`);
+    const how = picked ? ` (${picked}; --all for every channel)` : "";
+    io.stdout.write(`\nChecking ${what} on ${channels.length} channels${how}\n\n`);
   }
   const reports = await checkMany(names, channels, {
     fetch: io.fetch,

@@ -33,10 +33,10 @@ Nameable 套用每個 registry 自己的規則（直接取自它們的原始碼�
 
 ## 在終端機使用
 
-需要 Node.js 22 以上。
+需要 Node.js 22 以上。在專案資料夾裡執行時，會依專案檔案挑出它會發佈的渠道：`package.json` 查 npm（有 `bin` 時加查 Homebrew）、`pyproject.toml` 查 PyPI、`Cargo.toml` 查 crates.io、`.gemspec` 查 RubyGems、`composer.json` 查 Packagist、`pubspec.yaml` 查 pub.dev、`.csproj` 查 NuGet、`Dockerfile` 查 Docker Hub、`.claude-plugin/` 查 Claude plugins、依賴 MCP SDK 時查 Smithery，GitHub 和網域則一定會查。不在專案裡時，查一組通用渠道：npm、PyPI、crates.io、Homebrew、GitHub 和網域。
 
 ```sh
-npx nameable nameable --tlds com,dev,sh
+npx nameable nameable --all --tlds com,dev,sh
 ```
 
 ```
@@ -84,6 +84,7 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 
 | 選項            |                                                                                                                                                                                                |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--all`         | 查全部渠道                                                                                                                                                                                     |
 | `--only <ids>`  | 要查的渠道：`npm`、`pypi`、`crates`、`homebrew`、`rubygems`、`packagist`、`pub`、`nuget`、`docker`、`github`、`smithery`、`claude-plugins`、`domain`（`--tlds` 裡的每個 TLD）或 `domain:<tld>` |
 | `--tlds <list>` | 要查的網域，任何 TLD 都可以（預設 `com,dev`）。沒有 RDAP 的 TLD，例如 `.io`、`.sh`、`.de`，會改用 whois                                                                                        |
 | `--json`        | 輸出 JSON；輸出不是終端機時預設就是 JSON                                                                                                                                                       |
