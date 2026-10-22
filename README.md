@@ -38,7 +38,7 @@ be checked, the answer says "probably" and why, instead of "available". A failed
 
 ## Use it from the terminal
 
-Requires Node.js 22 or later (22.13 for the MCP Registry check). Run it in your project (or any folder under it, up to the
+Requires Node.js 22 or later. Run it in your project (or any folder under it, up to the
 repository root) and it checks the channels the project ships on, picked from its files:
 
 - `package.json` for npm (unless it has no `name`, is private, or is a server or site: it starts, serves or deploys
@@ -48,7 +48,7 @@ repository root) and it checks the channels the project ships on, picked from it
 - `Cargo.toml` for crates.io (unless `publish = false`), Homebrew when it builds a binary
 - a `.gemspec` for RubyGems, `composer.json` for Packagist (unless it is a project), `pubspec.yaml` for pub.dev
   (unless `publish_to: none`), a `.csproj` or `.sln` for NuGet (unless it builds a web app, an executable or tests), a
-  `Dockerfile` for Docker Hub (unless the `package.json` is private), a `Package.swift` with an executable for Homebrew
+  `Dockerfile` for Docker Hub (unless the `package.json` is private, or CI and deploy files push images only to a private registry or a cloud deploy), a `Package.swift` with an executable for Homebrew
 - `.claude-plugin/`, `.cursor-plugin/` and `gemini-extension.json` for those directories, a `plugin.xml` or the
   IntelliJ Gradle plugin for JetBrains Marketplace, an MCP SDK dependency for the MCP Registry and Smithery
 - an Xcode project for the App Store, an Android app for Google Play, and an Expo or Flutter app for both
@@ -75,7 +75,7 @@ Checking "nameable" on 23 channels
   ✓ NuGet                 probably available no package with this ID; reserved prefixes and the ty…
   ✓ Docker Hub            probably available no user or organization; deactivated or reserved Dock…
   ✓ GitHub user/org       probably available suspended, deleted or reserved accounts also look fre…
-  ✓ MCP Registry          probably available no server uses this name in a community mirror of the…
+  ✓ MCP Registry          probably available no server uses this name in the registry as of 2026-10…
   ✓ Smithery              probably available no public servers; a namespace with none, or with onl…
   ✓ Claude plugins        available          not in the official marketplace
   ✓ Cursor plugins        probably available not among Cursor's listed plugins; plugins in review …
@@ -183,7 +183,7 @@ confirmed PyPI answer cannot cover them: names its admins prohibited, and names 
 | Docker Hub            | Docker ID rules, users and organizations (including ones only a redirect reveals), official images; deactivated IDs are hidden, so a free answer is probable                                                                                                                                                                                           |
 | GitHub                | Users and organizations; hidden accounts make a free answer probable                                                                                                                                                                                                                                                                                   |
 | Domains               | Any TLD through RDAP or whois, internationalized names, labels registries cannot accept                                                                                                                                                                                                                                                                |
-| MCP Registry          | Servers whose name part matches, in any namespace, from a daily community mirror of the registry (its own search takes 30 seconds or more); nobody owns a bare name there, so a match is a clash and a free answer is probable. Needs Node.js 22.13 or later                                                                                           |
+| MCP Registry          | Servers whose name part matches, in any namespace, from a list of every server this project rebuilds daily from the registry API (its own search takes 30 seconds or more); nobody owns a bare name there, so a match is a clash and a free answer is probable                                                                                         |
 | Smithery              | Namespace rules; a namespace with no public servers also looks free, so a free answer is probable                                                                                                                                                                                                                                                      |
 | Cursor plugins        | Cursor's marketplace; plugin name rules. Undocumented data, so a free answer is probable                                                                                                                                                                                                                                                               |
 | Gemini extensions     | The Gemini CLI gallery. Names are not unique there, so a match only means users will meet another extension by that name                                                                                                                                                                                                                               |

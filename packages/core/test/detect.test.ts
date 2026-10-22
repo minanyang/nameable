@@ -348,6 +348,37 @@ describe("detectProject", () => {
     expect((await detectProject(cargo))?.only).toEqual(["crates", "homebrew", "github", "domain"]);
   });
 
+  it.each([
+    [
+      "ECR in a workflow",
+      { ".github/workflows/deploy.yml": "uses: aws-actions/amazon-ecr-login@v2" },
+      [],
+    ],
+    ["a CDK deploy script", { "deploy.sh": "npx cdk deploy --all" }, []],
+    ["GHCR in a GitLab pipeline", { ".gitlab-ci.yml": "docker push ghcr.io/me/app" }, []],
+    [
+      "Docker Hub beside a private registry",
+      {
+        ".github/workflows/release.yml":
+          "registry: ghcr.io\nusername: ${{ secrets.DOCKERHUB_USERNAME }}",
+      },
+      ["docker"],
+    ],
+    ["no CI at all", {}, ["docker"]],
+  ])("reads where images go from %s", async (_, files, docker) => {
+    const dir = project({ ".git/": "", Dockerfile: "", ...files });
+    expect((await detectProject(dir))?.only).toEqual([...docker, "github", "domain"]);
+  });
+
+  it("reads the CI of the repository a service lives in", async () => {
+    const dir = project({
+      ".git/": "",
+      ".github/workflows/deploy.yml": "run: dotnet lambda deploy-function",
+      "services/api/Dockerfile": "",
+    });
+    expect((await detectProject(join(dir, "services", "api")))?.only).toEqual(["github", "domain"]);
+  });
+
   it("counts a package.json it cannot read as a JavaScript project", async () => {
     const dir = project({ "package.json/": "" });
     expect((await detectProject(dir))?.from).toEqual(["package.json"]);

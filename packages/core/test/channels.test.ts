@@ -10,7 +10,7 @@ import {
 import { Gate } from "../src/gate.js";
 import { appNameMatch, storefronts } from "../src/channels/app-names.js";
 import { fakeFetch, fakeWhois, seq, zipArchive, rangeReply, type Reply } from "./fake-fetch.js";
-import { CRATES_DUMP, cratesDump, mcpDatabase, sqlite } from "./fixtures.js";
+import { CRATES_DUMP, cratesDump, mcpList } from "./fixtures.js";
 
 const NPM = "https://registry.npmjs.org";
 const searchUrl = (name: string) => `${NPM}/-/v1/search?text=${name}&size=50`;
@@ -826,43 +826,37 @@ describe("readWhois", () => {
   });
 });
 
-describe.runIf(sqlite())("mcp-registry", () => {
-  const MIRROR =
-    "https://raw.githubusercontent.com/rosmur/official-mcp-registry-database/main/official_mcp_registry.db";
-  it("puts the original emitWarning back, even with checks running at once", async () => {
-    // oxlint-disable-next-line typescript/unbound-method -- compared by identity, never called
-    const original = process.emitWarning;
-    const db = mcpDatabase(["io.github.a/thing"]);
-    const run = (name: string) =>
-      check(name, selectChannels({ only: ["mcp-registry"] }), {
-        fetch: fakeFetch({ [MIRROR]: () => new Response(new Uint8Array(db)) }),
-        whois: fakeWhois(),
-        backoffMs: 0,
-      });
-    await Promise.all([run("thing"), run("other")]);
-    // oxlint-disable-next-line typescript/unbound-method -- compared by identity, never called
-    expect(process.emitWarning).toBe(original);
-  });
-
-  it("leads with an active server and counts the rest", async () => {
-    const db = mcpDatabase(["ai.old/check", "ai.new/check", "ai.third/check"]);
-    const [r] = await check("check", selectChannels({ only: ["mcp-registry"] }), {
-      fetch: fakeFetch({ [MIRROR]: () => new Response(new Uint8Array(db)) }),
+describe("mcp-registry", () => {
+  const LIST = "https://raw.githubusercontent.com/minanyang/nameable/data/mcp-servers.tsv";
+  const run = (name: string, list: string) =>
+    check(name, selectChannels({ only: ["mcp-registry"] }), {
+      fetch: fakeFetch({ [LIST]: () => new Response(list) }),
       whois: fakeWhois(),
       backoffMs: 0,
     });
-    expect(r!.note).toMatch(/^clash, not a block: ai\.old\/check and 2 more use this name/);
+
+  it("leads with an active server and counts the rest", async () => {
+    const list = mcpList(["ai.new/check", "ai.third/check"]).replace(
+      "\n",
+      "\nai.old/check\tdeprecated\n",
+    );
+    const [r] = await run("check", list);
+    expect(r!.note).toMatch(/^clash, not a block: ai\.new\/check and 2 more use this name/);
     expect(r!.meta).toMatchObject({ servers: 3 });
   });
 
-  it("dates a free answer by the newest update in the mirror, not by the download", async () => {
-    const db = mcpDatabase(["ai.new/check"]);
-    const [r] = await check("other", selectChannels({ only: ["mcp-registry"] }), {
-      fetch: fakeFetch({ [MIRROR]: () => new Response(new Uint8Array(db)) }),
-      whois: fakeWhois(),
-      backoffMs: 0,
-    });
-    expect(r!.note).toContain("mirror of the registry from 2026-10-21");
+  it("dates a free answer by when the list was read from the registry, not by the download", async () => {
+    const [r] = await run("other", mcpList());
+    expect(r!.note).toContain("in the registry as of 2026-10-21");
+  });
+
+  it.each([
+    ["another file", "<html>Not Found</html>"],
+    ["a list cut short", mcpList().split("\n").slice(0, 500).join("\n")],
+    ["a list without its date", mcpList().replace(/#asof[^\n]*\n/, "")],
+  ])("does not read %s as a registry where nothing is taken", async (_, list) => {
+    const [r] = await run("server1", list);
+    expect(r).toMatchObject({ status: "unknown" });
   });
 });
 

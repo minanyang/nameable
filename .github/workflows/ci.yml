@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
-  # The live tests catch a registry that changed its API or its rules; they run weekly and on demand.
+  # The live tests catch a registry that changed its API or its rules; they run daily and on demand.
   schedule:
-    - cron: "0 3 * * 1"
+    - cron: "0 3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
       - run: pnpm verify
       - run: scripts/try-tarball.sh
 
-  # engines allows Node 22.0, which has no node:sqlite; the packed CLI must still install and run there.
+  # engines allows Node 22.0; the packed CLI must still install and run there.
   oldest-node:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest

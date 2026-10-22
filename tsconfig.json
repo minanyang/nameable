@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "noEmit": true, "isolatedDeclarations": false },
-  "include": ["packages/*/test", "vite.config.ts", "packages/*/vite.config.ts"]
+  "compilerOptions": {
+    "noEmit": true,
+    "isolatedDeclarations": false,
+    "allowImportingTsExtensions": true
+  },
+  "include": ["packages/*/test", "scripts", "vite.config.ts", "packages/*/vite.config.ts"]
 }

@@ -15,9 +15,9 @@ Sixteen new channels, channels picked from your project, and fixes from three ro
   - `nuget`: unlisted packages, and IDs the NuGet team deleted but still holds.
   - `docker`: Docker Hub users and organizations, including accounts only a redirect reveals, and official images.
 - AI agent directories:
-  - `mcp-registry`: servers in the official MCP Registry whose name part matches, read from a daily community
-    mirror because the registry's own search takes 30 seconds or more. Needs Node.js 22.13 or later; older versions
-    report it as unknown.
+  - `mcp-registry`: servers in the official MCP Registry whose name part matches, read from a list of every
+    server this project rebuilds daily from the registry API, because the registry's own search takes 30 seconds or
+    more.
   - `smithery`: Smithery namespaces, which only one owner can hold.
   - `claude-plugins`: Anthropic's official Claude Code marketplace, with the names Claude Code refuses or cannot
     install.
@@ -35,7 +35,8 @@ Sixteen new channels, channels picked from your project, and fixes from three ro
   npm, PyPI, crates.io, RubyGems, Packagist, pub.dev and NuGet manifests (skipping private apps, servers and
   unpublished packages), Swift executables, Dockerfiles, Claude Code, Cursor, Gemini CLI, VS Code and JetBrains
   plugins, MCP SDK dependencies, and Xcode, Android, Expo and Flutter apps; at a workspace root, every member's.
-  Outside a project it checks a general set. `--all` checks every channel.
+  Outside a project it checks a general set. `--all` checks every channel. A Dockerfile is skipped when CI or deploy
+  files push its images only to a private registry (ECR, Artifact Registry, GHCR) or a cloud deploy.
 
 **Changes to existing channels and the CLI**
 

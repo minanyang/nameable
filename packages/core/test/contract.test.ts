@@ -1,6 +1,3 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { tcpWhois } from "../src/tcp-whois.js";
 import { remoteZipFiles } from "../src/zip.js";
@@ -351,23 +348,32 @@ live("JetBrains Marketplace", () => {
   });
 });
 
-live("MCP Registry mirror", () => {
-  it("is a SQLite copy of every server, rebuilt within the last few days", async () => {
-    const { DatabaseSync } = await import("node:sqlite");
-    const res = await fetch(
-      "https://raw.githubusercontent.com/rosmur/official-mcp-registry-database/main/official_mcp_registry.db",
-      { headers: UA },
+live("MCP Registry", () => {
+  const LIST = "https://raw.githubusercontent.com/minanyang/nameable/data/mcp-servers.tsv";
+  it("has the list the daily workflow publishes, read within the last few days", async () => {
+    const text = await (await fetch(LIST, { headers: UA })).text();
+    const lines = text.split("\n");
+    expect(lines[0]).toBe("#nameable-data mcp-servers v1");
+    expect(lines.length).toBeGreaterThan(10_000);
+    expect(lines).toContain("com.pulsemcp/remote-filesystem\tactive");
+    const asOf = Date.parse(lines.find((l) => l.startsWith("#asof\t"))!.slice(6));
+    expect(Date.now() - asOf).toBeLessThan(3 * 24 * 60 * 60 * 1000);
+  });
+
+  it("lists the servers updated since a time, deleted ones included", async () => {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const page = await json(
+      `https://registry.modelcontextprotocol.io/v0.1/servers?limit=100&version=latest&updated_since=${since}`,
     );
-    const dir = mkdtempSync(join(tmpdir(), "nameable-mcp-contract-"));
-    writeFileSync(join(dir, "r.db"), Buffer.from(await res.arrayBuffer()));
-    const db = new DatabaseSync(join(dir, "r.db"), { readOnly: true });
-    const servers = db.prepare("SELECT entry_name, updated_at FROM servers").all() as any[];
-    db.close();
-    rmSync(dir, { recursive: true, force: true });
-    expect(servers.length).toBeGreaterThan(10_000);
-    expect(servers.map((s) => s.entry_name)).toContain("com.pulsemcp/remote-filesystem");
-    const newest = Math.max(...servers.map((s) => Date.parse(s.updated_at)));
-    expect(Date.now() - newest).toBeLessThan(7 * 24 * 60 * 60 * 1000);
+    const meta = (s: any) => s._meta["io.modelcontextprotocol.registry/official"];
+    expect(page.servers.length).toBeGreaterThan(0);
+    for (const s of page.servers) {
+      expect(typeof s.server.name).toBe("string");
+      expect(meta(s).updatedAt >= since).toBe(true);
+    }
+    expect(
+      await status("https://registry.modelcontextprotocol.io/v0.1/servers?updated_since=x"),
+    ).toBe(400);
   });
 });
 

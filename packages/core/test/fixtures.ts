@@ -1,6 +1,3 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { selectChannels, type Channel, type Status } from "../src/index.js";
 import { rangeReply, zipArchive, type Headers, type Reply } from "./fake-fetch.js";
 
@@ -278,39 +275,22 @@ const jetbrainsFree = (names: string[] = ["Other"]): Service => ({
       : 404,
   whois: noWhois,
 });
-/** node:sqlite where this Node has it (22.13 and later); the MCP Registry channel needs it. */
-export const sqlite = () =>
-  process.getBuiltinModule?.("node:sqlite") as typeof import("node:sqlite") | undefined;
-
-/** A copy of the MCP Registry mirror's database, with the servers table the channel reads. */
-export function mcpDatabase(names: string[] = []): Buffer {
-  const { DatabaseSync } = sqlite()!;
-  const dir = mkdtempSync(join(tmpdir(), "nameable-mcp-fixture-"));
-  try {
-    const db = new DatabaseSync(join(dir, "registry.db"));
-    db.exec(
-      "CREATE TABLE servers (id INTEGER PRIMARY KEY, entry_name TEXT NOT NULL, status TEXT, updated_at TEXT)",
-    );
-    const insert = db.prepare(
-      "INSERT INTO servers (entry_name, status, updated_at) VALUES (?, ?, ?)",
-    );
-    for (let i = 0; i < 1000; i++) {
-      insert.run(`io.github.someone/server${i}`, "active", "2026-10-20T00:00:00Z");
-    }
-    for (const name of names) insert.run(name, "active", "2026-10-21T08:00:00Z");
-    db.close();
-    return readFileSync(join(dir, "registry.db"));
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+/** The MCP Registry list the channel downloads, with a thousand other servers around `names`. */
+export function mcpList(names: string[] = [], status = "active"): string {
+  const servers = Array.from({ length: 1000 }, (_, i) => `io.github.someone/server${i}\tactive`);
+  return [
+    "#nameable-data mcp-servers v1",
+    "#asof\t2026-10-21T08:00:00.000Z",
+    "#full\t2026-10-20T08:00:00.000Z",
+    ...servers,
+    ...names.map((n) => `${n}\t${status}`),
+    "",
+  ].join("\n");
 }
-const mcpFree = (names: string[] = ["io.github.x/nameable-tools"]): Service => {
-  let bytes: Buffer | undefined;
-  return {
-    http: () => new Response(new Uint8Array((bytes ??= mcpDatabase(names)))),
-    whois: noWhois,
-  };
-};
+const mcpFree = (names: string[] = ["io.github.x/nameable-tools"]): Service => ({
+  http: () => new Response(mcpList(names)),
+  whois: noWhois,
+});
 const NUGET_DELETED = "<p>This package has been deleted from the gallery.</p>";
 const PUB_NAMES = "https://pub.dev/api/package-names";
 const pubFree = (names: string[] = ["http"]): Service => ({
@@ -1219,37 +1199,34 @@ export const FIXTURES: Fixture[] = [
   })),
 ];
 
-// Without node:sqlite (Node before 22.13) the channel can only answer unknown, so it has no fixture.
-if (sqlite()) {
-  FIXTURES.push({
-    channel: only("mcp-registry"),
-    freeCertainty: "probable",
-    free: mcpFree(),
-    taken: mcpFree(["io.github.someone/nameable"]),
-    // server.json: the name part of `namespace/name` is [a-zA-Z0-9._-]+.
-    accepts: {
-      ...reject,
-      typical: true,
-      uppercase: true,
-      digits: true,
-      leadingDigit: true,
-      hyphen: true,
-      doubleHyphen: true,
-      reservedHyphens: true,
-      underscore: true,
-      dot: true,
-      leadingHyphen: true,
-      trailingHyphen: true,
-      single: true,
-      punycode: true,
+FIXTURES.push({
+  channel: only("mcp-registry"),
+  freeCertainty: "probable",
+  free: mcpFree(),
+  taken: mcpFree(["io.github.someone/nameable"]),
+  // server.json: the name part of `namespace/name` is [a-zA-Z0-9._-]+.
+  accepts: {
+    ...reject,
+    typical: true,
+    uppercase: true,
+    digits: true,
+    leadingDigit: true,
+    hyphen: true,
+    doubleHyphen: true,
+    reservedHyphens: true,
+    underscore: true,
+    dot: true,
+    leadingHyphen: true,
+    trailingHyphen: true,
+    single: true,
+    punycode: true,
+  },
+  refused: [
+    {
+      name: "NameAble",
+      why: "another namespace's server, compared ignoring case",
+      expect: "taken",
+      service: mcpFree(["com.example/nameable"]),
     },
-    refused: [
-      {
-        name: "NameAble",
-        why: "another namespace's server, compared ignoring case",
-        expect: "taken",
-        service: mcpFree(["com.example/nameable"]),
-      },
-    ],
-  });
-}
+  ],
+});

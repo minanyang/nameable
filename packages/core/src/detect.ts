@@ -257,6 +257,43 @@ async function workspaceMembers(
   return [...new Set(await expanded(patterns))].filter((m) => !skip.has(m));
 }
 
+// Where CI and deploy scripts push images. Docker Hub when they name it; a private registry (ECR, Google
+// Artifact Registry, GHCR, Azure, GitLab, Quay) or a cloud deploy that builds the image itself (CDK,
+// `dotnet lambda`, Cloud Run, Fly) otherwise.
+const DOCKER_HUB = /docker\.io\b|hub\.docker\.com|DOCKER_?HUB|DOCKER_USERNAME/i;
+const PRIVATE_REGISTRY =
+  /\.dkr\.ecr\.|amazon-ecr-login|\bECR\b|\bgcr\.io\b|-docker\.pkg\.dev\b|\bghcr\.io\b|\.azurecr\.io\b|registry\.gitlab\.com|\bquay\.io\b|\bcdk deploy\b|ContainerImage\.fromAsset|DockerImageAsset|\bdotnet lambda\b|gcloud run deploy|\bfly(?:ctl)? deploy\b/;
+// How far up a project's files are looked for, when no repository root comes first.
+const MAX_CI_LEVELS = 5;
+
+/**
+ * Where the project's images go, read from the CI and deploy files from `dir` up to the repository root:
+ * "hub" when anything names Docker Hub, "private" when only a private registry or a cloud deploy is
+ * named, undefined when nothing says.
+ */
+async function imageRegistry(dir: string): Promise<"hub" | "private" | undefined> {
+  let found: "private" | undefined;
+  for (let at = dir, level = 0; level < MAX_CI_LEVELS; level++, at = dirname(at)) {
+    const entries = await list(at);
+    const workflows = (await list(join(at, ".github", "workflows"))).map((f) =>
+      join(".github", "workflows", f),
+    );
+    const files = [
+      ...workflows,
+      ...entries.filter((e) =>
+        /^(?:\.gitlab-ci\.ya?ml|bitbucket-pipelines\.yml|Makefile|cdk\.json|deploy.*)$/i.test(e),
+      ),
+    ];
+    for (const file of files) {
+      const content = (await text(at, file)) ?? "";
+      if (DOCKER_HUB.test(content)) return "hub";
+      if (PRIVATE_REGISTRY.test(content)) found = "private";
+    }
+    if (entries.includes(".git") || dirname(at) === at) break;
+  }
+  return found;
+}
+
 /** Whether a Python manifest depends on an MCP SDK. */
 function pythonMcp(py: string): boolean {
   const lists = [...py.matchAll(/dependencies\s*=\s*\[([\s\S]*?)\]\s*$/gm)].map((m) => m[1]!);
@@ -418,7 +455,10 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
   const container = entries.find((e) =>
     /^(?:Dockerfile|Containerfile)(?:\..+)?$|\.Dockerfile$/.test(e),
   );
-  if (container) pick(container, ...(privateApp ? [] : ["docker"]));
+  if (container) {
+    pick(container);
+    if (!privateApp && (await imageRegistry(dir)) !== "private") pick(container, "docker");
+  }
 
   if (has(".claude-plugin")) pick(".claude-plugin", "claude-plugins");
   if (has(".cursor-plugin")) pick(".cursor-plugin", "cursor");

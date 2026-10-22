@@ -33,12 +33,12 @@ Nameable 套用每個 registry 自己的規則（直接取自它們的原始碼�
 
 ## 在終端機使用
 
-需要 Node.js 22 以上（MCP Registry 需要 22.13 以上）。在專案資料夾（或它底下到 repo 根目錄為止的任何資料夾）裡執行時，會依專案檔案挑出它會發佈的管道：
+需要 Node.js 22 以上。在專案資料夾（或它底下到 repo 根目錄為止的任何資料夾）裡執行時，會依專案檔案挑出它會發佈的管道：
 
 - `package.json` 查 npm（沒有 `name`、private，或是會自己啟動、serve 或部署又沒宣告要發佈內容的伺服器或網站時不查），有 `bin` 時加查 Homebrew；有 `engines.vscode` 時改查 VS Code Marketplace 和 Open VSX，不查 npm
 - 描述套件的 `pyproject.toml`、`setup.py` 或 `setup.cfg` 查 PyPI，有宣告 scripts 時加查 Homebrew
 - `Cargo.toml` 查 crates.io（`publish = false` 時不查），會建置出執行檔時加查 Homebrew
-- `.gemspec` 查 RubyGems、`composer.json` 查 Packagist（project 類型不查）、`pubspec.yaml` 查 pub.dev（`publish_to: none` 時不查）、`.csproj` 或 `.sln` 查 NuGet（建置 web app、執行檔或測試時不查）、`Dockerfile` 查 Docker Hub（`package.json` 是 private 時不查）、有執行檔的 `Package.swift` 查 Homebrew
+- `.gemspec` 查 RubyGems、`composer.json` 查 Packagist（project 類型不查）、`pubspec.yaml` 查 pub.dev（`publish_to: none` 時不查）、`.csproj` 或 `.sln` 查 NuGet（建置 web app、執行檔或測試時不查）、`Dockerfile` 查 Docker Hub（`package.json` 是 private，或 CI、部署檔只推到私有 registry 或雲端部署時不查）、有執行檔的 `Package.swift` 查 Homebrew
 - `.claude-plugin/`、`.cursor-plugin/` 和 `gemini-extension.json` 查對應的目錄，`plugin.xml` 或 IntelliJ Gradle plugin 查 JetBrains Marketplace，依賴 MCP SDK 時查 MCP Registry 和 Smithery
 - Xcode 專案查 App Store、Android app 查 Google Play，Expo 或 Flutter app 兩個都查
 - 在 npm、pnpm、Yarn、Lerna 或 Cargo workspace 根目錄時，用同樣方式讀每個成員，合併它們的管道
@@ -62,7 +62,7 @@ Checking "nameable" on 23 channels
   ✓ NuGet                 probably available no package with this ID; reserved prefixes and the ty…
   ✓ Docker Hub            probably available no user or organization; deactivated or reserved Dock…
   ✓ GitHub user/org       probably available suspended, deleted or reserved accounts also look fre…
-  ✓ MCP Registry          probably available no server uses this name in a community mirror of the…
+  ✓ MCP Registry          probably available no server uses this name in the registry as of 2026-10…
   ✓ Smithery              probably available no public servers; a namespace with none, or with onl…
   ✓ Claude plugins        available          not in the official marketplace
   ✓ Cursor plugins        probably available not among Cursor's listed plugins; plugins in review …
@@ -162,7 +162,7 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 | Docker Hub            | Docker ID 規則、使用者和組織（包括只有轉址才看得出來的帳號）、官方 image；停用的帳號看不到，所以「可用」只能是 probable                                                                                                                      |
 | GitHub                | 使用者和組織；隱藏的帳號讓「可用」只能是 probable                                                                                                                                                                                            |
 | 網域                  | 任何 TLD，透過 RDAP 或 whois；國際化網域名稱；registry 無法接受的 label                                                                                                                                                                      |
-| MCP Registry          | 任何 namespace 下名稱部分相同的 server，資料來自每日更新的社群鏡像（registry 自己的搜尋一次要 30 秒以上）；名稱部分沒有人能擁有，所以查到同名代表撞名，「可用」只能是 probable。需要 Node.js 22.13 以上                                      |
+| MCP Registry          | 任何 namespace 下名稱部分相同的 server，資料來自本專案每天從 registry API 重建的完整 server 清單（registry 自己的搜尋一次要 30 秒以上）；名稱部分沒有人能擁有，所以查到同名代表撞名，「可用」只能是 probable                                 |
 | Smithery              | Namespace 命名規則；沒有公開 server 的 namespace 看起來也是空的，所以「可用」只能是 probable                                                                                                                                                 |
 | Cursor plugins        | Cursor 的 marketplace；plugin 命名規則。資料沒有文件，所以「可用」只能是 probable                                                                                                                                                            |
 | Gemini extensions     | Gemini CLI 的擴充目錄。名稱不唯一，查到同名只代表使用者會看到另一個同名擴充                                                                                                                                                                  |
