@@ -104,19 +104,19 @@ export async function readRegistry(since?: string, fetchFn: FetchFn = fetch): Pr
   return found;
 }
 
-/** A page, retried a few times through network errors, rate limits and server errors. */
+/** A page, retried a few times through network errors, cut-off bodies, rate limits and server errors. */
 async function getJson(url: string, fetchFn: FetchFn): Promise<unknown> {
   for (let attempt = 1; ; attempt++) {
-    const res = await fetchFn(url, { signal: AbortSignal.timeout(60_000) }).catch(
-      (err: unknown) => {
-        if (attempt >= 5) throw err;
-        return undefined;
-      },
-    );
-    if (res?.ok) return await res.json();
-    if (res && res.status < 500 && res.status !== 429)
-      throw new Error(`HTTP ${res.status} for ${url}`);
-    if (res && attempt >= 5) throw new Error(`HTTP ${res.status} for ${url}`);
+    try {
+      const res = await fetchFn(url, { signal: AbortSignal.timeout(60_000) });
+      if (res.ok) return await res.json();
+      const error = new Error(`HTTP ${res.status} for ${url}`);
+      // Any other client error will not go away on another try.
+      if (res.status < 500 && res.status !== 429) throw Object.assign(error, { final: true });
+      throw error;
+    } catch (err) {
+      if (attempt >= 5 || (err as { final?: boolean }).final) throw err;
+    }
     await new Promise((resolve) => setTimeout(resolve, 2000 * 2 ** attempt));
   }
 }
@@ -158,9 +158,13 @@ if (import.meta.main) {
   }
   const text = await readFile(previousPath, "utf8").catch(() => "");
   const previous = parseList(text);
-  // A previous list that is there but unreadable (cut short in transfer) means reading every server.
-  if (text && !previous) console.warn("the previous list is not complete; reading every server");
-  const next = await update(previous, { full: flag === "--full" });
+  const full = flag === "--full";
+  // A previous list that is there but unreadable leaves nothing to check a new one against.
+  if (text && !previous && !full) {
+    console.error("the previous list is not complete; run with --full to read every server");
+    process.exit(1);
+  }
+  const next = await update(previous, { full });
   await writeFile(output, formatList(next));
   const kind = next.full === next.asOf ? "full" : "incremental";
   console.log(`${next.servers.size} servers (${kind} read, as of ${next.asOf})`);

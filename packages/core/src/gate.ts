@@ -5,7 +5,9 @@
 export class Gate {
   #active = 0;
   #waiting: (() => void)[] = [];
-  #nextStart = 0;
+  // Paced tasks start in turn, each an interval after the one before it actually started.
+  #turn: Promise<void> = Promise.resolve();
+  #lastStart = -Infinity;
 
   constructor(
     readonly max: number,
@@ -17,10 +19,13 @@ export class Gate {
     if (this.#active < this.max) this.#active++;
     else await new Promise<void>((resolve) => this.#waiting.push(resolve));
     if (this.intervalMs && paced()) {
-      const now = Date.now();
-      const at = Math.max(now, this.#nextStart);
-      this.#nextStart = at + this.intervalMs;
-      if (at > now) await new Promise((r) => setTimeout(r, at - now));
+      const turn = this.#turn.then(async () => {
+        const wait = this.#lastStart + this.intervalMs - Date.now();
+        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+        this.#lastStart = Date.now();
+      });
+      this.#turn = turn;
+      await turn;
     }
     try {
       return await task();

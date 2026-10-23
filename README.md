@@ -48,7 +48,7 @@ repository root) and it checks the channels the project ships on, picked from it
 - `Cargo.toml` for crates.io (unless `publish = false`), Homebrew when it builds a binary
 - a `.gemspec` for RubyGems, `composer.json` for Packagist (unless it is a project), `pubspec.yaml` for pub.dev
   (unless `publish_to: none`), a `.csproj` or `.sln` for NuGet (unless it builds a web app, an executable or tests), a
-  `Dockerfile` for Docker Hub (unless the `package.json` is private, or CI and deploy files push images only to a private registry or a cloud deploy), a `Package.swift` with an executable for Homebrew
+  `Dockerfile` for Docker Hub (unless it belongs to a private `package.json` app with dependencies, or CI and deploy files push images only to a private registry or a cloud deploy), a `Package.swift` with an executable for Homebrew
 - `.claude-plugin/`, `.cursor-plugin/` and `gemini-extension.json` for those directories, a `plugin.xml` or the
   IntelliJ Gradle plugin for JetBrains Marketplace, an MCP SDK dependency for the MCP Registry and Smithery
 - an Xcode project for the App Store, an Android app for Google Play, and an Expo or Flutter app for both

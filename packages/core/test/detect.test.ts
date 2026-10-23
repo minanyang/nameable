@@ -105,6 +105,98 @@ describe("detectProject", () => {
       },
       ["github", "domain"],
     ],
+    // A self-closing conditional element hides nothing after it.
+    [
+      {
+        "Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "Directory.Build.props":
+          '<ItemGroup><None Include="icon.png" Pack="true" Condition="Exists(\'icon.png\')" /></ItemGroup><PropertyGroup><IsPackable>false</IsPackable></PropertyGroup><ItemGroup><None Include="README.md"><Pack>true</Pack></None></ItemGroup>',
+      },
+      ["github", "domain"],
+    ],
+    // A Choose block is as conditional as a Condition attribute, nested or not.
+    [
+      {
+        "Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "Directory.Build.props":
+          '<Choose><When Condition="a"><Choose><When Condition="b"></When></Choose><PropertyGroup><IsPackable>false</IsPackable></PropertyGroup></When><Otherwise><PropertyGroup><IsPackable>false</IsPackable></PropertyGroup></Otherwise></Choose>',
+      },
+      ["nuget", "github", "domain"],
+    ],
+    // Comments are not read.
+    [{ "X.csproj": "<!-- <OutputType>Exe</OutputType> -->" }, ["nuget", "github", "domain"]],
+    [{ "X.csproj": "<!--<IsPackable>false</IsPackable>-->" }, ["nuget", "github", "domain"]],
+    // As in MSBuild, the last value wins, and the project's own over its props.
+    [
+      {
+        "X.csproj":
+          "<PropertyGroup><IsPackable>false</IsPackable></PropertyGroup><PropertyGroup><IsPackable>true</IsPackable></PropertyGroup>",
+      },
+      ["nuget", "github", "domain"],
+    ],
+    [
+      {
+        "X.csproj": "<IsPackable>true</IsPackable>",
+        "Directory.Build.props": "<IsPackable>false</IsPackable>",
+      },
+      ["nuget", "github", "domain"],
+    ],
+    // A props file that imports the one above it.
+    [
+      {
+        "src/Lib/Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "X.sln": 'Project("{G}") = "Lib", "src\\Lib\\Lib.csproj", "{H}"',
+        "Directory.Build.props": "<IsPackable>false</IsPackable>",
+        "src/Directory.Build.props":
+          "<Import Project=\"$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))\" /><LangVersion>latest</LangVersion>",
+      },
+      ["github", "domain"],
+    ],
+    // Test projects that are executables, by framework, SDK, runner or a props file's references.
+    ...[
+      '<OutputType>Exe</OutputType><PackageReference Include="TUnit" Version="0.6" />',
+      '<OutputType>Exe</OutputType><EnableMSTestRunner>true</EnableMSTestRunner><PackageReference Include="MSTest" />',
+      '<Project Sdk="MSTest.Sdk/3.6.4">',
+    ].map((test): [Record<string, string>, string[]] => [
+      {
+        "X.slnx":
+          '<Solution><Project Path="Lib/Lib.csproj" /><Project Path="T/T.csproj" /></Solution>',
+        "Lib/Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "T/T.csproj": test,
+      },
+      ["nuget", "github", "domain"],
+    ]),
+    [
+      {
+        "X.sln":
+          'Project("{G}") = "Lib", "Lib\\Lib.csproj", "{H}"\nProject("{G}") = "T", "tests\\T\\T.csproj", "{I}"',
+        "Lib/Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "tests/T/T.csproj": "<OutputType>Exe</OutputType>",
+        "tests/Directory.Build.props":
+          '<ItemGroup><PackageReference Include="xunit.v3" /></ItemGroup>',
+      },
+      ["nuget", "github", "domain"],
+    ],
+    // A library that extends a test framework is still a package.
+    [
+      { "X.csproj": '<PackageReference Include="xunit.v3.extensibility.core" />' },
+      ["nuget", "github", "domain"],
+    ],
+    // Apps by SDK version, element, quotes or Azure Functions.
+    ...[
+      '<Project Sdk="Microsoft.NET.Sdk.Web/8.0.0">',
+      '<Project><Sdk Name="Microsoft.NET.Sdk.Web" />',
+      "<Project Sdk='Microsoft.NET.Sdk.Web'>",
+      '<Project Sdk="Microsoft.NET.Sdk.WebAssembly">',
+      '<Project Sdk="Microsoft.NET.Sdk"><AzureFunctionsVersion>v4</AzureFunctionsVersion>',
+    ].map((app): [Record<string, string>, string[]] => [{ "X.csproj": app }, ["github", "domain"]]),
+    [
+      {
+        "X.sln": 'Project("{G}") = "Lib", "Lib\\Lib.CSPROJ", "{H}"',
+        "Lib/Lib.CSPROJ": "<PackageId>Lib</PackageId>",
+      },
+      ["nuget", "github", "domain"],
+    ],
     [{ "X.csproj": '<Project Sdk="Microsoft.NET.Sdk.Worker">' }, ["github", "domain"]],
     [{ "X.csproj": '<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">' }, ["github", "domain"]],
     [{ "X.csproj": '<IsPackable Condition="x">false</IsPackable>' }, ["github", "domain"]],
@@ -126,7 +218,7 @@ describe("detectProject", () => {
     // pnpm 10 keeps settings in pnpm-workspace.yaml without making the repository a workspace.
     [
       {
-        "package.json": '{"name":"app","private":true}',
+        "package.json": '{"name":"app","private":true,"dependencies":{"x":"1"}}',
         "pnpm-workspace.yaml": "onlyBuiltDependencies:\n  - esbuild\n",
         Dockerfile: "",
       },
@@ -144,7 +236,19 @@ describe("detectProject", () => {
       ["npm", "github", "domain"],
     ],
     // A private app's image is deployed, not published; a package's image may be.
-    [{ "package.json": '{"name":"web","private":true}', Dockerfile: "" }, ["github", "domain"]],
+    [
+      { "package.json": '{"name":"web","private":true,"dependencies":{"x":"1"}}', Dockerfile: "" },
+      ["github", "domain"],
+    ],
+    // A private package.json that only holds another project's tooling says nothing of its image.
+    [
+      {
+        "pyproject.toml": '[project]\nname = "x"',
+        "package.json": '{"private":true,"devDependencies":{"prettier":"3"}}',
+        Dockerfile: "",
+      },
+      ["docker", "github", "domain"],
+    ],
     // Only a JavaScript workspace with members it cannot find falls back to npm, and not for an app.
     [
       {
@@ -488,6 +592,62 @@ describe("detectProject", () => {
       },
       ["docker"],
     ],
+    ["Kaniko", { ".gitlab-ci.yml": "script: /kaniko/executor --destination gcr.io/me/app" }, []],
+    [
+      "GitLab's registry",
+      { ".gitlab-ci.yml": "script: docker push $CI_REGISTRY_IMAGE:latest" },
+      [],
+    ],
+    ["a Jenkinsfile", { Jenkinsfile: "sh 'docker push ghcr.io/me/app'" }, []],
+    ["a CircleCI config", { ".circleci/config.yml": "- run: docker push ghcr.io/me/app" }, []],
+    [
+      "a comment that ends in a backslash",
+      { "deploy.sh": "# build \\\ndocker push ghcr.io/me/app" },
+      [],
+    ],
+    // Docker Hub beside another registry: Docker Hub wins.
+    ...(
+      [
+        ["a tags block", "tags: |\n  me/app:latest\n  ghcr.io/me/app:latest"],
+        ["inline tags", "tags: me/app:latest,ghcr.io/me/app:latest"],
+        ["a tags list", "tags:\n  - me/app:latest\n  - ghcr.io/me/app:latest"],
+        [
+          "metadata-action images",
+          "with:\n  images: |\n    me/app\n    ghcr.io/me/app\n  tags: type=sha",
+        ],
+        [
+          "a tag with an expression",
+          "run: docker push ghcr.io/me/app:${{ github.sha }} && docker push me/app:${{ github.sha }}",
+        ],
+        [
+          "an ECR login and a Docker Hub tag",
+          "- uses: aws-actions/amazon-ecr-login@v2\n- with:\n    push: true\n    tags: me/app:latest",
+        ],
+        [
+          "a push with an output",
+          "run: docker buildx build -t me/app --output type=image,push=true . && docker push ghcr.io/me/x",
+        ],
+      ] as const
+    ).map(([what, ci]): [string, Record<string, string>, string[]] => [
+      `${what} on Docker Hub and GHCR`,
+      { ".github/workflows/ci.yml": ci },
+      ["docker"],
+    ]),
+    [
+      "a variable tag",
+      { "deploy.sh": "docker push ghcr.io/me/app:$V\ndocker push me/app:$V" },
+      ["docker"],
+    ],
+    [
+      "two pushes on a line",
+      { "deploy.sh": "docker push ghcr.io/me/app && docker push me/app" },
+      ["docker"],
+    ],
+    [
+      "podman to Docker Hub",
+      { "deploy.sh": "podman push quay.io/me/app\npodman push me/app" },
+      ["docker"],
+    ],
     // Nothing that says where this image goes: Docker Hub stays.
     ["no CI at all", {}, ["docker"]],
     [
@@ -506,6 +666,25 @@ describe("detectProject", () => {
       ["docker"],
     ],
     ["prose", { "DEPLOY.md": "Pull the image from quay.io." }, ["docker"]],
+    [
+      "an npm registry",
+      {
+        ".github/workflows/ci.yml":
+          'run: npm publish --registry=https://npm.pkg.github.com/\nrun: echo "@me:registry=https://npm.pkg.github.com" >> .npmrc',
+      },
+      ["docker"],
+    ],
+    [
+      "a trailing comment",
+      { ".gitlab-ci.yml": "script: make # docker push ghcr.io/me/app" },
+      ["docker"],
+    ],
+    [
+      "a Go module path",
+      { ".github/workflows/ci.yml": "matrix:\n  module:\n    - github.com/me/app" },
+      ["docker"],
+    ],
+    ["release tag patterns", { ".github/workflows/ci.yml": "tags:\n  - 'release/*'" }, ["docker"]],
     [
       "GitLab runner tags",
       { ".gitlab-ci.yml": "build:\n  tags: [ docker ]\n  script: make" },
@@ -533,11 +712,31 @@ describe("detectProject", () => {
     ]);
   });
 
-  it("reads a large CI file in linear time", async () => {
+  it("reads the repository's CI from a relative path", async () => {
+    const dir = project({
+      ".git/": "",
+      "deploy.sh": "docker push ghcr.io/me/app",
+      "svc/Dockerfile": "",
+    });
+    const cwd = process.cwd();
+    process.chdir(join(dir, "svc"));
+    try {
+      expect((await detectProject("."))?.only).toEqual(["github", "domain"]);
+    } finally {
+      process.chdir(cwd);
+    }
+  });
+
+  it.each([
+    [".github/workflows/ci.yml", `run: docker buildx build ${"-t a ".repeat(100_000)}--push .`],
+    ["deploy.sh", "x \\\n".repeat(200_000)],
+    ["Directory.Build.props", "<a ".repeat(50_000)],
+  ])("reads a large %s in linear time", async (file, content) => {
     const dir = project({
       ".git/": "",
       Dockerfile: "",
-      ".github/workflows/ci.yml": `run: docker buildx build ${"-t a ".repeat(100_000)}--push .`,
+      "X.csproj": "<Project />",
+      [file]: content,
     });
     const started = Date.now();
     await detectProject(dir);

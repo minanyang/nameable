@@ -17,7 +17,7 @@ const STALE_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
 const VALID = /^[a-zA-Z0-9._-]+$/;
 
 /**
- * Every server in the published list, one `name part\tfull name\tstatus` line each, then `#asof\t<date>`:
+ * Every server in the published list, one `name part\tfull name\tstatus` line each, then `#asof\t<time>`:
  * when the list was read from the registry.
  */
 async function serverList(ctx: Context): Promise<string> {
@@ -25,11 +25,16 @@ async function serverList(ctx: Context): Promise<string> {
   if (!res.ok) throw new Error(`the MCP Registry list returned HTTP ${res.status}`);
   const lines = (await res.text()).split("\n");
   // A file in another shape must fail the check, not read as an empty registry.
-  const asOf = lines.find((l) => l.startsWith("#asof\t"))?.slice(6, 16) ?? "";
+  const asOf = lines.find((l) => l.startsWith("#asof\t"))?.slice(6) ?? "";
   const servers = lines.slice(1).filter((l) => l && !l.startsWith("#"));
   // The last line counts the servers, so a list cut short is never read as complete.
   const end = lines.find((l) => l.startsWith("#end\t"))?.slice(5);
-  if (lines[0] !== HEADER || !asOf || servers.length < 1000 || Number(end) !== servers.length) {
+  if (
+    lines[0] !== HEADER ||
+    Number.isNaN(Date.parse(asOf)) ||
+    servers.length < 1000 ||
+    Number(end) !== servers.length
+  ) {
     throw new Error("the MCP Registry list is not in the expected shape");
   }
   const rows = servers.flatMap((line) => {
@@ -66,9 +71,10 @@ export const mcpRegistry: Channel = defineChannel({
         meta: { servers: servers.length, examples: servers.slice(0, 10).map(([s]) => s) },
       };
     }
-    const date = linesFor(list.text, "#asof")[0]?.[0] || asOf(list);
+    const time = linesFor(list.text, "#asof")[0]?.[0] || asOf(list);
+    const date = time.slice(0, 10);
     // The list is rebuilt daily; an older one means the workflow that builds it has stopped.
-    const behind = (ctx.now?.() ?? Date.now()) - Date.parse(date) > STALE_AFTER_MS;
+    const behind = (ctx.now?.() ?? Date.now()) - Date.parse(time) > STALE_AFTER_MS;
     return {
       status: "available",
       certainty: "probable",

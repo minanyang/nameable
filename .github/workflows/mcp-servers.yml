@@ -20,6 +20,8 @@ concurrency: mcp-servers
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # A full read takes minutes; a registry that stalls should not hold the job for hours.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -34,7 +36,11 @@ jobs:
         run: |
           git init -q data && cd data
           git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
-          if git fetch -q --depth=1 origin data; then git checkout -q -b data FETCH_HEAD; else git checkout -q --orphan data; fi
+          # Exit code 2: the branch is missing, rather than unreachable.
+          status=0; git ls-remote -q --exit-code origin refs/heads/data > /dev/null || status=$?
+          if [ "$status" = 0 ]; then git fetch -q --depth=1 origin data && git checkout -q -b data FETCH_HEAD
+          elif [ "$status" = 2 ]; then git checkout -q --orphan data
+          else exit "$status"; fi
       - name: Build the list
         run: node scripts/mcp-servers.ts data/mcp-servers.tsv data/mcp-servers.tsv.new ${FULL:+--full} && mv data/mcp-servers.tsv.new data/mcp-servers.tsv
         env:

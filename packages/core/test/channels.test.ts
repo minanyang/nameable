@@ -766,6 +766,18 @@ describe("Gate", () => {
     expect(starts[2]! - starts[1]!).toBeGreaterThanOrEqual(35);
   });
 
+  it("spaces a task from when the one before it actually started", async () => {
+    const gate = new Gate(4, 40);
+    const starts: number[] = [];
+    const all = Promise.all(
+      [1, 2, 3].map(() => gate.run(async () => void starts.push(Date.now()))),
+    );
+    // A busy event loop holds every timer past its time.
+    for (const until = Date.now() + 100; Date.now() < until;);
+    await all;
+    expect(starts[2]! - starts[1]!).toBeGreaterThanOrEqual(35);
+  });
+
   it("never runs more than its limit and runs every task", async () => {
     const gate = new Gate(2);
     let active = 0;
@@ -856,7 +868,8 @@ describe("mcp-registry", () => {
     const [fresh] = await check("other", selectChannels({ only: ["mcp-registry"] }), {
       fetch: fakeFetch({ [LIST]: () => new Response(mcpList()) }),
       backoffMs: 0,
-      now: () => Date.parse("2026-10-22T00:00:00Z"),
+      // Three days from the time of the read, not from the start of its day.
+      now: () => Date.parse("2026-10-24T07:00:00Z"),
     });
     expect(fresh!.note).toBe("no server uses this name in the registry as of 2026-10-21");
   });
@@ -865,6 +878,7 @@ describe("mcp-registry", () => {
     ["another file", "<html>Not Found</html>"],
     ["a list cut short", mcpList().split("\n").slice(0, 500).join("\n")],
     ["a list without its date", mcpList().replace(/#asof[^\n]*\n/, "")],
+    ["a list with a date that does not parse", mcpList().replace(/#asof[^\n]*/, "#asof\tsoon")],
     [
       "a list cut short after its header",
       mcpList().replace(/io\.github\.someone\/server9\d\d\tactive\n/g, ""),
