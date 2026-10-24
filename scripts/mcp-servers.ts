@@ -9,6 +9,8 @@ import { readFile, writeFile } from "node:fs/promises";
 
 const API = "https://registry.modelcontextprotocol.io/v0.1/servers";
 export const HEADER = "#nameable-data mcp-servers v1";
+// What toISOString writes; Date.parse alone takes "1" for a date.
+export const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const FULL_EVERY_MS = 7 * 24 * 60 * 60 * 1000;
 // Reading from a little before the previous run covers servers updated while it was paging.
 const OVERLAP_MS = 60 * 60 * 1000;
@@ -49,7 +51,7 @@ export function parseList(text: string): ServerList | undefined {
     else if (name === "#end") end = Number(value);
     else servers.set(name, value);
   }
-  const dated = !Number.isNaN(Date.parse(asOf)) && !Number.isNaN(Date.parse(full));
+  const dated = ISO_TIME.test(asOf) && ISO_TIME.test(full);
   return dated && end === servers.size ? { servers, asOf, full } : undefined;
 }
 
@@ -156,11 +158,15 @@ if (import.meta.main) {
     console.error("usage: node scripts/mcp-servers.ts <previous list> <output> [--full]");
     process.exit(64);
   }
-  const text = await readFile(previousPath, "utf8").catch(() => "");
-  const previous = parseList(text);
+  // Only a missing file means there is no previous list; one that cannot be read is an error.
+  const text = await readFile(previousPath, "utf8").catch((err: NodeJS.ErrnoException) => {
+    if (err.code === "ENOENT") return undefined;
+    throw err;
+  });
+  const previous = text === undefined ? undefined : parseList(text);
   const full = flag === "--full";
   // A previous list that is there but unreadable leaves nothing to check a new one against.
-  if (text && !previous && !full) {
+  if (text !== undefined && !previous && !full) {
     console.error("the previous list is not complete; run with --full to read every server");
     process.exit(1);
   }

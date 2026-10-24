@@ -778,6 +778,15 @@ describe("Gate", () => {
     expect(starts[2]! - starts[1]!).toBeGreaterThanOrEqual(35);
   });
 
+  it("frees its slot when deciding whether to pace a task fails", async () => {
+    const gate = new Gate(1, 10);
+    const broken = () => {
+      throw new Error("x");
+    };
+    await expect(gate.run(async () => 1, broken)).rejects.toThrow("x");
+    expect(await gate.run(async () => 2)).toBe(2);
+  });
+
   it("never runs more than its limit and runs every task", async () => {
     const gate = new Gate(2);
     let active = 0;
@@ -879,6 +888,7 @@ describe("mcp-registry", () => {
     ["a list cut short", mcpList().split("\n").slice(0, 500).join("\n")],
     ["a list without its date", mcpList().replace(/#asof[^\n]*\n/, "")],
     ["a list with a date that does not parse", mcpList().replace(/#asof[^\n]*/, "#asof\tsoon")],
+    ["a list with a number for a date", mcpList().replace(/#asof[^\n]*/, "#asof\t1")],
     [
       "a list cut short after its header",
       mcpList().replace(/io\.github\.someone\/server9\d\d\tactive\n/g, ""),

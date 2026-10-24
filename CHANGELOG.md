@@ -35,8 +35,7 @@ Sixteen new channels, channels picked from your project, and fixes from three ro
   npm, PyPI, crates.io, RubyGems, Packagist, pub.dev and NuGet manifests (skipping private apps, servers and
   unpublished packages), Swift executables, Dockerfiles, Claude Code, Cursor, Gemini CLI, VS Code and JetBrains
   plugins, MCP SDK dependencies, and Xcode, Android, Expo and Flutter apps; at a workspace root, every member's.
-  Outside a project it checks a general set. `--all` checks every channel. A Dockerfile is skipped when CI or deploy
-  files push its images only to a private registry (ECR, Artifact Registry, GHCR) or a cloud deploy.
+  Outside a project it checks a general set. `--all` checks every channel.
 
 **Changes to existing channels and the CLI**
 

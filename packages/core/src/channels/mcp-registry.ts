@@ -31,7 +31,7 @@ async function serverList(ctx: Context): Promise<string> {
   const end = lines.find((l) => l.startsWith("#end\t"))?.slice(5);
   if (
     lines[0] !== HEADER ||
-    Number.isNaN(Date.parse(asOf)) ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(asOf) ||
     servers.length < 1000 ||
     Number(end) !== servers.length
   ) {

@@ -72,18 +72,9 @@ function pythonPackage(file: string, py: string): boolean {
 
 type DotnetProject = "package" | "library" | "app" | "none";
 
-/** MSBuild XML without its comments. */
+/** MSBuild XML without its comments and CDATA sections, whose text holds no elements. */
 function uncommented(xml: string): string {
-  const [head = "", ...rest] = xml.split("<!--");
-  return (
-    head +
-    rest
-      .map((part) => {
-        const end = part.indexOf("-->");
-        return end < 0 ? "" : part.slice(end + 3);
-      })
-      .join("")
-  );
+  return xml.replace(/<!--[\s\S]*?(?:-->|$)|<!\[CDATA\[[\s\S]*?(?:\]\]>|$)/g, "");
 }
 
 /**
@@ -96,8 +87,9 @@ function unconditional(xml: string): string {
   // The element being skipped, and how deep inside elements of the same name the scan is.
   let skipping: string | undefined;
   let depth = 0;
-  // Attribute values hold no `<`, which keeps a tag that never closes from being read to the end.
-  for (const m of xml.matchAll(/<(\/?)([\w.]+)([^<>]*)>/g)) {
+  // A quoted attribute value can hold `>` (`'$(V)' > '16'`) but never `<`, which keeps a tag that never
+  // closes from being read to the end.
+  for (const m of xml.matchAll(/<(\/?)([\w.-]+)((?:\s(?:[^<>"']|"[^"<]*"|'[^'<]*')*)?)>/g)) {
     const [tag, close, name, attrs] = m as unknown as [string, string, string, string];
     const empty = attrs.endsWith("/");
     if (skipping) {
@@ -123,16 +115,17 @@ const TEST_REFERENCE =
 const SDK = /\bSdk(?:\s+Name)?\s*=\s*["']([\w.]+)/gi;
 
 /**
- * What a .NET project builds, from its own properties and those of the Directory.Build.props files it
- * imports. A tool (`PackAsTool`) is a package. Then none: a test project. Then an app: a web, worker,
- * WebAssembly or Azure Functions project, or an executable; package metadata does not make one a
+ * What a .NET project builds, from its own properties and those of the Directory.Build.props and
+ * Directory.Build.targets files it imports. A tool (`PackAsTool`) is a package. Then none: a test project,
+ * or one that only groups others. Then an app: a web, worker, WebAssembly, Aspire AppHost, Azure
+ * Functions or AWS Lambda project, or an executable; package metadata does not make one a
  * package, since a props file often sets it for every project. Then none: a project marked not
  * packable. Then a package: one that is packable, built as a package or declares package metadata.
  * A plain library is packable by default, so NuGet takes it unless something says otherwise.
  */
-function dotnetProject(project: string, props = ""): DotnetProject {
-  // The project comes last: as in MSBuild, the last value set wins, and props are imported first.
-  const xml = unconditional(uncommented(props)) + uncommented(project);
+function dotnetProject(project: string, props = "", targets = ""): DotnetProject {
+  // In MSBuild's order, in which the last value set wins: props, the project, then targets.
+  const xml = unconditional(props) + uncommented(project) + unconditional(targets);
   const prop = (name: string) => {
     const values = [...xml.matchAll(new RegExp(`<${name}(?:\\s[^>]*)?>([^<]*)</${name}>`, "gi"))];
     return values.at(-1)?.[1]?.trim().toLowerCase();
@@ -145,16 +138,21 @@ function dotnetProject(project: string, props = ""): DotnetProject {
     prop("EnableMSTestRunner") === "true" ||
     prop("EnableNUnitRunner") === "true" ||
     sdks.includes("mstest.sdk") ||
+    // Projects that build nothing of their own: they only group or run others.
+    sdks.some((sdk) => /^microsoft\.build\.(?:notargets|traversal)$/.test(sdk)) ||
     TEST_REFERENCE.test(xml)
   ) {
     return "none";
   }
   if (
     sdks.some((sdk) =>
-      /^microsoft\.net\.sdk\.(?:web|worker|blazorwebassembly|webassembly)$/.test(sdk),
+      /^(?:microsoft\.net\.sdk\.(?:web|worker|blazorwebassembly|webassembly)|aspire\.apphost\.sdk)$/.test(
+        sdk,
+      ),
     ) ||
     /^(?:winexe|exe)$/.test(prop("OutputType") ?? "") ||
-    prop("AzureFunctionsVersion") !== undefined
+    prop("AzureFunctionsVersion") !== undefined ||
+    prop("AWSProjectType") !== undefined
   ) {
     return "app";
   }
@@ -169,23 +167,30 @@ function dotnetProject(project: string, props = ""): DotnetProject {
   return "library";
 }
 
+// How far up a project the search for Directory.Build files goes, short of the repository root.
+const MAX_BUILD_LEVELS = 5;
+
 /**
- * The Directory.Build.props MSBuild imports for a project in `dir`: the nearest one up the tree, as far as
- * the repository root, and the ones above it that it imports in turn, outermost first.
+ * The Directory.Build.props or Directory.Build.targets MSBuild imports for a project in `dir`: the nearest
+ * one up the tree, as far as the repository root, with the one above it in place of its import of it.
  */
-async function buildProps(dir: string): Promise<string> {
-  let found = "";
-  for (let at = resolve(dir), level = 0; level < MAX_CI_LEVELS && at !== homedir(); level++) {
+async function buildFile(dir: string, file: string, levels = MAX_BUILD_LEVELS): Promise<string> {
+  for (let at = resolve(dir), level = 0; level < levels && at !== homedir(); level++) {
     const entries = await list(at);
-    if (entries.includes("Directory.Build.props")) {
-      const props = (await text(at, "Directory.Build.props")) ?? "";
-      found = props + found;
-      if (!/<Import\s[^>]*Directory\.Build\.props/i.test(uncommented(props))) break;
+    const top = entries.includes(".git") || dirname(at) === at;
+    if (entries.includes(file)) {
+      const xml = uncommented((await text(at, file)) ?? "");
+      const parent = new RegExp(`<Import\\s[^>]*${file.replaceAll(".", "\\.")}[^>]*>`, "i").exec(
+        xml,
+      );
+      if (!parent || top) return xml;
+      const outer = await buildFile(dirname(at), file, levels - level - 1);
+      return xml.slice(0, parent.index) + outer + xml.slice(parent.index + parent[0].length);
     }
-    if (entries.includes(".git") || dirname(at) === at) break;
+    if (top) break;
     at = dirname(at);
   }
-  return found;
+  return "";
 }
 
 /**
@@ -194,10 +199,15 @@ async function buildProps(dir: string): Promise<string> {
  * projects take no side, and projects the solution lists but that are missing are skipped.
  */
 async function nugetPackage(dir: string, file: string, xml: string): Promise<boolean> {
-  const props = (sub: string) => buildProps(join(dir, sub));
+  const kind = async (project: string, sub: string) =>
+    dotnetProject(
+      project,
+      await buildFile(join(dir, sub), "Directory.Build.props"),
+      await buildFile(join(dir, sub), "Directory.Build.targets"),
+    );
   if (!/\.slnx?$/i.test(file)) {
-    const kind = dotnetProject(xml, await props("."));
-    return kind === "package" || kind === "library";
+    const own = await kind(xml, ".");
+    return own === "package" || own === "library";
   }
   const paths = [...xml.matchAll(/"([^"]+\.(?:cs|fs|vb)proj)"/gi)].map((m) =>
     m[1]!.replaceAll("\\", "/"),
@@ -206,7 +216,7 @@ async function nugetPackage(dir: string, file: string, xml: string): Promise<boo
     paths.map(async (path) => {
       const project = await text(dir, path);
       if (project === undefined) return "none";
-      return dotnetProject(project, await props(dirname(path)));
+      return kind(project, dirname(path));
     }),
   );
   return kinds.includes("package") || (kinds.includes("library") && !kinds.includes("app"));
@@ -348,163 +358,6 @@ async function workspaceMembers(
   return { members: [...new Set(await expanded(patterns))].filter((m) => !skip.has(m)), js };
 }
 
-// Where CI and deploy scripts push images, read from the image references they push or tag and the
-// registries they log in to or set. Docker Hub when any reference has no registry or names docker.io, or
-// Docker Hub credentials are used; elsewhere when they name only other registries (ECR, Artifact
-// Registry, GHCR, Azure, GitLab, Quay), or a cloud deploy builds and stores the image itself (CDK, SAM,
-// `dotnet lambda`, Cloud Run, Fly). Images a job only pulls (services, containers) say nothing.
-// Undefined, when nothing says, keeps Docker Hub.
-const HUB_CREDENTIALS = /DOCKER_?HUB|DOCKER_USERNAME|hub\.docker\.com/i;
-const CLOUD =
-  /amazon-ecr-login|ecr get-login|gcloud auth configure-docker|az acr login|\bcdk deploy\b|\bsam deploy\b|\bdotnet lambda deploy|gcloud run deploy|\bfly(?:ctl)? deploy\b/;
-// A registry login or setting: login-action's `registry:`, a REGISTRY or IMAGE variable. A lowercase
-// `image:` is a job's service or container, which it pulls; it is not read.
-const REGISTRY_SETTING = /\b(?:registry|REGISTRY|IMAGE(?:_NAME)?)\s*(?:[?:+]?=|:)/;
-// A key whose value lists the references an image is tagged with: build-push-action's `tags`,
-// metadata-action's `images`. Inline, or a block on the lines below it.
-const REF_KEY = /^(\s*(?:-\s+)?)(?:tags|images)\s*:\s*(.*)$/;
-const PUSH =
-  /\b(docker|podman|buildah)\s+(?:image\s+)?push\s+(?:-\S+\s+)*(\S+)(?:\s+([^\s&|;-]\S*))?/g;
-// A build that pushes what it tags.
-const BUILD_PUSHES = /(?:^|\s)--push\b|\bpush=true\b|\btype=registry\b/;
-const BUILD_TAG = /(?:^|\s)(?:-t|--tag)[\s=]+(\S+)/g;
-// Kaniko pushes to every destination.
-const DESTINATION = /(?:^|\s)--destination[\s=]+(\S+)/g;
-const HOST = /^(?:(?:[a-z0-9-]+\.)+[a-z]{2,}|localhost)(?::\d+)?$/i;
-const HUB_HOST = /^(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)$/i;
-// Only CI, build and deploy scripts, never prose such as DEPLOY.md.
-const CI_FILE =
-  /^(?:\.gitlab-ci\.ya?ml|bitbucket-pipelines\.yml|azure-pipelines\.ya?ml|Jenkinsfile|(?:GNU)?Makefile|justfile|(?:deploy|release|publish)[\w.-]*\.(?:sh|bash|ps1))$/i;
-const CI_DIRS = [join(".github", "workflows"), ".circleci"];
-// How far up a project's repository root is looked for.
-const MAX_CI_LEVELS = 5;
-// CI files are small; anything bigger (or not a file) is not read.
-const MAX_CI_BYTES = 1024 * 1024;
-
-/** A line without its `#` comment: one at the start or after a space, outside quotes. */
-function uncommentedLine(line: string): string {
-  let quote = "";
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i]!;
-    if (quote) {
-      if (c === quote) quote = "";
-    } else if (c === '"' || c === "'") quote = c;
-    else if (c === "#" && (i === 0 || /\s/.test(line[i - 1]!))) return line.slice(0, i);
-  }
-  return line;
-}
-
-/** A CI or script file as lines, comments dropped and continuations joined; [] when unreadable. */
-async function ciLines(dir: string, file: string): Promise<string[]> {
-  const info = await stat(join(dir, file)).catch(() => undefined);
-  if (!info?.isFile() || info.size > MAX_CI_BYTES) return [];
-  const lines: string[] = [];
-  // The lines of a command continued with `\`, until the line that ends it.
-  let pending: string[] = [];
-  for (const raw of ((await text(dir, file)) ?? "").split(/\r?\n/)) {
-    const line = uncommentedLine(raw).trimEnd();
-    if (line.endsWith("\\")) pending.push(line.slice(0, -1));
-    else {
-      lines.push([...pending, line].join(" "));
-      pending = [];
-    }
-  }
-  if (pending.length) lines.push(pending.join(" "));
-  return lines;
-}
-
-/**
- * Where an image reference goes: the registry it starts with, or Docker Hub for one with none. Undefined
- * for what is not a literal reference, such as one that starts with a variable.
- */
-function refRegistry(word: string): "hub" | "elsewhere" | undefined {
-  const ref = word.replace(/^["']+|["']+$/g, "").replace(/^(?:https?|docker):\/\//, "");
-  // GitLab's own registry.
-  if (/^\$\{?CI_REGISTRY/.test(ref)) return "elsewhere";
-  // What comes before a variable, such as the tag in `me/app:$VERSION`.
-  const literal = ref.split("$")[0]!;
-  const [first = "", ...path] = literal.split("/");
-  if (path.length && HOST.test(first)) return HUB_HOST.test(first) ? "hub" : "elsewhere";
-  return /^[a-z0-9][\w.-]*(?:\/[\w.-]+)*(?::[\w.-]*)?(?:@\S*)?$/i.test(literal) ? "hub" : undefined;
-}
-
-/** The registries a line pushes to or configures. */
-function lineRegistries(line: string): ("hub" | "elsewhere" | undefined)[] {
-  const refs = [...line.matchAll(PUSH)].map(([, tool, image, destination]) =>
-    tool !== "docker" && destination ? destination : image!,
-  );
-  if (BUILD_PUSHES.test(line)) refs.push(...[...line.matchAll(BUILD_TAG)].map((m) => m[1]!));
-  refs.push(...[...line.matchAll(DESTINATION)].map((m) => m[1]!));
-  const found = refs.map(refRegistry);
-  if (REGISTRY_SETTING.test(line)) {
-    const words = line.split(/[\s"'`,=[\]()]+/);
-    for (const [at, word] of words.entries()) {
-      // A URL is a package registry (`npm publish --registry=https://…`, an .npmrc line), not an image's.
-      if (word.includes("://")) continue;
-      if (word.includes("/")) found.push(refRegistry(word));
-      else if (HOST.test(word) && /registry:?$/i.test(words[at - 1] ?? "")) {
-        found.push(HUB_HOST.test(word) ? "hub" : "elsewhere");
-      }
-    }
-  }
-  return found;
-}
-
-/** The registries of the image references a `tags:` or `images:` value lists. */
-function listedRegistries(value: string): ("hub" | "elsewhere" | undefined)[] {
-  // Runner tags, release tags and metadata-action's `type=` rules have no slash; references do.
-  return value
-    .split(/[\s"'`,[\]]+/)
-    .filter((w) => w.includes("/") && !w.includes("*"))
-    .map(refRegistry);
-}
-
-/**
- * Where the project's images go, read from the CI and deploy files from `dir` up to its repository root
- * (only `dir` itself when it is in no repository): "hub" when anything pushes to Docker Hub, "elsewhere"
- * when images go only to other registries or a cloud deploy, undefined when nothing says.
- */
-async function imageRegistry(dir: string): Promise<"hub" | "elsewhere" | undefined> {
-  const levels: string[] = [];
-  const home = resolve(homedir());
-  for (let at = resolve(dir); levels.length < MAX_CI_LEVELS; at = dirname(at)) {
-    if (at === home) break;
-    levels.push(at);
-    if ((await list(at)).includes(".git") || dirname(at) === at) break;
-  }
-  const inRepository = levels.length > 0 && (await list(levels.at(-1)!)).includes(".git");
-  let found: "elsewhere" | undefined;
-  for (const at of inRepository ? levels : [resolve(dir)]) {
-    const files = (await list(at)).filter((e) => CI_FILE.test(e));
-    for (const sub of CI_DIRS) files.push(...(await list(join(at, sub))).map((f) => join(sub, f)));
-    for (const file of files) {
-      // The indent of the `tags:` or `images:` key whose block is being read.
-      let block: number | undefined;
-      for (const line of await ciLines(at, file)) {
-        if (HUB_CREDENTIALS.test(line)) return "hub";
-        if (CLOUD.test(line)) found = "elsewhere";
-        const indent = line.search(/\S/);
-        if (block !== undefined && indent >= 0) {
-          if (indent > block || (indent === block && /^\s*-\s/.test(line))) {
-            const where = listedRegistries(line);
-            if (where.includes("hub")) return "hub";
-            if (where.includes("elsewhere")) found = "elsewhere";
-            continue;
-          }
-          block = undefined;
-        }
-        const key = REF_KEY.exec(line);
-        const value = key?.[2]?.trim() ?? "";
-        if (key && (!value || /^[|>][-+]?$/.test(value))) block = key[1]!.length;
-        const where = [...lineRegistries(line), ...(key ? listedRegistries(value) : [])];
-        if (where.includes("hub")) return "hub";
-        if (where.includes("elsewhere")) found = "elsewhere";
-      }
-    }
-  }
-  return found;
-}
-
 /** Whether a Python manifest depends on an MCP SDK. */
 function pythonMcp(py: string): boolean {
   const lists = [...py.matchAll(/dependencies\s*=\s*\[([\s\S]*?)\]\s*$/gm)].map((m) => m[1]!);
@@ -556,9 +409,6 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
   // A workspace root publishes through its members, read as projects of their own.
   const workspace =
     depth < MAX_WORKSPACE_DEPTH ? await workspaceMembers(dir, manifest, cargo) : undefined;
-  // A private app keeps its images to itself, as it keeps its package off npm. A private package.json
-  // with no dependencies only holds another project's tooling (a formatter, git hooks).
-  let privateApp = false;
   // Whether the root package.json could be published: not an extension, not a server or site.
   let rootPublishes = false;
 
@@ -582,7 +432,6 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
     const scripts =
       manifest.scripts && typeof manifest.scripts === "object" ? Object.keys(manifest.scripts) : [];
     const runs = !publishes && scripts.some((s) => /^(?:start|serve|deploy)(?::|$)/.test(s));
-    privateApp = manifest.private === true && !workspace && "dependencies" in manifest;
     rootPublishes = !manifest.engines?.vscode && !runs;
     pick("package.json");
     // A VS Code extension is published to both extension marketplaces, not to npm.
@@ -659,7 +508,7 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
       pick("pubspec.yaml", "app-store", "google-play");
   }
 
-  const dotnet = entries.find((e) => /\.(?:(?:cs|fs|vb)proj|slnx?)$/.test(e));
+  const dotnet = entries.find((e) => /\.(?:(?:cs|fs|vb)proj|slnx?)$/i.test(e));
   if (dotnet) {
     pick(dotnet);
     if (await nugetPackage(dir, dotnet, (await text(dir, dotnet)) ?? "")) pick(dotnet, "nuget");
@@ -670,10 +519,7 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
   const container = entries.find((e) =>
     /^(?:Dockerfile|Containerfile)(?:\..+)?$|\.Dockerfile$/.test(e),
   );
-  if (container) {
-    pick(container);
-    if (!privateApp && (await imageRegistry(dir)) !== "elsewhere") pick(container, "docker");
-  }
+  if (container) pick(container, "docker");
 
   if (has(".claude-plugin")) pick(".claude-plugin", "claude-plugins");
   if (has(".cursor-plugin")) pick(".cursor-plugin", "cursor");

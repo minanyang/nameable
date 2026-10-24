@@ -38,7 +38,9 @@ jobs:
           git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
           # Exit code 2: the branch is missing, rather than unreachable.
           status=0; git ls-remote -q --exit-code origin refs/heads/data > /dev/null || status=$?
-          if [ "$status" = 0 ]; then git fetch -q --depth=1 origin data && git checkout -q -b data FETCH_HEAD
+          if [ "$status" = 0 ]; then
+            git fetch -q --depth=1 origin data
+            git checkout -q -b data FETCH_HEAD
           elif [ "$status" = 2 ]; then git checkout -q --orphan data
           else exit "$status"; fi
       - name: Build the list

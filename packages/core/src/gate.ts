@@ -18,16 +18,16 @@ export class Gate {
   async run<T>(task: () => Promise<T>, paced: () => boolean = () => true): Promise<T> {
     if (this.#active < this.max) this.#active++;
     else await new Promise<void>((resolve) => this.#waiting.push(resolve));
-    if (this.intervalMs && paced()) {
-      const turn = this.#turn.then(async () => {
-        const wait = this.#lastStart + this.intervalMs - Date.now();
-        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-        this.#lastStart = Date.now();
-      });
-      this.#turn = turn;
-      await turn;
-    }
     try {
+      if (this.intervalMs && paced()) {
+        const turn = this.#turn.then(async () => {
+          const wait = this.#lastStart + this.intervalMs - Date.now();
+          if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+          this.#lastStart = Date.now();
+        });
+        this.#turn = turn;
+        await turn;
+      }
       return await task();
     } finally {
       const next = this.#waiting.shift();

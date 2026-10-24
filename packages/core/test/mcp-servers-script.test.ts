@@ -32,6 +32,7 @@ describe("scripts/mcp-servers.ts", () => {
     // Cut short in transfer, or with a date that does not parse.
     expect(parseList(text.slice(0, text.length / 2))).toBeUndefined();
     expect(parseList(text.replace(/#full\t[^\n]*/, "#full\tgarbage"))).toBeUndefined();
+    expect(parseList(text.replace(/#asof\t[^\n]*/, "#asof\t1"))).toBeUndefined();
   });
 
   it("drops a deleted server and keeps a deprecated one with its status", () => {

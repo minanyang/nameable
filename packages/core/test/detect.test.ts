@@ -189,6 +189,7 @@ describe("detectProject", () => {
       "<Project Sdk='Microsoft.NET.Sdk.Web'>",
       '<Project Sdk="Microsoft.NET.Sdk.WebAssembly">',
       '<Project Sdk="Microsoft.NET.Sdk"><AzureFunctionsVersion>v4</AzureFunctionsVersion>',
+      '<Project Sdk="Microsoft.NET.Sdk"><AWSProjectType>Lambda</AWSProjectType>',
     ].map((app): [Record<string, string>, string[]] => [{ "X.csproj": app }, ["github", "domain"]]),
     [
       {
@@ -197,6 +198,55 @@ describe("detectProject", () => {
       },
       ["nuget", "github", "domain"],
     ],
+    // A quoted `>` inside a conditional element, before and after what is read.
+    [
+      {
+        "Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "Directory.Build.props":
+          "<Project><Import Project=\"a.props\" Condition=\"'$(VisualStudioVersion)' > '16.0'\" /><PropertyGroup><IsPackable>false</IsPackable></PropertyGroup></Project>",
+      },
+      ["github", "domain"],
+    ],
+    [
+      {
+        "Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "Directory.Build.props":
+          '<PropertyGroup Label="a>b" Condition="x"><IsPackable>false</IsPackable></PropertyGroup>',
+      },
+      ["nuget", "github", "domain"],
+    ],
+    // CDATA holds text, not elements.
+    [
+      {
+        "Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "Directory.Build.props":
+          '<Script><![CDATA[ <Foo Condition="x"> <!-- ]]></Script><PropertyGroup><IsPackable>false</IsPackable></PropertyGroup>',
+      },
+      ["github", "domain"],
+    ],
+    // The props above are read where the import stands, so what comes after it wins.
+    [
+      {
+        "X.sln": 'Project("{G}") = "Lib", "src\\Lib\\Lib.csproj", "{H}"',
+        "src/Lib/Lib.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "Directory.Build.props": "<IsPackable>false</IsPackable>",
+        "src/Directory.Build.props":
+          "<IsPackable>true</IsPackable><Import Project=\"$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))\" />",
+      },
+      ["github", "domain"],
+    ],
+    // Directory.Build.targets comes after the project.
+    [
+      {
+        "X.csproj": "<IsPackable>true</IsPackable>",
+        "Directory.Build.targets": "<IsPackable>false</IsPackable>",
+      },
+      ["github", "domain"],
+    ],
+    [{ "X.csproj": '<Project Sdk="Aspire.AppHost.Sdk/13.0.0">' }, ["github", "domain"]],
+    [{ "X.csproj": '<Project Sdk="Microsoft.Build.NoTargets/3.7.0">' }, ["github", "domain"]],
+    [{ "X.csproj": '<Project Sdk="Microsoft.Build.Traversal/4.1.0">' }, ["github", "domain"]],
+    [{ "Foo.CSPROJ": '<Project Sdk="Microsoft.NET.Sdk">' }, ["nuget", "github", "domain"]],
     [{ "X.csproj": '<Project Sdk="Microsoft.NET.Sdk.Worker">' }, ["github", "domain"]],
     [{ "X.csproj": '<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">' }, ["github", "domain"]],
     [{ "X.csproj": '<IsPackable Condition="x">false</IsPackable>' }, ["github", "domain"]],
@@ -220,7 +270,6 @@ describe("detectProject", () => {
       {
         "package.json": '{"name":"app","private":true,"dependencies":{"x":"1"}}',
         "pnpm-workspace.yaml": "onlyBuiltDependencies:\n  - esbuild\n",
-        Dockerfile: "",
       },
       ["github", "domain"],
     ],
@@ -235,18 +284,9 @@ describe("detectProject", () => {
       { "package.json": '{"name":"x","files":["dist"],"scripts":{"start":"vite"}}' },
       ["npm", "github", "domain"],
     ],
-    // A private app's image is deployed, not published; a package's image may be.
+    // Any Dockerfile checks Docker Hub, a private app's too: where its images go cannot be read reliably.
     [
       { "package.json": '{"name":"web","private":true,"dependencies":{"x":"1"}}', Dockerfile: "" },
-      ["github", "domain"],
-    ],
-    // A private package.json that only holds another project's tooling says nothing of its image.
-    [
-      {
-        "pyproject.toml": '[project]\nname = "x"',
-        "package.json": '{"private":true,"devDependencies":{"prettier":"3"}}',
-        Dockerfile: "",
-      },
       ["docker", "github", "domain"],
     ],
     // Only a JavaScript workspace with members it cannot find falls back to npm, and not for an app.
@@ -507,249 +547,13 @@ describe("detectProject", () => {
   });
 
   it.each([
-    // Pushes and registry settings that name another registry.
-    [
-      "ECR login in a workflow",
-      { ".github/workflows/ci.yml": "- uses: aws-actions/amazon-ecr-login@v2" },
-      [],
-    ],
-    ["a CDK deploy script", { "deploy.sh": "npx cdk deploy --all" }, []],
-    [
-      "a push to GHCR in a GitLab pipeline",
-      { ".gitlab-ci.yml": "script: docker push ghcr.io/me/app" },
-      [],
-    ],
-    ["a login to GHCR", { ".github/workflows/ci.yml": "with:\n  registry: ghcr.io" }, []],
-    [
-      "GitHub's GHCR starter workflow",
-      {
-        ".github/workflows/ci.yml":
-          "env:\n  REGISTRY: ghcr.io\n  IMAGE_NAME: ${{ github.repository }}\nsteps:\n  - with:\n      registry: ${{ env.REGISTRY }}\n  - with:\n      images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\n  - with:\n      push: true\n      tags: ${{ steps.meta.outputs.tags }}",
-      },
-      [],
-    ],
-    [
-      "a tag with an expression",
-      { ".github/workflows/ci.yml": "tags: ghcr.io/me/app:${{ github.sha }}" },
-      [],
-    ],
-    [
-      "a push with an expression",
-      { ".github/workflows/ci.yml": "run: docker push ghcr.io/${{ github.repository }}:latest" },
-      [],
-    ],
-    [
-      "a tags block",
-      { ".github/workflows/ci.yml": "tags: |\n  ghcr.io/me/app:latest\n  ghcr.io/me/app:1" },
-      [],
-    ],
-    [
-      "buildx with --push first",
-      { ".github/workflows/ci.yml": "run: docker buildx build --push -t ghcr.io/me/app ." },
-      [],
-    ],
-    [
-      "a continued command",
-      { "deploy.sh": "docker buildx build \\\n  -t quay.io/me/app \\\n  --push ." },
-      [],
-    ],
-    [
-      "a Makefile variable",
-      { Makefile: "IMAGE ?= ghcr.io/me/app\npush:\n\tdocker push $(IMAGE)" },
-      [],
-    ],
-    ["a quoted #", { "deploy.sh": 'echo "build #1" && docker push ghcr.io/me/app' }, []],
-    ["podman with a destination", { "deploy.sh": "podman push app docker://quay.io/me/app" }, []],
-    [
-      "buildah with a destination",
-      { "deploy.sh": "buildah push app:latest quay.io/me/app:latest" },
-      [],
-    ],
-    [
-      "a push to ECR beside a pulled Docker Hub image",
-      {
-        ".github/workflows/ci.yml":
-          "services:\n  db:\n    image: docker.io/library/postgres:16\nsteps:\n  - uses: aws-actions/amazon-ecr-login@v2",
-      },
-      [],
-    ],
-    // Docker Hub, by credentials, a login or a reference without a registry.
-    [
-      "Docker Hub credentials beside GHCR",
-      {
-        ".github/workflows/ci.yml":
-          "registry: ghcr.io\nusername: ${{ secrets.DOCKERHUB_USERNAME }}",
-      },
-      ["docker"],
-    ],
-    ["a login to docker.io", { ".github/workflows/ci.yml": "registry: docker.io" }, ["docker"]],
-    ["a push to Docker Hub", { "deploy.sh": "docker push me/app:1" }, ["docker"]],
-    ["a quoted push to Docker Hub", { "deploy.sh": 'docker push "me/app:1"' }, ["docker"]],
-    [
-      "two tags, one on Docker Hub",
-      {
-        ".github/workflows/ci.yml": "run: docker buildx build -t ghcr.io/me/app -t me/app --push .",
-      },
-      ["docker"],
-    ],
-    ["Kaniko", { ".gitlab-ci.yml": "script: /kaniko/executor --destination gcr.io/me/app" }, []],
-    [
-      "GitLab's registry",
-      { ".gitlab-ci.yml": "script: docker push $CI_REGISTRY_IMAGE:latest" },
-      [],
-    ],
-    ["a Jenkinsfile", { Jenkinsfile: "sh 'docker push ghcr.io/me/app'" }, []],
-    ["a CircleCI config", { ".circleci/config.yml": "- run: docker push ghcr.io/me/app" }, []],
-    [
-      "a comment that ends in a backslash",
-      { "deploy.sh": "# build \\\ndocker push ghcr.io/me/app" },
-      [],
-    ],
-    // Docker Hub beside another registry: Docker Hub wins.
-    ...(
-      [
-        ["a tags block", "tags: |\n  me/app:latest\n  ghcr.io/me/app:latest"],
-        ["inline tags", "tags: me/app:latest,ghcr.io/me/app:latest"],
-        ["a tags list", "tags:\n  - me/app:latest\n  - ghcr.io/me/app:latest"],
-        [
-          "metadata-action images",
-          "with:\n  images: |\n    me/app\n    ghcr.io/me/app\n  tags: type=sha",
-        ],
-        [
-          "a tag with an expression",
-          "run: docker push ghcr.io/me/app:${{ github.sha }} && docker push me/app:${{ github.sha }}",
-        ],
-        [
-          "an ECR login and a Docker Hub tag",
-          "- uses: aws-actions/amazon-ecr-login@v2\n- with:\n    push: true\n    tags: me/app:latest",
-        ],
-        [
-          "a push with an output",
-          "run: docker buildx build -t me/app --output type=image,push=true . && docker push ghcr.io/me/x",
-        ],
-      ] as const
-    ).map(([what, ci]): [string, Record<string, string>, string[]] => [
-      `${what} on Docker Hub and GHCR`,
-      { ".github/workflows/ci.yml": ci },
-      ["docker"],
-    ]),
-    [
-      "a variable tag",
-      { "deploy.sh": "docker push ghcr.io/me/app:$V\ndocker push me/app:$V" },
-      ["docker"],
-    ],
-    [
-      "two pushes on a line",
-      { "deploy.sh": "docker push ghcr.io/me/app && docker push me/app" },
-      ["docker"],
-    ],
-    [
-      "podman to Docker Hub",
-      { "deploy.sh": "podman push quay.io/me/app\npodman push me/app" },
-      ["docker"],
-    ],
-    // Nothing that says where this image goes: Docker Hub stays.
-    ["no CI at all", {}, ["docker"]],
-    [
-      "a service image a test job pulls",
-      { ".github/workflows/ci.yml": "services:\n  db:\n    image: ghcr.io/baosystems/postgis:15" },
-      ["docker"],
-    ],
-    [
-      "a container a job runs in",
-      { ".github/workflows/ci.yml": "container: ghcr.io/renovatebot/renovate:39" },
-      ["docker"],
-    ],
-    [
-      "a comment",
-      { Makefile: "# TODO: push to ECR later\nbuild:\n\tdocker build -t me/app ." },
-      ["docker"],
-    ],
-    ["prose", { "DEPLOY.md": "Pull the image from quay.io." }, ["docker"]],
-    [
-      "an npm registry",
-      {
-        ".github/workflows/ci.yml":
-          'run: npm publish --registry=https://npm.pkg.github.com/\nrun: echo "@me:registry=https://npm.pkg.github.com" >> .npmrc',
-      },
-      ["docker"],
-    ],
-    [
-      "a trailing comment",
-      { ".gitlab-ci.yml": "script: make # docker push ghcr.io/me/app" },
-      ["docker"],
-    ],
-    [
-      "a Go module path",
-      { ".github/workflows/ci.yml": "matrix:\n  module:\n    - github.com/me/app" },
-      ["docker"],
-    ],
-    ["release tag patterns", { ".github/workflows/ci.yml": "tags:\n  - 'release/*'" }, ["docker"]],
-    [
-      "GitLab runner tags",
-      { ".gitlab-ci.yml": "build:\n  tags: [ docker ]\n  script: make" },
-      ["docker"],
-    ],
-    ["release tags", { ".github/workflows/ci.yml": "on:\n  push:\n    tags: [ v1 ]" }, ["docker"]],
-    [
-      "a git push",
-      { ".github/workflows/ci.yml": "run: git push https://github.com/me/app.git data" },
-      ["docker"],
-    ],
-  ])("reads where images go from %s", async (_, files, docker) => {
-    const dir = project({ ".git/": "", Dockerfile: "", ...files });
-    expect((await detectProject(dir))?.only).toEqual([...docker, "github", "domain"]);
-  });
-
-  it("reads CI files only up to the repository, and only the project's own outside one", async () => {
-    const outer = project({ Makefile: "docker push gcr.io/me/app" });
-    mkdirSync(join(outer, "a", "proj"), { recursive: true });
-    writeFileSync(join(outer, "a", "proj", "Dockerfile"), "");
-    expect((await detectProject(join(outer, "a", "proj")))?.only).toEqual([
-      "docker",
-      "github",
-      "domain",
-    ]);
-  });
-
-  it("reads the repository's CI from a relative path", async () => {
-    const dir = project({
-      ".git/": "",
-      "deploy.sh": "docker push ghcr.io/me/app",
-      "svc/Dockerfile": "",
-    });
-    const cwd = process.cwd();
-    process.chdir(join(dir, "svc"));
-    try {
-      expect((await detectProject("."))?.only).toEqual(["github", "domain"]);
-    } finally {
-      process.chdir(cwd);
-    }
-  });
-
-  it.each([
-    [".github/workflows/ci.yml", `run: docker buildx build ${"-t a ".repeat(100_000)}--push .`],
-    ["deploy.sh", "x \\\n".repeat(200_000)],
     ["Directory.Build.props", "<a ".repeat(50_000)],
+    ["Directory.Build.props", `<Project><${"a".repeat(80_000)}`],
   ])("reads a large %s in linear time", async (file, content) => {
-    const dir = project({
-      ".git/": "",
-      Dockerfile: "",
-      "X.csproj": "<Project />",
-      [file]: content,
-    });
+    const dir = project({ "X.csproj": "<Project />", [file]: content });
     const started = Date.now();
     await detectProject(dir);
     expect(Date.now() - started).toBeLessThan(500);
-  });
-
-  it("reads the CI of the repository a service lives in", async () => {
-    const dir = project({
-      ".git/": "",
-      ".github/workflows/deploy.yml": "run: dotnet lambda deploy-function",
-      "services/api/Dockerfile": "",
-    });
-    expect((await detectProject(join(dir, "services", "api")))?.only).toEqual(["github", "domain"]);
   });
 
   it("counts a package.json it cannot read as a JavaScript project", async () => {
