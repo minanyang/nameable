@@ -44,7 +44,7 @@ Usage
 
   Channels are picked from the project files in the current directory, or its parents up to the
   repository root: package.json, pyproject.toml, setup.py, Cargo.toml, a .gemspec, composer.json,
-  pubspec.yaml, a .csproj or .sln, Package.swift, a Dockerfile, .claude-plugin, .cursor-plugin,
+  pubspec.yaml, a .NET project or solution, Package.swift, a Dockerfile, .claude-plugin, .cursor-plugin,
   gemini-extension.json, a VS Code extension, a JetBrains plugin, an MCP SDK dependency, and an
   Xcode, Android, Expo or Flutter app; at a workspace root, those of its members too. Private apps,
   servers and unpublished packages skip their registry.
@@ -177,7 +177,11 @@ export async function run(argv: string[], io: Io): Promise<number> {
         try {
           await clearStore(io.cacheDir);
         } catch (err) {
-          io.stderr.write(`nameable: could not clear ${io.cacheDir}: ${(err as Error).message}\n`);
+          const message = `could not clear ${io.cacheDir}: ${(err as Error).message}`;
+          io.stderr.write(`nameable: ${message}\n`);
+          // A script reading the JSON gets an answer rather than empty output.
+          if (values.json)
+            io.stdout.write(`${JSON.stringify({ cleared: null, error: message })}\n`);
           // 1 means a name is taken; this is a task that could not be done, as 2 is for a check.
           return 2;
         }

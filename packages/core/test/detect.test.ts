@@ -235,6 +235,41 @@ describe("detectProject", () => {
       },
       ["github", "domain"],
     ],
+    // Only an import of the props above splices them in: not another file, itself, or one under a condition.
+    ...(
+      [
+        [
+          '<Import Project="$(MSBuildThisFileDirectory)Directory.Build.props.user" Condition="Exists(\'x\')" />',
+        ],
+        ['<Import Project="$(MSBuildThisFileDirectory)eng/Directory.Build.props" />'],
+        ['<Import Project="$(MSBuildThisFileDirectory)Directory.Build.props" />'],
+        [
+          "<Import Project=\"$(MSBuildThisFileDirectory)../Directory.Build.props\" Condition=\"'$(Official)' == 'true'\" />",
+        ],
+      ] as const
+    ).map(([props]): [Record<string, string>, string[]] => [
+      {
+        "X.sln": 'Project("{G}") = "A", "src\\A\\A.csproj", "{H}"',
+        "src/A/A.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "Directory.Build.props": "<IsPackable>false</IsPackable>",
+        "src/Directory.Build.props": props,
+      },
+      ["nuget", "github", "domain"],
+    ]),
+    // A quoted `>` in the project's own element.
+    [
+      { "X.csproj": "<OutputType Condition=\"'$(V)' > '1'\">Exe</OutputType>" },
+      ["github", "domain"],
+    ],
+    // MSBuild looks up the whole tree, however deep the project.
+    [
+      {
+        "X.sln": 'Project("{G}") = "A", "src\\a\\b\\c\\d\\A\\A.csproj", "{H}"',
+        "src/a/b/c/d/A/A.csproj": '<Project Sdk="Microsoft.NET.Sdk">',
+        "Directory.Build.props": "<IsPackable>false</IsPackable>",
+      },
+      ["github", "domain"],
+    ],
     // Directory.Build.targets comes after the project.
     [
       {
@@ -307,6 +342,18 @@ describe("detectProject", () => {
     // A Cargo workspace root without a [package] is no crate.
     [{ "Cargo.toml": '[workspace]\nmembers = ["crates/*"]' }, ["github", "domain"]],
     [{ "Dockerfile.prod": "" }, ["docker", "github", "domain"]],
+    [{ Containerfile: "" }, ["docker", "github", "domain"]],
+    [{ "api.Dockerfile": "" }, ["docker", "github", "domain"]],
+    [{ dockerfile: "" }, ["docker", "github", "domain"]],
+    // Where CI pushes the image is not read: a push elsewhere does not rule Docker Hub out.
+    [
+      {
+        Dockerfile: "",
+        ".github/workflows/ci.yml":
+          "- uses: aws-actions/amazon-ecr-login@v2\n- run: docker push ghcr.io/me/app",
+      },
+      ["docker", "github", "domain"],
+    ],
     // A private workspace root publishes its packages.
     [
       { "package.json": '{"private":true,"workspaces":["packages/*"]}' },
@@ -549,6 +596,8 @@ describe("detectProject", () => {
   it.each([
     ["Directory.Build.props", "<a ".repeat(50_000)],
     ["Directory.Build.props", `<Project><${"a".repeat(80_000)}`],
+    ["Directory.Build.props", "<IsPackable ".repeat(20_000)],
+    ["Directory.Build.props", "<Import ".repeat(20_000)],
   ])("reads a large %s in linear time", async (file, content) => {
     const dir = project({ "X.csproj": "<Project />", [file]: content });
     const started = Date.now();

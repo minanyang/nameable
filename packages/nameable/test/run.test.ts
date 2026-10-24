@@ -92,6 +92,17 @@ describe("cache", () => {
     expect(r.stderr).toMatch(/^nameable: could not clear .*not-a-dir: /);
   });
 
+  it("reports a cache it could not clear as JSON with --json", async () => {
+    const file = join(await mkdtemp(join(tmpdir(), "nameable-")), "not-a-dir");
+    await writeFile(file, "x");
+    const r = await cli(["--clear-cache", "--json"], {}, { cacheDir: file });
+    expect(r.code).toBe(2);
+    expect(JSON.parse(r.stdout)).toMatchObject({
+      cleared: null,
+      error: expect.stringContaining("not-a-dir"),
+    });
+  });
+
   it("reports the cleared directory as JSON with --json", async () => {
     const dir = await mkdtemp(join(tmpdir(), "nameable-"));
     const r = await cli(["--clear-cache", "--json"], {}, { cacheDir: dir });

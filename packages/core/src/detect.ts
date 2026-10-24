@@ -77,6 +77,10 @@ function uncommented(xml: string): string {
   return xml.replace(/<!--[\s\S]*?(?:-->|$)|<!\[CDATA\[[\s\S]*?(?:\]\]>|$)/g, "");
 }
 
+// A tag's attributes. A quoted value can hold `>` (`'$(V)' > '16'`) but never `<`, which keeps a tag that
+// never closes from being read to the end.
+const ATTRIBUTES = `(?:\\s(?:[^<>"']|"[^"<]*"|'[^'<]*')*)?`;
+
 /**
  * MSBuild XML without what it sets only under a condition: elements with a Condition attribute and
  * Choose blocks. Which projects a props file's conditions reach cannot be told without evaluating MSBuild.
@@ -87,9 +91,7 @@ function unconditional(xml: string): string {
   // The element being skipped, and how deep inside elements of the same name the scan is.
   let skipping: string | undefined;
   let depth = 0;
-  // A quoted attribute value can hold `>` (`'$(V)' > '16'`) but never `<`, which keeps a tag that never
-  // closes from being read to the end.
-  for (const m of xml.matchAll(/<(\/?)([\w.-]+)((?:\s(?:[^<>"']|"[^"<]*"|'[^'<]*')*)?)>/g)) {
+  for (const m of xml.matchAll(new RegExp(`<(\\/?)([\\w.-]+)(${ATTRIBUTES})>`, "g"))) {
     const [tag, close, name, attrs] = m as unknown as [string, string, string, string];
     const empty = attrs.endsWith("/");
     if (skipping) {
@@ -127,7 +129,7 @@ function dotnetProject(project: string, props = "", targets = ""): DotnetProject
   // In MSBuild's order, in which the last value set wins: props, the project, then targets.
   const xml = unconditional(props) + uncommented(project) + unconditional(targets);
   const prop = (name: string) => {
-    const values = [...xml.matchAll(new RegExp(`<${name}(?:\\s[^>]*)?>([^<]*)</${name}>`, "gi"))];
+    const values = [...xml.matchAll(new RegExp(`<${name}${ATTRIBUTES}>([^<]*)</${name}>`, "gi"))];
     return values.at(-1)?.[1]?.trim().toLowerCase();
   };
   const sdks = [...xml.matchAll(SDK)].map((m) => m[1]!.toLowerCase());
@@ -167,28 +169,45 @@ function dotnetProject(project: string, props = "", targets = ""): DotnetProject
   return "library";
 }
 
-// How far up a project the search for Directory.Build files goes, short of the repository root.
-const MAX_BUILD_LEVELS = 5;
+/**
+ * The import of the same file further up, in the forms MSBuild documents: `GetPathOfFileAbove` or a `..`
+ * path, unconditional or only on the file existing.
+ */
+function parentImport(xml: string, file: string): RegExpMatchArray | undefined {
+  const name = file.replaceAll(".", "\\.");
+  const above = new RegExp(`GetPathOfFileAbove\\(\\s*'${name}'|\\.\\.[\\\\/]${name}$`, "i");
+  for (const m of xml.matchAll(new RegExp(`<Import(${ATTRIBUTES})>`, "gi"))) {
+    const attribute = (key: string) => {
+      const value = new RegExp(`\\s${key}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, "i").exec(m[1]!);
+      return value ? (value[1] ?? value[2]) : undefined;
+    };
+    const condition = attribute("Condition");
+    if (
+      above.test(attribute("Project") ?? "") &&
+      (condition === undefined || /^\s*Exists\(/i.test(condition))
+    ) {
+      return m;
+    }
+  }
+  return undefined;
+}
 
 /**
  * The Directory.Build.props or Directory.Build.targets MSBuild imports for a project in `dir`: the nearest
  * one up the tree, as far as the repository root, with the one above it in place of its import of it.
  */
-async function buildFile(dir: string, file: string, levels = MAX_BUILD_LEVELS): Promise<string> {
-  for (let at = resolve(dir), level = 0; level < levels && at !== homedir(); level++) {
+async function buildFile(dir: string, file: string): Promise<string> {
+  for (let at = resolve(dir); at !== homedir(); at = dirname(at)) {
     const entries = await list(at);
     const top = entries.includes(".git") || dirname(at) === at;
     if (entries.includes(file)) {
       const xml = uncommented((await text(at, file)) ?? "");
-      const parent = new RegExp(`<Import\\s[^>]*${file.replaceAll(".", "\\.")}[^>]*>`, "i").exec(
-        xml,
-      );
+      const parent = parentImport(xml, file);
       if (!parent || top) return xml;
-      const outer = await buildFile(dirname(at), file, levels - level - 1);
-      return xml.slice(0, parent.index) + outer + xml.slice(parent.index + parent[0].length);
+      const outer = await buildFile(dirname(at), file);
+      return xml.slice(0, parent.index) + outer + xml.slice(parent.index! + parent[0].length);
     }
     if (top) break;
-    at = dirname(at);
   }
   return "";
 }
@@ -517,7 +536,7 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
   // An image is built from a Dockerfile. A compose file runs other people's images, and a compose file
   // alone (a docker/ folder in a project) is not a project to stop at.
   const container = entries.find((e) =>
-    /^(?:Dockerfile|Containerfile)(?:\..+)?$|\.Dockerfile$/.test(e),
+    /^(?:Dockerfile|Containerfile)(?:\..+)?$|\.Dockerfile$/i.test(e),
   );
   if (container) pick(container, "docker");
 

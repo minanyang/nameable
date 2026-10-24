@@ -38,7 +38,7 @@ Nameable 套用每個 registry 自己的規則（直接取自它們的原始碼�
 - `package.json` 查 npm（沒有 `name`、private，或是會自己啟動、serve 或部署又沒宣告要發佈內容的伺服器或網站時不查），有 `bin` 時加查 Homebrew；有 `engines.vscode` 時改查 VS Code Marketplace 和 Open VSX，不查 npm
 - 描述套件的 `pyproject.toml`、`setup.py` 或 `setup.cfg` 查 PyPI，有宣告 scripts 時加查 Homebrew
 - `Cargo.toml` 查 crates.io（`publish = false` 時不查），會建置出執行檔時加查 Homebrew
-- `.gemspec` 查 RubyGems、`composer.json` 查 Packagist（project 類型不查）、`pubspec.yaml` 查 pub.dev（`publish_to: none` 時不查）、`.csproj` 或 `.sln` 查 NuGet（建置 web app、function、執行檔或測試時不查）、`Dockerfile` 查 Docker Hub、有執行檔的 `Package.swift` 查 Homebrew
+- `.gemspec` 查 RubyGems、`composer.json` 查 Packagist（project 類型不查）、`pubspec.yaml` 查 pub.dev（`publish_to: none` 時不查）、.NET 專案或 solution 查 NuGet（建置 web app、function、執行檔或測試，或標記為不打包時不查）、`Dockerfile` 查 Docker Hub、有執行檔的 `Package.swift` 查 Homebrew
 - `.claude-plugin/`、`.cursor-plugin/` 和 `gemini-extension.json` 查對應的目錄，`plugin.xml` 或 IntelliJ Gradle plugin 查 JetBrains Marketplace，依賴 MCP SDK 時查 MCP Registry 和 Smithery
 - Xcode 專案查 App Store、Android app 查 Google Play，Expo 或 Flutter app 兩個都查
 - 在 npm、pnpm、Yarn、Lerna 或 Cargo workspace 根目錄時，用同樣方式讀每個成員，合併它們的管道
@@ -209,7 +209,7 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 
 結束碼：`0` 每個名稱在每個管道都是 available 或 reclaimable · `1` 某處是 taken 或 unavailable · `2` 沒有被佔用的，但有管道沒查成功，或快取清不掉 · `64` 用法錯誤。
 
-語意化版本（semver）涵蓋的範圍：指令和選項、結束碼、管道 ID、`check_names` 工具和它的參數，以及 JSON 的欄位和 `status`、`certainty` 的值。次版本可能新增 status，遇到不認得的值請當成 `unknown`。`label` 和 `note` 的文字、`meta` 的內容，以及從專案挑出哪些管道，任何版本都可能調整；需要固定管道時請用 `--only`。
+語意化版本（semver）涵蓋的範圍：指令和選項、結束碼、管道 ID、`check_names` 工具和它的參數，JSON 的欄位和 `status`、`certainty` 的值、上面提到的環境變數，以及支援的最低 Node.js 版本。次版本可能新增 status，遇到不認得的值請當成 `unknown`。`label` 和 `note` 的文字、`meta` 的內容，以及從專案挑出哪些管道，任何版本都可能調整；需要固定管道時請用 `--only`。
 
 ## 預計加入的管道
 

@@ -47,7 +47,7 @@ repository root) and it checks the channels the project ships on, picked from it
 - `pyproject.toml`, `setup.py` or `setup.cfg` that describe a package for PyPI, Homebrew when they declare scripts
 - `Cargo.toml` for crates.io (unless `publish = false`), Homebrew when it builds a binary
 - a `.gemspec` for RubyGems, `composer.json` for Packagist (unless it is a project), `pubspec.yaml` for pub.dev
-  (unless `publish_to: none`), a `.csproj` or `.sln` for NuGet (unless it builds a web app, a function, an executable or tests), a
+  (unless `publish_to: none`), a .NET project or solution for NuGet (unless it builds a web app, a function, an executable or tests, or is not packable), a
   `Dockerfile` for Docker Hub, a `Package.swift` with an executable for Homebrew
 - `.claude-plugin/`, `.cursor-plugin/` and `gemini-extension.json` for those directories, a `plugin.xml` or the
   IntelliJ Gradle plugin for JetBrains Marketplace, an MCP SDK dependency for the MCP Registry and Smithery
@@ -237,7 +237,8 @@ Exit codes: `0` every channel is available or reclaimable for every name · `1` 
 `2` nothing taken, but some channels could not be checked, or the cache could not be cleared · `64` usage error.
 
 Semantic versioning covers the commands and options, the exit codes, the channel IDs, the `check_names` tool and its
-inputs, and the JSON fields with the values of `status` and `certainty`. A minor release may add a status; read one you
+inputs, the JSON fields with the values of `status` and `certainty`, the environment variables above, and the oldest
+Node.js version supported. A minor release may add a status; read one you
 do not know as `unknown`. The wording of `label` and `note`, what `meta` holds, and which channels are picked from a
 project can change in any release; pass `--only` to fix the channels.
 
