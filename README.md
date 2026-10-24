@@ -234,7 +234,12 @@ are kept compressed (about 12 MB) in `~/Library/Caches/nameable` on macOS,
 ```
 
 Exit codes: `0` every channel is available or reclaimable for every name · `1` taken or unavailable somewhere ·
-`2` nothing taken, but some channels could not be checked · `64` usage error.
+`2` nothing taken, but some channels could not be checked, or the cache could not be cleared · `64` usage error.
+
+Semantic versioning covers the commands and options, the exit codes, the channel IDs, the `check_names` tool and its
+inputs, and the JSON fields with the values of `status` and `certainty`. A minor release may add a status; read one you
+do not know as `unknown`. The wording of `label` and `note`, what `meta` holds, and which channels are picked from a
+project can change in any release; pass `--only` to fix the channels.
 
 ## Planned channels
 

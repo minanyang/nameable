@@ -88,7 +88,7 @@ describe("cache", () => {
     const file = join(await mkdtemp(join(tmpdir(), "nameable-")), "not-a-dir");
     await writeFile(file, "x");
     const r = await cli(["--clear-cache"], {}, { cacheDir: file });
-    expect(r.code).toBe(1);
+    expect(r.code).toBe(2);
     expect(r.stderr).toMatch(/^nameable: could not clear .*not-a-dir: /);
   });
 

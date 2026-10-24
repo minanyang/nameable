@@ -65,11 +65,11 @@ Options
 Exit codes
   0  every channel is available or reclaimable for every name
   1  taken or unavailable somewhere
-  2  nothing taken, but some channels could not be checked
+  2  nothing taken, but some channels could not be checked (or the cache could not be cleared)
   64 usage error
 
 GitHub checks use GITHUB_TOKEN, GH_TOKEN or \`gh auth token\` when available.
-Several checks download registry-wide name lists (about 40 MB in all) at most once a day and keep
+Several checks download registry-wide name lists (about 25 MB in all) at most once a day and keep
 them in the cache directory (NAMEABLE_CACHE_DIR to change it).
 `;
 
@@ -178,7 +178,8 @@ export async function run(argv: string[], io: Io): Promise<number> {
           await clearStore(io.cacheDir);
         } catch (err) {
           io.stderr.write(`nameable: could not clear ${io.cacheDir}: ${(err as Error).message}\n`);
-          return 1;
+          // 1 means a name is taken; this is a task that could not be done, as 2 is for a check.
+          return 2;
         }
       }
       if (values.json) {

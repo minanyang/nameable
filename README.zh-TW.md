@@ -207,7 +207,9 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 }
 ```
 
-結束碼：`0` 每個名稱在每個管道都是 available 或 reclaimable · `1` 某處是 taken 或 unavailable · `2` 沒有被佔用的，但有管道沒查成功 · `64` 用法錯誤。
+結束碼：`0` 每個名稱在每個管道都是 available 或 reclaimable · `1` 某處是 taken 或 unavailable · `2` 沒有被佔用的，但有管道沒查成功，或快取清不掉 · `64` 用法錯誤。
+
+語意化版本（semver）涵蓋的範圍：指令和選項、結束碼、管道 ID、`check_names` 工具和它的參數，以及 JSON 的欄位和 `status`、`certainty` 的值。次版本可能新增 status，遇到不認得的值請當成 `unknown`。`label` 和 `note` 的文字、`meta` 的內容，以及從專案挑出哪些管道，任何版本都可能調整；需要固定管道時請用 `--only`。
 
 ## 預計加入的管道
 

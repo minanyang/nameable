@@ -49,7 +49,8 @@ Sixteen new channels, channels picked from your project, and fixes from three ro
 - The PyPI project list is read as it downloads, with a fraction of the memory. MCP calls running at the same time
   share downloads.
 - `--tlds` takes at most 20 valid TLDs and needs `domain` among the channels. `--clear-cache` takes no names,
-  supports `--json` and reports errors in one line.
+  supports `--json`, reports errors in one line and exits 2 when it cannot clear the cache (1 is kept for a taken
+  name).
 - `nameable mcp` answers lines that are not JSON-RPC messages with a JSON-RPC error instead of ignoring them.
 - The table no longer garbles when it is taller or wider than the terminal, or when a name or description holds
   bidirectional control characters. Notes lead with what matters, since the table clips them.
