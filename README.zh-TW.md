@@ -38,7 +38,7 @@ Nameable 套用每個 registry 自己的規則（直接取自它們的原始碼�
 - `package.json` 查 npm（沒有 `name`、private，或是會自己啟動、serve 或部署又沒宣告要發佈內容的伺服器或網站時不查），有 `bin` 時加查 Homebrew；有 `engines.vscode` 時改查 VS Code Marketplace 和 Open VSX，不查 npm
 - 描述套件的 `pyproject.toml`、`setup.py` 或 `setup.cfg` 查 PyPI，有宣告 scripts 時加查 Homebrew
 - `Cargo.toml` 查 crates.io（`publish = false` 時不查），會建置出執行檔時加查 Homebrew
-- `.gemspec` 查 RubyGems、`composer.json` 查 Packagist（project 類型不查）、`pubspec.yaml` 查 pub.dev（`publish_to: none` 時不查）、`.csproj` 或 `.sln` 查 NuGet（建置 web app、執行檔或測試時不查）、`Dockerfile` 查 Docker Hub、有執行檔的 `Package.swift` 查 Homebrew
+- `.gemspec` 查 RubyGems、`composer.json` 查 Packagist（project 類型不查）、`pubspec.yaml` 查 pub.dev（`publish_to: none` 時不查）、`.csproj` 或 `.sln` 查 NuGet（建置 web app、function、執行檔或測試時不查）、`Dockerfile` 查 Docker Hub、有執行檔的 `Package.swift` 查 Homebrew
 - `.claude-plugin/`、`.cursor-plugin/` 和 `gemini-extension.json` 查對應的目錄，`plugin.xml` 或 IntelliJ Gradle plugin 查 JetBrains Marketplace，依賴 MCP SDK 時查 MCP Registry 和 Smithery
 - Xcode 專案查 App Store、Android app 查 Google Play，Expo 或 Flutter app 兩個都查
 - 在 npm、pnpm、Yarn、Lerna 或 Cargo workspace 根目錄時，用同樣方式讀每個成員，合併它們的管道
@@ -175,7 +175,7 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 
 ### 名稱清單
 
-有幾個管道會比對整個 registry 的清單：PyPI 的所有專案、Homebrew 的所有別名和舊名、crates.io 每日資料庫快照中保留和最近刪除的名稱（用 byte range 讀取，只下載 2 GB 檔案中不到 1 MB）、pub.dev 的所有套件、所有 gem、所有 MCP server、所有 Open VSX namespace，以及 Cursor marketplace 和 Gemini CLI 擴充目錄裡的所有項目。每份清單在第一次需要時才會下載，總共約 40 MB，之後每天最多下載一次。清單會壓縮存放（約 13 MB），位置在 macOS 的 `~/Library/Caches/nameable`、Linux 的 `$XDG_CACHE_HOME/nameable`、Windows 的 `%LOCALAPPDATA%\nameable\Cache`，或 `NAMEABLE_CACHE_DIR`。
+有幾個管道會比對整個 registry 的清單：PyPI 的所有專案、Homebrew 的所有別名和舊名、crates.io 每日資料庫快照中保留和最近刪除的名稱（用 byte range 讀取，只下載 2 GB 檔案中不到 1 MB）、pub.dev 的所有套件、所有 gem、所有 MCP server、所有 Open VSX namespace，以及 Cursor marketplace 和 Gemini CLI 擴充目錄裡的所有項目。每份清單在第一次需要時才會下載，總共約 25 MB，之後每天最多下載一次。清單會壓縮存放（約 12 MB），位置在 macOS 的 `~/Library/Caches/nameable`、Linux 的 `$XDG_CACHE_HOME/nameable`、Windows 的 `%LOCALAPPDATA%\nameable\Cache`，或 `NAMEABLE_CACHE_DIR`。
 
 ### JSON
 

@@ -47,7 +47,7 @@ repository root) and it checks the channels the project ships on, picked from it
 - `pyproject.toml`, `setup.py` or `setup.cfg` that describe a package for PyPI, Homebrew when they declare scripts
 - `Cargo.toml` for crates.io (unless `publish = false`), Homebrew when it builds a binary
 - a `.gemspec` for RubyGems, `composer.json` for Packagist (unless it is a project), `pubspec.yaml` for pub.dev
-  (unless `publish_to: none`), a `.csproj` or `.sln` for NuGet (unless it builds a web app, an executable or tests), a
+  (unless `publish_to: none`), a `.csproj` or `.sln` for NuGet (unless it builds a web app, a function, an executable or tests), a
   `Dockerfile` for Docker Hub, a `Package.swift` with an executable for Homebrew
 - `.claude-plugin/`, `.cursor-plugin/` and `gemini-extension.json` for those directories, a `plugin.xml` or the
   IntelliJ Gradle plugin for JetBrains Marketplace, an MCP SDK dependency for the MCP Registry and Smithery
@@ -199,8 +199,8 @@ confirmed PyPI answer cannot cover them: names its admins prohibited, and names 
 Several checks compare against registry-wide lists: every PyPI project, every Homebrew alias and old name, the reserved
 and recently deleted names in crates.io's daily database dump (read by byte range, under 1 MB of a 2 GB archive), every
 pub.dev package, every gem, every MCP server, every Open VSX namespace, and every plugin and extension in Cursor's
-marketplace and the Gemini CLI gallery. Each is downloaded the first time a check needs it, about 40 MB in all, and at most once a day after that. They
-are kept compressed (about 13 MB) in `~/Library/Caches/nameable` on macOS,
+marketplace and the Gemini CLI gallery. Each is downloaded the first time a check needs it, about 25 MB in all, and at most once a day after that. They
+are kept compressed (about 12 MB) in `~/Library/Caches/nameable` on macOS,
 `$XDG_CACHE_HOME/nameable` on Linux, `%LOCALAPPDATA%\nameable\Cache` on Windows, or `NAMEABLE_CACHE_DIR`.
 
 ### JSON
