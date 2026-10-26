@@ -1,7 +1,7 @@
 {
   "name": "nameable",
   "displayName": "Nameable",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "description": "Check whether a name is free on package registries, GitHub, agent and editor directories, app stores and domains, find who already built the same thing, and pick a name you can use.",
   "author": {
     "name": "Min-An Yang",

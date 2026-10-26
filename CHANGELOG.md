@@ -1,8 +1,16 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 — 2026-10-27
 
-Sixteen new channels, channels picked from your project, and fixes from three rounds of testing.
+The first stable release: fifteen new channels, channels picked from your project, and a public contract that
+semantic versioning covers from here on.
+
+**Stability**
+
+- Semantic versioning covers the commands and options, the exit codes, the channel IDs, the `check_names` tool and
+  its inputs, the JSON fields with the values of `status` and `certainty`, the environment variables and the oldest
+  Node.js version supported. A minor release may add a status. The
+  wording of `label` and `note`, what `meta` holds, and the channels picked from a project can change in any release.
 
 **New channels**
 
@@ -49,7 +57,7 @@ Sixteen new channels, channels picked from your project, and fixes from three ro
 - The PyPI project list is read as it downloads, with a fraction of the memory. MCP calls running at the same time
   share downloads.
 - `--tlds` takes at most 20 valid TLDs and needs `domain` among the channels. `--clear-cache` takes no names,
-  supports `--json`, reports errors in one line and exits 2 when it cannot clear the cache (1 is kept for a taken
+  supports `--json`, reports errors in one line (as JSON too with `--json`) and exits 2 when it cannot clear the cache (1 is kept for a taken
   name).
 - `nameable mcp` answers lines that are not JSON-RPC messages with a JSON-RPC error instead of ignoring them.
 - The table no longer garbles when it is taller or wider than the terminal, or when a name or description holds
