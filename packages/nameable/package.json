@@ -1,7 +1,7 @@
 {
   "name": "nameable",
   "version": "2.0.0",
-  "description": "Find out if a name is free everywhere it matters for your project, and whether someone already built the same thing.",
+  "description": "Is the name really free? Nameable checks every registry, store and domain your project needs.",
   "keywords": [
     "agent-skill",
     "app-store",

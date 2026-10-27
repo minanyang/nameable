@@ -2,7 +2,7 @@
 
 # Nameable
 
-在你的專案會發佈的每個地方查名稱有沒有被用，而且不把 404 當成「可以用」。
+這個名稱真的沒人用嗎？Nameable 幫你查專案需要的每個套件庫、商店和網域。
 
 [![npm](https://img.shields.io/npm/v/nameable)](https://www.npmjs.com/package/nameable) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) [![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-D97757)](https://code.claude.com/docs/en/plugins)
 

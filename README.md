@@ -2,7 +2,7 @@
 
 # Nameable
 
-Find out if a name is free everywhere your project will ship, and don't take a 404 for a yes.
+Is the name really free? Nameable checks every registry, store and domain your project needs.
 
 [![npm](https://img.shields.io/npm/v/nameable)](https://www.npmjs.com/package/nameable) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE) [![Claude Code plugin](https://img.shields.io/badge/Claude_Code-plugin-D97757)](https://code.claude.com/docs/en/plugins)
 
