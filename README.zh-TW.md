@@ -233,4 +233,4 @@ Nameable 目前查詢 npm、PyPI、crates.io、Homebrew、RubyGems、Packagist�
 
 Nameable 以 [MIT License](LICENSE) 授權釋出。
 
-Nameable 這個名稱指的是本專案；請不要用它命名 fork 或衍生作品，但說明某個 fork 是基於 Nameable 是可以的。
+Nameable 的名稱和 logo 不在 MIT License 的授權範圍內。logo 圖檔（`docs/brand/` 和 `plugins/nameable/.claude-plugin/icon.png`）© 2026 Min-An Yang (minanyang)，保留所有權利。fork 和衍生作品必須使用不同的名稱和 logo；註明「基於 Nameable」則沒有問題。

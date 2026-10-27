@@ -273,5 +273,6 @@ can look yourself.
 
 Nameable is released under the [MIT License](LICENSE).
 
-The name Nameable refers to this project; please don't use it as the name of a fork or derivative work — saying a
-fork is based on Nameable is fine.
+The Nameable name and logo are not covered by the MIT License. The logo artwork (`docs/brand/` and
+`plugins/nameable/.claude-plugin/icon.png`) is © 2026 Min-An Yang (minanyang), all rights reserved. Forks and
+derivative works must use a different name and logo; saying a fork is "based on Nameable" is fine.
