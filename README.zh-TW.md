@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/minanyang/nameable/main/docs/brand/icon-dark.png" width="128" alt="Nameable 圖示">
+
 # Nameable
 
 這個名稱真的沒人用嗎？Nameable 幫你查專案需要的每個套件庫、商店和網域。

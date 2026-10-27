@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="https://raw.githubusercontent.com/minanyang/nameable/main/docs/brand/icon-dark.png" width="128" alt="Nameable icon">
+
 # Nameable
 
 Is the name really free? Nameable checks every registry, store and domain your project needs.
