@@ -2,7 +2,7 @@
   "mcpServers": {
     "nameable": {
       "command": "npx",
-      "args": ["-y", "nameable@2.0.0", "mcp"]
+      "args": ["-y", "nameable@2.0.1", "mcp"]
     }
   }
 }

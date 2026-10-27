@@ -1,6 +1,6 @@
 {
   "name": "nameable",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Is the name really free? Nameable checks every registry, store and domain your project needs.",
   "keywords": [
     "agent-skill",
@@ -69,5 +69,6 @@
   },
   "engines": {
     "node": ">=22"
-  }
+  },
+  "mcpName": "io.github.minanyang/nameable"
 }

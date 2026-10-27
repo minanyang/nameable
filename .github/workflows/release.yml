@@ -3,7 +3,9 @@ name: Release
 # Pushing a tag such as v0.1.0 stages that version on npm with provenance, through npm trusted publishing
 # (no token is stored), and drafts the GitHub release from docs/releases/<tag>.md. Nothing is public until a
 # maintainer approves the staged version with 2FA (npmjs.com → Staged Packages, or `npm stage approve`),
-# then publishes the draft: `gh release edit <tag> --draft=false`.
+# then publishes the draft: `gh release edit <tag> --draft=false`, and lists the version on the MCP Registry
+# from server.json: `mcp-publisher login github && mcp-publisher publish` (the registry checks the public npm
+# package's mcpName, so this waits for the approval).
 on:
   push:
     tags: ["v*"]

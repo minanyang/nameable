@@ -18,6 +18,13 @@ describe("release versions", () => {
     expect(server).toEqual({ command: "npx", args: ["-y", `nameable@${version}`, "mcp"] });
   });
 
+  it("lists that package version on the MCP Registry, under the package's mcpName", () => {
+    const server = json(`${root}server.json`);
+    expect(server.name).toBe(json("../package.json").mcpName);
+    expect(server.version).toBe(version);
+    expect(server.packages).toEqual([expect.objectContaining({ identifier: "nameable", version })]);
+  });
+
   it("has release notes for it, in English and Traditional Chinese", () => {
     const notes = readFileSync(
       new URL(`${root}docs/releases/v${version}.md`, import.meta.url),

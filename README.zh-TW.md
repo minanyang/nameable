@@ -127,7 +127,7 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 
 ### MCP server
 
-`npx -y nameable mcp` 會用 stdio 跑一個 MCP server，查詢方式和 CLI 一樣。它只有一個唯讀工具 `check_names`（參數是 `names`，可選 `channels`、`tlds`、`refresh`），以 structured content 回傳[下方的 JSON](#json)。
+`npx -y nameable mcp` 會用 stdio 跑一個 MCP server，查詢方式和 CLI 一樣。它只有一個唯讀工具 `check_names`（參數是 `names`，可選 `channels`、`tlds`、`refresh`），以 structured content 回傳[下方的 JSON](#json)。它已登錄在官方 [MCP Registry](https://registry.modelcontextprotocol.io)，名稱是 `io.github.minanyang/nameable`。
 
 | 客戶端      | 設定方式                                                                                                                                     |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |

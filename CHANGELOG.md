@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1 — 2026-10-28
+
+- Listed on the official MCP Registry as `io.github.minanyang/nameable`: the npm package now names it in `mcpName`,
+  which the registry checks.
+
 ## 2.0.0 — 2026-10-27
 
 The first stable release: fifteen new channels, channels picked from your project, and a public contract that

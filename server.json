@@ -1,0 +1,27 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.minanyang/nameable",
+  "title": "Nameable",
+  "description": "Check whether a name is free on package registries, app stores, agent directories and domains.",
+  "repository": {
+    "url": "https://github.com/minanyang/nameable",
+    "source": "github"
+  },
+  "version": "2.0.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "nameable",
+      "version": "2.0.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ]
+    }
+  ]
+}

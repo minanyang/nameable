@@ -144,6 +144,8 @@ with changes (a scope, another TLD, another GitHub owner), or drop it.
 
 `npx -y nameable mcp` runs the same checks as an MCP server over stdio. It has one read-only tool, `check_names`
 (`names`, and optionally `channels`, `tlds` and `refresh`), which returns the [JSON below](#json) as structured content.
+It is listed on the official [MCP Registry](https://registry.modelcontextprotocol.io) as
+`io.github.minanyang/nameable`.
 
 | Client      | Add it with                                                                                                                                    |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
