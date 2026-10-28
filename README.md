@@ -274,6 +274,20 @@ These will only show whether something with the same name exists, never that a n
 When a channel Nameable does not check matters for your project, the Claude Code skill lists it as not checked, so you
 can look yourself.
 
+## What it sends
+
+Nameable has no server of its own and no telemetry; nothing goes to its author.
+
+- **A check** sends the name, and for domains the name with each TLD, to the registry, store, directory or RDAP/whois
+  server of each channel checked, the ones in the table under [What the answers mean](#what-the-answers-mean).
+- **[Name lists](#name-lists)** come from those registries, and the MCP Registry's from the list this project
+  rebuilds daily on GitHub (`raw.githubusercontent.com/minanyang/nameable/data/mcp-servers.tsv`). They are cached on
+  your machine.
+- **GitHub** requests carry `GITHUB_TOKEN`, `GH_TOKEN` or the `gh auth token` when one is available, and go only to
+  `api.github.com`.
+- **The Claude Code plugin's skill** also asks Claude to look for prior art with the tools it already has, such as web
+  search.
+
 ## License
 
 Nameable is released under the [MIT License](LICENSE).

@@ -233,6 +233,15 @@ Nameable 目前查詢 npm、PyPI、crates.io、Homebrew、RubyGems、Packagist�
 
 當 Nameable 沒查的管道對你的專案很重要時，Claude Code skill 會把它列為「未查」，讓你自己確認。
 
+## 會送出哪些資料
+
+Nameable 沒有自己的伺服器，也不收集使用資料；不會有任何東西送到作者那裡。
+
+- **查詢**時，會把名稱（網域則是名稱加上每個 TLD）送到所查管道的套件庫、商店、目錄或 RDAP/whois 伺服器，也就是[答案的意思](#答案的意思)表格裡列出的那些。
+- [**名稱清單**](#名稱清單)從這些套件庫下載；MCP Registry 的清單則來自本專案每天在 GitHub 上重建的清單（`raw.githubusercontent.com/minanyang/nameable/data/mcp-servers.tsv`）。清單會快取在你的電腦上。
+- **GitHub** 的請求在有 `GITHUB_TOKEN`、`GH_TOKEN` 或 `gh auth token` 時會帶上它，而且只送到 `api.github.com`。
+- **Claude Code plugin 的 skill** 還會請 Claude 用它原有的工具（例如網頁搜尋）找有沒有人做過一樣的東西。
+
 ## 授權
 
 Nameable 以 [MIT License](LICENSE) 授權釋出。
