@@ -9,6 +9,8 @@
   },
   "homepage": "https://github.com/minanyang/nameable#readme",
   "repository": "https://github.com/minanyang/nameable",
+  "documentationUrl": "https://github.com/minanyang/nameable#readme",
+  "supportUrl": "https://github.com/minanyang/nameable/issues",
   "license": "MIT",
   "keywords": [
     "naming",
