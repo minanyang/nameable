@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.0 — 2026-10-28
+
+- The MCP tool takes `channels` or `tlds` that are empty or hold only blank entries as not given, and uses the
+  default, instead of refusing the call. Clients that fill the tool's schema as a form send a list left blank that
+  way. TLDs given for a call that checks no domain are still refused.
+- The Claude Code plugin's skill no longer runs the CLI through Bash when the `check_names` tool is missing; it tells
+  you the plugin's MCP server did not start.
+- The README says what Nameable sends and where.
+
 ## 2.0.2 — 2026-10-28
 
 - The Claude Code plugin runs its own copy of the CLI instead of fetching it through npx, and Claude Code installs

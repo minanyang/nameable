@@ -52,6 +52,15 @@ Each result has a status:
 
 Pick only the channels that matter for the project instead of checking everything.`;
 
+/**
+ * An optional list as given, or undefined when it holds nothing but blanks: form-based clients send a
+ * list left blank as [] or [""] instead of leaving it out.
+ */
+const given = (list?: string[]) => {
+  const kept = list?.filter((item) => item.trim() !== "");
+  return kept?.length ? kept : undefined;
+};
+
 /** The MCP server: one read-only tool that runs the same checks as the CLI. */
 export function createMcpServer(deps: McpDeps): McpServer {
   const server = new McpServer({ name: "nameable", version: deps.version });
@@ -73,14 +82,12 @@ export function createMcpServer(deps: McpDeps): McpServer {
           .describe("Candidate names, checked on every selected channel"),
         channels: z
           .array(z.string())
-          .min(1)
           .optional()
           .describe(
             `Channels to check (default: all). One of: ${channelIds().join(", ")}. "domain" means every TLD in tlds.`,
           ),
         tlds: z
           .array(z.string())
-          .min(1)
           .optional()
           // The limit is counted after "com" and ".com" are taken as one, as the CLI counts it.
           .describe(`TLDs for "domain", at most ${MAX_TLDS} (default: ${DEFAULT_TLDS.join(", ")})`),
@@ -95,7 +102,7 @@ export function createMcpServer(deps: McpDeps): McpServer {
     async ({ names, channels: only, tlds, refresh }) => {
       let channels: Channel[];
       try {
-        channels = selectChannels({ only, tlds });
+        channels = selectChannels({ only: given(only), tlds: given(tlds) });
       } catch (err) {
         // A bad channel or TLD is the caller's to fix, so it comes back as a tool error it can read.
         return { isError: true, content: [{ type: "text", text: (err as Error).message }] };

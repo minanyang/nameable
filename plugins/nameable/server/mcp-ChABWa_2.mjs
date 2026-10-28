@@ -39,6 +39,14 @@ Each result has a status:
 - unknown: no trustworthy answer (network error, rate limit). Never treat it as free.
 
 Pick only the channels that matter for the project instead of checking everything.`;
+/**
+* An optional list as given, or undefined when it holds nothing but blanks: form-based clients send a
+* list left blank as [] or [""] instead of leaving it out.
+*/
+const given = (list) => {
+	const kept = list?.filter((item) => item.trim() !== "");
+	return kept?.length ? kept : void 0;
+};
 /** The MCP server: one read-only tool that runs the same checks as the CLI. */
 function createMcpServer(deps) {
 	const server = new McpServer({
@@ -56,8 +64,8 @@ function createMcpServer(deps) {
 		description: DESCRIPTION,
 		inputSchema: z.object({
 			names: z.array(z.string().refine((n) => n.trim() !== "", "names cannot be empty")).min(1).max(50).describe("Candidate names, checked on every selected channel"),
-			channels: z.array(z.string()).min(1).optional().describe(`Channels to check (default: all). One of: ${channelIds().join(", ")}. "domain" means every TLD in tlds.`),
-			tlds: z.array(z.string()).min(1).optional().describe(`TLDs for "domain", at most 20 (default: ${DEFAULT_TLDS.join(", ")})`),
+			channels: z.array(z.string()).optional().describe(`Channels to check (default: all). One of: ${channelIds().join(", ")}. "domain" means every TLD in tlds.`),
+			tlds: z.array(z.string()).optional().describe(`TLDs for "domain", at most 20 (default: ${DEFAULT_TLDS.join(", ")})`),
 			refresh: z.boolean().optional().describe("Download registry name lists again even when the cached copy is fresh")
 		}),
 		outputSchema: output,
@@ -70,8 +78,8 @@ function createMcpServer(deps) {
 		let channels;
 		try {
 			channels = selectChannels({
-				only,
-				tlds
+				only: given(only),
+				tlds: given(tlds)
 			});
 		} catch (err) {
 			return {

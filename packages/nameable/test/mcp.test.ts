@@ -58,6 +58,36 @@ describe("nameable mcp", () => {
     expect(JSON.stringify(r.content)).toContain("TLDs apply to domains");
   });
 
+  // Form-based clients (Glama's inspector, and models filling a schema) send an optional list they leave
+  // blank as [] or as [""] rather than leaving it out; that means "not given", not an error.
+  it.each([
+    [{ channels: [] }, { channels: undefined }],
+    [{ channels: ["", " "] }, { channels: undefined }],
+    [{ channels: ["crates", ""] }, { channels: ["crates"] }],
+    [{ channels: ["crates"], tlds: [] }, { channels: ["crates"] }],
+    [{ channels: ["crates"], tlds: [""] }, { channels: ["crates"] }],
+    [{ channels: ["domain"], tlds: [] }, { channels: ["domain"] }],
+    [
+      { channels: ["domain"], tlds: [" ", "io"] },
+      { channels: ["domain"], tlds: ["io"] },
+    ],
+  ])("takes blank entries in %j as not given, like %j", async (blank, given) => {
+    const { client } = await connect();
+    const call = async (args: object) => {
+      const r = await client.callTool({
+        name: "check_names",
+        arguments: { names: ["zz"], ...args },
+      });
+      expect(r.isError, JSON.stringify(r.content)).toBeFalsy();
+      const reports = (r.structuredContent as { reports: { results: { channel: string }[] }[] })
+        .reports;
+      return reports[0]!.results.map((x) => x.channel);
+    };
+    const channels = await call(blank);
+    expect(channels.length).toBeGreaterThan(0);
+    expect(channels).toEqual(await call(given));
+  });
+
   it("downloads a list once for calls running at the same time, and again after they finish", async () => {
     const routes = { [CRATES("aa")]: 404, [CRATES("bb")]: 404 };
     const call = (client: Client, name: string) =>
@@ -131,9 +161,6 @@ describe("nameable mcp", () => {
     [{ names: ["zz"], channels: ["domain"], tlds: ["co.uk"] }, "several labels"],
     [{ names: [] }, "names"],
     [{ names: [" "] }, "names cannot be empty"],
-    // An empty list would check nothing, which an agent could read as "nothing is taken".
-    [{ names: ["zz"], channels: [] }, "channels"],
-    [{ names: ["zz"], channels: ["domain"], tlds: [] }, "tlds"],
     [
       { names: ["zz"], channels: ["domain"], tlds: Array.from({ length: 21 }, (_, i) => `t${i}`) },
       "at most 20 TLDs",

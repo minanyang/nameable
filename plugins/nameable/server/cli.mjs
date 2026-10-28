@@ -279,7 +279,7 @@ async function run(argv, io) {
 		if (values.version) return io.stdout.write(`${version}\n`), 0;
 		if (mcp) {
 			if (Object.values(values).some((v) => v !== void 0)) throw new UsageError("`mcp` takes no options; the agent chooses them in each call");
-			const { serveMcp } = await import("./mcp-IO8vjLAT.mjs");
+			const { serveMcp } = await import("./mcp-ChABWa_2.mjs");
 			const { githubToken, fetch, whois, cacheDir, mcpTransport } = io;
 			serveMcp({
 				version,
