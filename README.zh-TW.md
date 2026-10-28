@@ -127,6 +127,8 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
 
 接著直接請它幫你取名，或執行 `/nameable:check <names>`。這個 skill 會根據你的專案挑出重要的管道、查詢、找有沒有人已經做過一樣的東西，最後對每個候選名稱給出結論：可以用、修改後可以用（加 scope、換 TLD、換 GitHub owner），或放棄。
 
+plugin 內附一份 CLI，用 Node.js 22 以上執行。安裝時，Claude Code 會依照 plugin 裡的 npm lockfile 裝好 CLI 的兩個依賴：`zod` 和 `@modelcontextprotocol/server`。
+
 ### MCP server
 
 `npx -y nameable mcp` 會用 stdio 跑一個 MCP server，查詢方式和 CLI 一樣。它只有一個唯讀工具 `check_names`（參數是 `names`，可選 `channels`、`tlds`、`refresh`），以 structured content 回傳[下方的 JSON](#json)。它已登錄在官方 [MCP Registry](https://registry.modelcontextprotocol.io)，名稱是 `io.github.minanyang/nameable`。

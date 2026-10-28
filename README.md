@@ -142,6 +142,9 @@ Then ask for a name, or run `/nameable:check <names>`. The skill picks the chann
 checks them, looks for projects that already do the same thing, and gives a verdict for each candidate: use it, use it
 with changes (a scope, another TLD, another GitHub owner), or drop it.
 
+The plugin carries its own copy of the CLI and runs it with Node.js 22 or later. When it installs, Claude Code adds
+the CLI's two dependencies, `zod` and `@modelcontextprotocol/server`, from the npm lockfile in the plugin.
+
 ### MCP server
 
 `npx -y nameable mcp` runs the same checks as an MCP server over stdio. It has one read-only tool, `check_names`

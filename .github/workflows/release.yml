@@ -30,6 +30,7 @@ jobs:
       - name: Check the tag matches the package version
         run: test "v$(node -p 'require("./packages/nameable/package.json").version')" = "$GITHUB_REF_NAME"
       - run: pnpm verify
+      - run: scripts/try-plugin.sh
       # The tarball is packed by pnpm (it turns workspace: versions into real ones), installed and run
       # the way a user would, and only then published, with provenance.
       - name: Check npm can stage packages (11.15.0 or later)

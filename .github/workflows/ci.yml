@@ -29,6 +29,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify
       - run: scripts/try-tarball.sh
+      - run: scripts/try-plugin.sh
 
   # engines allows Node 22.0; the packed CLI must still install and run there.
   oldest-node:
@@ -47,6 +48,7 @@ jobs:
         with:
           node-version: 22.0.0
       - run: scripts/try-tarball.sh
+      - run: scripts/try-plugin.sh
 
   live:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

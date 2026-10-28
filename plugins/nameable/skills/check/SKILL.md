@@ -59,9 +59,9 @@ Never drop a name on a soft constraint alone.
 ## 2. Availability
 
 Call the `check_names` tool with all candidates at once and only the channels you picked. Without the tool, run
-the CLI instead: `npx -y nameable <names...> --only <channels> --tlds <tlds> --json`. Pass TLDs only when the
-channels include `domain`. The CLI exits with 1 when any name is taken somewhere, which is a normal result, not a
-failure; read the JSON either way.
+the CLI instead: `node ${CLAUDE_PLUGIN_ROOT}/server/cli.mjs <names...> --only <channels> --tlds <tlds> --json`.
+Pass TLDs only when the channels include `domain`. The CLI exits with 1 when any name is taken somewhere, which is
+a normal result, not a failure; read the JSON either way.
 
 Read each result exactly:
 

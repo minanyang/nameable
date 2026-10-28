@@ -13,9 +13,43 @@ describe("release versions", () => {
     expect(json(`${root}plugins/nameable/.claude-plugin/plugin.json`).version).toBe(version);
   });
 
-  it("starts that exact package version as the plugin's MCP server", () => {
+  it("starts the plugin's own copy of the CLI as its MCP server", () => {
     const server = json(`${root}plugins/nameable/.mcp.json`).mcpServers.nameable;
-    expect(server).toEqual({ command: "npx", args: ["-y", `nameable@${version}`, "mcp"] });
+    expect(server).toEqual({
+      command: "node",
+      args: ["${CLAUDE_PLUGIN_ROOT}/server/cli.mjs", "mcp"],
+    });
+  });
+
+  // Claude Code installs a plugin's dependencies only from an npm lockfile that pins registry packages
+  // to exact versions and sets no overrides; the plugin directory wants https sources and hashes too.
+  it("locks the plugin's dependencies to the package's, from the npm registry", () => {
+    const pkg = json("../package.json");
+    const plugin = json(`${root}plugins/nameable/package.json`);
+    const lock = json(`${root}plugins/nameable/package-lock.json`);
+    expect(plugin).toEqual({
+      name: "nameable-plugin",
+      version,
+      private: true,
+      license: pkg.license,
+      dependencies: pkg.dependencies,
+    });
+    expect(lock.lockfileVersion).toBe(3);
+    expect(lock.packages[""]).toMatchObject({ version, dependencies: pkg.dependencies });
+    const installed = Object.entries(lock.packages).filter(([path]) => path !== "");
+    expect(installed.length).toBeGreaterThan(0);
+    for (const [path, entry] of installed as [string, Record<string, unknown>][]) {
+      expect(entry, path).toMatchObject({
+        version: expect.stringMatching(/^\d+\.\d+\.\d+$/),
+        resolved: expect.stringMatching(/^https:\/\/registry\.npmjs\.org\//),
+        integrity: expect.stringMatching(/^sha512-/),
+      });
+      expect(entry.link, path).toBeUndefined();
+      expect(entry.hasInstallScript, path).toBeUndefined();
+    }
+    for (const [name, range] of Object.entries(pkg.dependencies as Record<string, string>)) {
+      expect(lock.packages[`node_modules/${name}`].version).toBe(range);
+    }
   });
 
   it("lists that package version on the MCP Registry, under the package's mcpName", () => {

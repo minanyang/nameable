@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.2 — 2026-10-28
+
+- The Claude Code plugin runs its own copy of the CLI instead of fetching it through npx, and Claude Code installs
+  the CLI's dependencies from a lockfile in the plugin when it installs the plugin. The plugin needs Node.js 22 or
+  later, as the CLI does.
+- The plugin has an icon. The Nameable name and logo are not covered by the MIT License; see the
+  [README](README.md#license).
+
 ## 2.0.1 — 2026-10-28
 
 - Listed on the official MCP Registry as `io.github.minanyang/nameable`: the npm package now names it in `mcpName`,

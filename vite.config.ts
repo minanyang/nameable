@@ -14,8 +14,10 @@ export default defineConfig({
       thresholds: { lines: 95, statements: 95, functions: 95, branches: 90 },
     },
   },
-  fmt: {},
+  // The plugin's copy of the built CLI (scripts/build-plugin.sh) is generated, like dist/.
+  fmt: { ignorePatterns: ["plugins/nameable/server/**"] },
   lint: {
+    ignorePatterns: ["plugins/nameable/server/**"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },

@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { execFile, spawn } from "node:child_process";
-import { accessSync, constants, readFileSync } from "node:fs";
+import { accessSync, constants, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vite-plus/test";
@@ -61,6 +61,18 @@ dist("packed CLI", () => {
     child.stdin.end(bytes.subarray(cut));
     await new Promise((resolve) => child.on("exit", resolve));
     expect(JSON.parse(out.trim())).toEqual({ jsonrpc: "2.0", id: "名", result: {} });
+  });
+
+  // The plugin runs its own copy of the CLI; scripts/build-plugin.sh refreshes it from this build.
+  it("is the build the Claude Code plugin carries", () => {
+    const build = new URL("../dist/", import.meta.url);
+    const plugin = new URL("../../../plugins/nameable/server/", import.meta.url);
+    const files = readdirSync(build).sort();
+    expect(readdirSync(plugin).sort(), "run scripts/build-plugin.sh").toEqual(files);
+    for (const file of files) {
+      const same = readFileSync(new URL(file, plugin)).equals(readFileSync(new URL(file, build)));
+      expect(same, `plugins/nameable/server/${file}: run scripts/build-plugin.sh`).toBe(true);
+    }
   });
 
   it("reports the package version", async () => {
