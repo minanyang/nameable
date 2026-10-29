@@ -7,6 +7,9 @@ export default defineConfig({
   ssr: { resolve: { conditions: ["@nameable/source"] } },
   test: {
     include: ["packages/*/test/**/*.test.ts"],
+    // The live tests (`pnpm test:live`) wait on real services, which at times take well over the default
+    // 5 seconds to answer (the MCP Registry's updated_since query has taken 22).
+    testTimeout: process.env.NAMEABLE_LIVE === "1" ? 60_000 : undefined,
     coverage: {
       include: ["packages/*/src/**"],
       // Process wiring and the raw socket are exercised by the dist and live tests instead.
