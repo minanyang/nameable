@@ -71,6 +71,7 @@ function createMcpServer(deps) {
 		outputSchema: output,
 		annotations: {
 			readOnlyHint: true,
+			destructiveHint: false,
 			idempotentHint: true,
 			openWorldHint: true
 		}

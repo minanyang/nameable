@@ -97,7 +97,12 @@ export function createMcpServer(deps: McpDeps): McpServer {
           .describe("Download registry name lists again even when the cached copy is fresh"),
       }),
       outputSchema: output,
-      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     async ({ names, channels: only, tlds, refresh }) => {
       let channels: Channel[];

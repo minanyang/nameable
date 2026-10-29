@@ -30,7 +30,11 @@ describe("nameable mcp", () => {
     const { tools } = await client.listTools();
     expect(code).toBe(0);
     expect(tools.map((t) => t.name)).toEqual(["check_names"]);
-    expect(tools[0]!.annotations).toMatchObject({ readOnlyHint: true, openWorldHint: true });
+    expect(tools[0]!.annotations).toMatchObject({
+      readOnlyHint: true,
+      destructiveHint: false,
+      openWorldHint: true,
+    });
     expect(tools[0]!.inputSchema.required).toEqual(["names"]);
     expect(tools[0]!.outputSchema).toBeDefined();
     // stdout is the MCP channel in production; anything else written there would corrupt it.

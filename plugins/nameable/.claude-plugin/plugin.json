@@ -1,7 +1,7 @@
 {
   "name": "nameable",
   "displayName": "Nameable",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Is the name really free? Nameable checks every registry, store and domain your project needs.",
   "author": {
     "name": "Min-An Yang",

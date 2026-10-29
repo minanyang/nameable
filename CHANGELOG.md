@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.1 — 2026-10-30
+
+- Depends on Zod 4.6.7, past the advisory
+  [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) (memory exhaustion while validating
+  oversized constrained collections), in the npm package and in the Claude Code plugin's lockfile.
+- The MCP tool `check_names` declares `destructiveHint: false` as well, for directories that require all four tool
+  hints.
+
 ## 2.1.0 — 2026-10-28
 
 - The MCP tool takes `channels` or `tlds` that are empty or hold only blank entries as not given, and uses the

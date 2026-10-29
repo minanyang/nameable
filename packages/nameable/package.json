@@ -1,6 +1,6 @@
 {
   "name": "nameable",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Is the name really free? Nameable checks every registry, store and domain your project needs.",
   "keywords": [
     "agent-skill",
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.3.1",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@nameable/core": "workspace:*"
