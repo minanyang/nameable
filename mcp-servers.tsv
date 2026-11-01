@@ -1,6 +1,6 @@
 #nameable-data mcp-servers v1
-#asof	2026-10-31T07:04:06.076Z
-#full	2026-10-24T20:27:36.546Z
+#asof	2026-11-01T07:37:44.844Z
+#full	2026-11-01T07:37:44.844Z
 ac.inference.sh/mcp	active
 ac.snag/snag	active
 ac.tandem/docs-mcp	active
@@ -37,6 +37,7 @@ ai.1325/mcp	active
 ai.1clickwebsite/mcp	active
 ai.1court.state/court-directory	active
 ai.2kw/mcp-server	active
+ai.4ai/domains	active
 ai.69ai/69ai	active
 ai.aard/aard	active
 ai.aarna/atars-mcp	active
@@ -116,6 +117,7 @@ ai.agentxray/amazon-seller-mcp	active
 ai.agentxray/mcp	active
 ai.aginera/preconstruction	active
 ai.agothe.mcp-chatgpt/agent-contract-preflight	active
+ai.ahel/ahel	active
 ai.ai-advisors/mcp	active
 ai.ai-akari/agent-trust-receipt	active
 ai.ai-akari/one-minute-akari	active
@@ -136,6 +138,7 @@ ai.aivonic/mcp	active
 ai.akaphone/akaphone	active
 ai.akkrudata/akkrudata	active
 ai.alcock/arena	active
+ai.aldro/tax	active
 ai.aliengiraffe/spotdb	active
 ai.alphabazaar/arena	active
 ai.alphacreek/alphacreek-mcp	active
@@ -238,6 +241,7 @@ ai.autovox/autovox	active
 ai.autron/autron	active
 ai.auxen/auxen	active
 ai.avaloncompany/web-content-url-tools	active
+ai.avasis.agents/avasis	active
 ai.avasis/quant-research	active
 ai.aviado/health	active
 ai.awardcast/federal-contracts	active
@@ -275,6 +279,8 @@ ai.bcited/bcited	active
 ai.beatbandit/beatbandit	active
 ai.beatra/beatra	active
 ai.beevr/beevr	active
+ai.beexcellent/excellent	active
+ai.beexcellent/reference	active
 ai.beket/audit	active
 ai.beliefstate/investor-research	active
 ai.benchgecko/benchgecko	active
@@ -697,6 +703,7 @@ ai.fenbs/fenbs	active
 ai.fetchfido/fido	active
 ai.fgac/fgac	active
 ai.fiber/mcp	active
+ai.fickel/fickel	active
 ai.file2markdown/file2markdown	active
 ai.filedone/filedone	active
 ai.filegraph/document-processing	active
@@ -913,6 +920,7 @@ ai.gtfi/groundtruth	active
 ai.gtinfetch/gtinfetch	active
 ai.gtmworks/apollo-audit	active
 ai.gvrn/incorporation	active
+ai.gwix/gwix	active
 ai.haggl/haggl	active
 ai.haggl/merchant	active
 ai.hanria/agent-mandate-check	active
@@ -940,6 +948,11 @@ ai.hivewiki/hivewiki	active
 ai.hlix/hlix	active
 ai.hodds/hodds	active
 ai.hoghogh/chistara	active
+ai.homouniversalis/astrologia-horoscopo-carta-natal-sinastria-oraculo-efemerides-constelaciones-familiares-tarot-bazi-maya-ching-cabala-diseno-humano-arquetipos-espiritual-alma-destino-ancestors	active
+ai.homouniversalis/astrology-swiss-ephemeris-natal-chart-synastry-horoscope-zodiac-draconic-astronomy-cosmos-cosmic-soul-spiritual-esoteric-destiny-numerology-meditation	active
+ai.homouniversalis/bazi-ba-zi-tarot-vedic-jyotish-nakshatra-mayan-iching-i-ching-human-design-humandesign-kabbalah-alchemy-karmic-compatibility-family-constellation	active
+ai.homouniversalis/four-pillars-tzolkin-dreamspell-hexagram-gene-keys-genekeys-sephiroth-tree-of-life-gematria-arcana-chakras-kundalini-ayurveda-elements-relationship-matchmaking-couple-lineage	active
+ai.homouniversalis/planetary-planets-lunar-solar-ascendant-transits-retrograde-chiron-lilith-nodes-houses-divination-mystic-karma-dharma-fate-consciousness-awakening-archetypes-jungian	active
 ai.homouniversalis/viveka-oracle	active
 ai.hookbird/hookbird	active
 ai.hostingbrain/intelligence	active
@@ -950,6 +963,7 @@ ai.hotapi/docs	active
 ai.hotker/hotker	active
 ai.hotrepo/hotrepo	active
 ai.howseen/howseen-mcp	active
+ai.howtocancel/the-fine-print	active
 ai.hrum/baro	active
 ai.huddo/huddo	active
 ai.human4ai/collaboration	active
@@ -965,6 +979,7 @@ ai.hypnothera/hypnothera	active
 ai.hypotize/hypotize	active
 ai.hyreflow/hyreflow	active
 ai.i18nagent/i18n-agent	active
+ai.iam360.app/iam360	active
 ai.iamcoach/coach	active
 ai.iceshore/iceshore	active
 ai.ictihad/ictihad-ai	active
@@ -1074,6 +1089,7 @@ ai.kognai/golden-kog	active
 ai.kolect.app/creator-search	active
 ai.kolens/kolens-mcp	active
 ai.kolonie/kolonie	active
+ai.komyosys.raabta/raabta	active
 ai.kontato/kontato	active
 ai.kooma/kooma	active
 ai.koppar/koppar	active
@@ -1215,6 +1231,7 @@ ai.membase/membase	active
 ai.memcell/memcell	active
 ai.memestack/mcp	active
 ai.meminal/meminal	active
+ai.memlo/memlo	active
 ai.memocore/mcp	active
 ai.memoket/memoket	active
 ai.memoryrouter/memoryrouter	active
@@ -1406,6 +1423,8 @@ ai.payments.mor/payments-ai-mcp	active
 ai.payzilla/marketplace	active
 ai.pdfassistant/pdfassistant	active
 ai.pechincha/deals	active
+ai.peerfoundry/holdkit	active
+ai.peerfoundry/typedpull	active
 ai.penholder/penholder	active
 ai.pensionhunter/pensionhunter	active
 ai.peoplescourt/peoples-court	active
@@ -1457,6 +1476,7 @@ ai.postey/postey	active
 ai.postfleet/postfleet	active
 ai.posthero/posthero	active
 ai.postpen/postpen	active
+ai.postpiper/mcp	active
 ai.postquick.www/postquickai	active
 ai.povver/mcp-server	active
 ai.powerbeat/powerbeat	active
@@ -1501,6 +1521,7 @@ ai.pulsegate/provenance	active
 ai.purrplan/purrplan	active
 ai.pyrimid/pyrimid	active
 ai.qcdatabase/mcp	active
+ai.qiyuanlabs/easyappointments	active
 ai.qlane/qlane	active
 ai.qompass/eigenstyle	active
 ai.qompass/fathom	active
@@ -1542,7 +1563,7 @@ ai.rayana/rayana-ai	active
 ai.rcll/fleet-memory	active
 ai.re-agents/mcp	active
 ai.reachkit/reachkit	active
-ai.readypermit/geo	active
+ai.readypermit/geo	deprecated
 ai.realastat/realastat	active
 ai.realeyes/verifeye	active
 ai.realton/mcp	active
@@ -1627,9 +1648,11 @@ ai.runx/runx	active
 ai.ruthven/ruthven	active
 ai.rxmanager/mcp	active
 ai.ryla/ryla	active
+ai.rystic/rystic	active
 ai.saascloud/cryptopulse	active
 ai.sacs/sacs-mcp	active
 ai.safe4/safe4	active
+ai.sageteacher/learning-printables	active
 ai.saifs/assessment-intelligence	active
 ai.saifs/code-execution	active
 ai.saifs/collections-optimizer	active
@@ -1987,6 +2010,7 @@ ai.social-api/socialapi	active
 ai.socialsight/mcp	active
 ai.softskillsacademy/destrava	active
 ai.solenium/netsuite-link	active
+ai.solwyn/solwyn	active
 ai.sosoapi/sosoapi	active
 ai.soundberry/soundberry	active
 ai.sourcemill/au-hot-water-payback	active
@@ -2156,6 +2180,7 @@ ai.tokenos/gas-tracker	active
 ai.tokenos/token-launch-planner	active
 ai.tokenos/tokenomics-designer	active
 ai.tokenos/wallet-inspector	active
+ai.tokentender/token-tender	active
 ai.tokonomix/council	active
 ai.tommos/tommos	active
 ai.toohardbasket/market	active
@@ -2173,6 +2198,7 @@ ai.topy/cso	active
 ai.topy/cto	active
 ai.torchrunner/runnerid	active
 ai.torgix/free-tools	active
+ai.tovan/tovan	active
 ai.trackradar/trackradar	active
 ai.traderouter/trade-router-mcp	active
 ai.tradesearcher/mcp-server	active
@@ -2322,8 +2348,10 @@ ai.vidofy/mcp	active
 ai.vidova/vidova	active
 ai.viite/business-studio	active
 ai.villiers/charter	active
+ai.vinano/mcp	active
 ai.viralspin/viralspin	active
 ai.vishot/vishot	active
+ai.vistazo/vistazo	active
 ai.visuary/actuarial-value-calculator	active
 ai.viuz/viuz	active
 ai.vocallab/vocallab	active
@@ -2559,6 +2587,7 @@ app.capgo/capgo	active
 app.cardog/mcp	active
 app.carrierscan/ai-text-checker	active
 app.carstat/carstat	active
+app.cassit/cassit	active
 app.causely/causely	active
 app.cellarion/cellarion	active
 app.cellarion/wine-registry	active
@@ -2588,6 +2617,7 @@ app.confcall/mcp-server	active
 app.connectmyshop/etsy	active
 app.contendeo/contendeo	active
 app.cooperpetcare.www/cooper	active
+app.cosend/mcp	active
 app.countlink/countdown	active
 app.courtrules/court-rules	active
 app.crawlie/crawlie	active
@@ -2607,6 +2637,7 @@ app.decibelshield/decibel-shield	active
 app.decknote/decknote	active
 app.deepjuniku/deep-juniku	active
 app.deepsearch/deepsearch	active
+app.deleva/deleva	active
 app.derate/derate	active
 app.descontinho/descontos-shopee	active
 app.desktopcommander/remote-desktop-commander	active
@@ -2644,6 +2675,7 @@ app.everjust/mcp	active
 app.everloot/knowledge	active
 app.everpop/everpop	active
 app.evertrain/evertrain	active
+app.everynumber/spreadsheet-dashboard	active
 app.evlek/mcp-server	active
 app.factograph/factograph	active
 app.factscanai/factscan	active
@@ -2730,6 +2762,7 @@ app.glif/glif	active
 app.goaichat/tools	active
 app.goodwatch/mcp	active
 app.goshipyard/shipyard	active
+app.gotsol/gotsol	active
 app.govauctions/govauctions	active
 app.govir/govir	active
 app.grailhound/marketplace-alerts	active
@@ -2751,8 +2784,10 @@ app.hinducalendar/hinducalendar	active
 app.hiregps/hiregps	active
 app.hoaster/hoaster	active
 app.hologallery.pocket/pokemon-tcg-pocket-catalog	active
+app.homotope/homotope	active
 app.hoodex/hoodex	active
 app.hooksend/instagram	active
+app.horoscoop/horoscoop	active
 app.hostbeam/mcp	active
 app.hostilo/hostilo	active
 app.housefile/licensing	active
@@ -2796,6 +2831,7 @@ app.john11/john11	active
 app.joinlayer/mcp	active
 app.joinways/joinways	active
 app.justemails/mcp	active
+app.kaliham/mail	active
 app.kanbai/discovery	active
 app.kanera/mcp	active
 app.kangram/kangram	active
@@ -2803,6 +2839,7 @@ app.kasar/crm	active
 app.katla/katla	active
 app.keepline/keepline	active
 app.keeploop/keeploop	active
+app.kellian/kellian	active
 app.kelpo/kelpo	active
 app.keyslip/keyslip	active
 app.kezai/memory	active
@@ -3080,6 +3117,8 @@ app.parrotnotes/parrotnotes	active
 app.partli/partli	active
 app.pascal/editor	active
 app.patricia/patricia	active
+app.payperwork/ai	active
+app.payperwork/payperwork	active
 app.peil/peil-mcp	active
 app.penlog/penlog	active
 app.peptidelibrary/peptide-library	active
@@ -3195,6 +3234,7 @@ app.safeship/mcp	active
 app.sallim/contract-compass	active
 app.sallim/korea-realty	active
 app.sallim/korea-stay	active
+app.samiswoi/firmy	active
 app.samplecut/samplecut	active
 app.sandooq/product	active
 app.sanovia/sanovia	active
@@ -3368,6 +3408,8 @@ app.undisk.mcp/stdio-proxy	active
 app.uniscript/carousels	active
 app.unmerge/unmerge	active
 app.uploadcheck/uploadcheck	active
+app.url2ad/url2ad	active
+app.usecircles/whatsapp	active
 app.usehourly/usehourly	active
 app.usemailroom/mailroom	active
 app.usewrit/writ-cloud	active
@@ -3406,6 +3448,7 @@ app.vercel.polyglot-ai-board/board	active
 app.vercel.proof-stack-lake/proofstack	active
 app.vercel.quran-reels-tau/quran-reels-mcp	active
 app.vercel.renewalmatrix/renewalmatrix	active
+app.vercel.roster-ivory-zeta/roster	active
 app.vercel.rugradar-dun/rugradar-mcp	active
 app.vercel.rv-kit/rv-kit	active
 app.vercel.slopcheck-one/slopcheck	active
@@ -3413,6 +3456,7 @@ app.vercel.stackfacts/stackfacts	deprecated
 app.vercel.stripecheckup/stripecheckup	active
 app.vercel.triageshield/triageshield	active
 app.veriql/veriql-mcp	active
+app.verli/verli	active
 app.veteranhq/va-disability-benefits	active
 app.vibecom/growth	active
 app.vibeyum/vibe-yum	active
@@ -3616,6 +3660,7 @@ archi.collab/archicollab	active
 archi.den/den_archi_mcp	active
 art.aiwashere/wall	active
 art.allover/agentee	active
+art.braindrops/braindrops	active
 art.fluxaipro/fluxai	active
 art.huebloom/coloring-pages	active
 art.kokomoji/mcp	active
@@ -3778,6 +3823,7 @@ bot.meet/mcp	active
 bot.myagi/openagent-registry	active
 bot.persnickety/bridal	active
 bot.ranch/mcp-server	active
+bot.thott/thott-bot	active
 bot.ttrpg/grimoire	active
 bot.yeehaw/events	active
 br.api.rendafixa/renda-fixa	active
@@ -3909,6 +3955,7 @@ ca.effset/guide	active
 ca.entogo/knowledge	active
 ca.findinghorizons/finding-horizons	active
 ca.findmyfarmer/farms	active
+ca.fonciq/fonciq	active
 ca.freelancertax/freelancertax	active
 ca.garagedoorman/business-card	active
 ca.gasquebec/quebec-gas-prices	active
@@ -3975,6 +4022,7 @@ cc.aiones/x-news-digest	active
 cc.aiones/x-news-monitor	active
 cc.basile/basile	active
 cc.bestaffiliateprograms/directory	active
+cc.brickbank/brickbank	active
 cc.captcha/captchacc	active
 cc.contexta/contexta-mcp	active
 cc.deplion/deplion	active
@@ -4397,6 +4445,7 @@ co.geztio/platform	active
 co.gitresume/gitresume	active
 co.gleanit/gleanit	active
 co.glide/banking-connector	active
+co.gobananas/go-bananas	active
 co.godmodeai/sprites	active
 co.golfdata/golfdata	active
 co.haveny/california-hoa-law	active
@@ -4411,6 +4460,7 @@ co.homemaster/homemaster	active
 co.huggingface/hf-mcp-server	active
 co.humanlike/hiring	active
 co.incarn/photo-animation	active
+co.indexmachine/mcp	active
 co.indigloo/model-finder	active
 co.instantreply/mcp	active
 co.instapi/instagram	active
@@ -4552,6 +4602,7 @@ co.thinair/geo	active
 co.thisdot.docusign-navigator/mcp	deprecated
 co.totalcms/docs	active
 co.trawlia/trawlia-mcp	active
+co.trooth/semanto	active
 co.truemarkets/marketdata	active
 co.truerent/rental-review	active
 co.truncus/mcp-server	active
@@ -4640,6 +4691,7 @@ com.1102tools/sam-gov-mcp	active
 com.1102tools/usaspending-gov-mcp	active
 com.1211holding/merch	active
 com.17nas/network-tools	active
+com.18cores/tracker	active
 com.1inch.business/mcp	active
 com.1stcollab/influencers	active
 com.1stdibs/1stDibs	active
@@ -4913,6 +4965,7 @@ com.adspirer/ads	active
 com.adsuploader/mcp	active
 com.adswipefile/adswipefile	active
 com.aduanafacilandorra.www/mcp	active
+com.advertiserleads/mcp	active
 com.adviserry/adviserry	active
 com.advisorfinder/mcp	active
 com.advisoriq/advisoriq	active
@@ -5000,6 +5053,7 @@ com.agentlefs/agentlefs	active
 com.agentletterdesk/letter-desk	active
 com.agentlinkops/agentlinkops	active
 com.agentmaru/agentmaru	active
+com.agentmasterdata/agent-master-data	active
 com.agentnewsstand/agent-newsstand	active
 com.agentonair/podcasts	active
 com.agentoolrank/agent-tools	active
@@ -5175,6 +5229,7 @@ com.airtable/mcp	active
 com.aisandboxenvironments/site	active
 com.aisenseapi/free-public-tools	active
 com.aiseparations/color-separations	active
+com.aisetupsthatwork/setups	active
 com.aishorty/shorty	active
 com.aiskilldir/directory	active
 com.aiskills402/mcp	active
@@ -5224,6 +5279,7 @@ com.allmymeetings/calendar	active
 com.allpdfmagic/allpdfmagic	active
 com.allratestoday/central-bank-mcp	active
 com.allratestoday/mcp	active
+com.allscreenshots/allscreenshots	active
 com.allstacks/allstacks-mcp	active
 com.allsvgicons/icons	active
 com.allthepossibles/designcheck	active
@@ -5252,6 +5308,7 @@ com.altfndata/altfinance-mcp	active
 com.altmetric.mcp/altmetric-mcp	active
 com.altoviz/mcp	active
 com.alvrun/support	active
+com.alwa7i.bayan/bayan	active
 com.am-lich/vietnamese-calendar	active
 com.amalgament/public-query	active
 com.amazap/amazap	active
@@ -5278,6 +5335,7 @@ com.anarmaa/world-poll	active
 com.anaxer/mcp	active
 com.ancestral-fire/ancestralfire	active
 com.anchoredip/anchoredip	active
+com.anchorterminal/anchor-terminal	active
 com.andavor/andavor	active
 com.andiai/andi-search	active
 com.andrewsfreebies/mcp	active
@@ -5318,12 +5376,14 @@ com.anycutlist/anycutlist	active
 com.anygett/anygett	active
 com.anymailmcp/mail	active
 com.anythingmd/convert	active
+com.anyvideototext/any-video-to-text	active
 com.anywaypossible/agent-utilities	active
 com.anywayr/anywayr	active
 com.anywhereroles/jobs	active
 com.apartamentsperlamar/apartments	active
 com.apexcharts/mcp	active
 com.apextick/mcp	active
+com.api-cinema/showtimes	active
 com.api-ninjas/mcp	active
 com.api2cart/mcp	active
 com.api402x/apix402	active
@@ -5358,6 +5418,7 @@ com.appealgo/appealgo	active
 com.appealgo/parking-guides	active
 com.appendix/appendix	active
 com.appfigures/mcp	active
+com.appgazers/appgazers	active
 com.apphitlist/mcp	active
 com.appin60.contractlens-api/contractlens	active
 com.appin60.mailferret/mailferret	active
@@ -5394,6 +5455,7 @@ com.arbling/beacon	active
 com.arc-relay/mcp	active
 com.arcadedb/mcp-server	active
 com.arcalune/music	active
+com.arcanasf/arcana	active
 com.arcandledger/tax-tools	active
 com.arcaneforecasting/world-sense	active
 com.arcanika/tarot	active
@@ -5517,6 +5579,7 @@ com.atollhq/atoll	active
 com.atom/premium-domains	active
 com.atproto-mcp/taproot	active
 com.attachpage/attachpage	active
+com.attendbeacon/attendbeacon	active
 com.attendmeet/mcp	active
 com.attensira/attensira	active
 com.attestroom/attestroom-tools	active
@@ -5532,6 +5595,7 @@ com.atxgraniteking/countertops	active
 com.atxminisplit/hvac-directory	active
 com.audexum/audexum	active
 com.audiala/mcp	active
+com.audioatlas/audioatlas	active
 com.audioeye/testing-sdk-mcp	active
 com.audiohash/audiohash	active
 com.audioscrape/audio-intelligence	active
@@ -5578,6 +5642,7 @@ com.automatedclientacquisition.www/aca	active
 com.automatedvideoapp/mcp	active
 com.automox/automox-mcp	active
 com.autopilotamerica/chicago-parking	active
+com.autoprivado/autoprivado	active
 com.autoridaddigital.www/geo	active
 com.autoview/mcp	active
 com.autrady/strategy-audits	active
@@ -5593,6 +5658,7 @@ com.avalara/returns	active
 com.avalyz/avalyz	active
 com.avaza/avaza-mcp	active
 com.avecindar/rental-search	active
+com.avenbridgetech/avenbridge	active
 com.aventurator/mcp	active
 com.averageelectricbill/electric-bill	active
 com.averray/mcp	active
@@ -5608,6 +5674,7 @@ com.awardsecrets/award-availability	active
 com.awardtape/mcp	active
 com.awardtravelfinder/mcp	active
 com.awesomeindie/mcp	active
+com.awesomevideoeditor/awesomevideo	active
 com.axiocairn/mcp	active
 com.axiomatic-ai/prover	active
 com.axiomide/axiom	active
@@ -5693,12 +5760,14 @@ com.beleeg/beleeg-public	active
 com.belindoc/belindoc-mcp	active
 com.bellwethermetrics/bellwether-mcp	active
 com.benawf/mcp	active
+com.benchleader/benchleader	active
 com.benriscore/api	active
 com.bereviewable/reviewable-artifacts	active
 com.bernuvia/marketplace	active
 com.besewbizzy/shop	active
 com.besot/catalogue	active
 com.bespree/resumes	active
+com.bestbouncebiz/rankings	active
 com.bestcarfinder/dealer-mcp	active
 com.bestekitools/bestekitools	active
 com.bestelectricianjobs/mcp	active
@@ -5727,6 +5796,7 @@ com.beyondpayday/mcp	active
 com.beyourcover/book-cover-generator	active
 com.biaedge/immigration-research	active
 com.bidbudai/estimating	active
+com.bidcraftai/quotes	active
 com.bidda/bidda-compliance	active
 com.bidprowl/bidprowl	active
 com.bidrover/bidrover	active
@@ -5748,6 +5818,7 @@ com.billingserv/mcp	active
 com.billstride/billstride	active
 com.bimcli/bim-cli	active
 com.binaryandthread/store	active
+com.binarybirthday.www/binarybirthday	active
 com.binderwork/binderwork	active
 com.binggio/binggio	active
 com.binstockly/binstockly-tools	active
@@ -5756,6 +5827,7 @@ com.biodnd/agent-fin	active
 com.biodnd/agent-ip	active
 com.biodnd/agent-press	active
 com.biologyverdict/product-guide	active
+com.bioturing/mcp	active
 com.birchbracken/store	active
 com.bird/mcp	active
 com.birdieduel/scorecard-import	active
@@ -5964,6 +6036,7 @@ com.briefpanel/briefpanel	active
 com.brightmoot/brightmoot	active
 com.brightsec/mcp	active
 com.bringmethat/bringmethat	active
+com.brionicsecurity.pay/payments	active
 com.brix36/brix36	active
 com.brixastudio/studio	active
 com.brixsignage/brix	active
@@ -6044,6 +6117,7 @@ com.cadprops/cadprops	active
 com.cafeboon/artigram	active
 com.cafmlane/cafmlane-tools	active
 com.cafmlane/site	active
+com.cairn-commons/cairn-commons	active
 com.cairnsafe/cairn	active
 com.cajusticewatch/cajusticewatch	active
 com.calcbright/calcbright	active
@@ -6089,6 +6163,8 @@ com.canhelpto/support	active
 com.canienter/visa-check	active
 com.cannonvoip/ask	active
 com.canonicai/canonicai-answers	active
+com.canopy-io/account	active
+com.canopy-io/docs	active
 com.canva.mcp/mcp	active
 com.canvas64/wall	active
 com.canvashand/canvashand	active
@@ -6136,6 +6212,7 @@ com.casafari/claro	active
 com.casafari/comparables	active
 com.casafari/locations	active
 com.casafari/mcp	deprecated
+com.casaprivat/casaprivat	active
 com.casedaleel/uae-legal-info	active
 com.casemargin/casemargin-mcp-server	active
 com.cashflowfrog.mcp/server	active
@@ -6155,6 +6232,7 @@ com.causeriebot/causerie	active
 com.cautellus/scam-detection	active
 com.cavuno/job-board-operator	active
 com.cavyro/cavyro	active
+com.caymanjobfinder/jobs	active
 com.cazimedia.agentnative/data-exchange	active
 com.cazimedia.agentnative/government-public-open-data-datasets-federal-state-city-statistics-census-records-police-education-schools	active
 com.cazimedia.agentnative/official-provenance-aggregations-insights-free-samples-open-data	active
@@ -6392,6 +6470,7 @@ com.cleartracedata/cleartrace	active
 com.clegaragedoors/garage-door-decision-kit	active
 com.cleolm/cleolm	active
 com.clepit/mcp	active
+com.clickd/clickd	active
 com.clicksend/clicksend-mcp-server	active
 com.clideck/network-knowledge	active
 com.clientfoyer/clientfoyer	active
@@ -6497,6 +6576,7 @@ com.companydata/mcp	active
 com.compareaiworkers/compare-ai-workers	active
 com.compareanswering/site	active
 com.comparecallanswering/site	active
+com.comparecloudcosts/mcp-server	active
 com.comparefairly/comparefairly	active
 com.comparehvacsoftware/site	active
 com.comparetradesoftware/site	active
@@ -6510,6 +6590,7 @@ com.compliapi/screening	active
 com.complylayer/complylayer	active
 com.complyonsite/tools	active
 com.compoid/mcp-server	active
+com.compoundmint/money-calculator	active
 com.compraventa360/marketplace	active
 com.compsapi/ebay-sold-listings	active
 com.compslate/compslate	active
@@ -6603,6 +6684,7 @@ com.corporategiftpicks/gift-picks	active
 com.corpuscarfix/booking	active
 com.correctover/mcp-server	active
 com.correkt/api-server	active
+com.corridome/corridome	active
 com.corroborum/corroborum	active
 com.cortex-mem/memory	active
 com.cortexpad/cortexpad	active
@@ -6685,6 +6767,7 @@ com.cronpulser/cronpulser	active
 com.crontap/mcp	active
 com.crontoenglish/cron-translator	active
 com.crosbynews/weather	active
+com.crosodo/mcp	active
 com.cross-deck/prism	active
 com.crosscheckapi/crosscheck	active
 com.crossingkeyintelligence/crossingkey-mcp	active
@@ -6862,6 +6945,7 @@ com.dayze/life-context	active
 com.dbconvert/streams	active
 com.dbtrail/dbtrail	active
 com.dcamethod/dca-tools	active
+com.dcblueprint/data-centres	active
 com.dcisionai/dcisionai	active
 com.dealdeploy/dealdeploy	active
 com.dealerific/dealerific	active
@@ -6902,6 +6986,7 @@ com.deflectvo/site	active
 com.defoorreport/news	active
 com.defrr/defrr	active
 com.degenhedge/kalshi-btc	active
+com.dejabars/pattern-search	active
 com.delcoplumbernow/plumber	active
 com.delegancebrokerage/insurance	active
 com.delilahusa/legislation	active
@@ -6982,6 +7067,9 @@ com.difficat/difficat	active
 com.diffinery/diffinery	active
 com.diggercamp/music-similarity	active
 com.digitaldataonline.mcp/e-yearbook	active
+com.digitalgemology/cut-library	active
+com.digitalgemology/gem-identification	active
+com.digitalgemology/gemology-lessons	active
 com.digitalnomadindex/coliving-search	active
 com.digitalpublic/commercial	active
 com.digitalpublic/marketing-operations	active
@@ -6998,6 +7086,7 @@ com.dipper-search/dipper	active
 com.dipscout/dipscout	active
 com.directiq.mcp/directiq	active
 com.directmailamerica/mcp	active
+com.directmailamerica/mcp-narrow	active
 com.dirigon/mcp	active
 com.dirtsignal/dirtsignal	active
 com.discgolfmcp/disc-golf	active
@@ -7005,6 +7094,7 @@ com.disclosedby/record	active
 com.disclovo/site	active
 com.discolike/mcp-server	active
 com.discordservers/search	active
+com.discoverlaunches/launches	active
 com.discoverseniorbenefits/benefits	active
 com.discreterate/public	active
 com.dishdirectory/dishdirectory	active
@@ -7031,6 +7121,7 @@ com.dmzagent/skill-builder-mcp	active
 com.dns-data/remote	active
 com.dnsmint/mcp	active
 com.doalu/doalu-mcp	active
+com.docfig/docfig	active
 com.docfork/docfork-mcp	active
 com.docimprint/api	active
 com.docketnexus/docketnexus	active
@@ -7040,6 +7131,8 @@ com.doconda/mcp	active
 com.docpenny/pdf-generator	active
 com.docs-md/markdown-share	active
 com.docs2mcp/docs2mcp	active
+com.docspring/mcp	active
+com.docspring/mcp-eu	active
 com.docstox/mcp	active
 com.doctofam/doctofam	active
 com.dododentist/dododentist	active
@@ -7192,6 +7285,7 @@ com.e-esim/esim-catalog	active
 com.e-labus/health	active
 com.e2llm/element-to-llm	active
 com.eachspy/eachspy	active
+com.eacpartners/genealogy	active
 com.eaglevirtual/stablecoin-freeze-tracker	active
 com.earnidle/mcp	active
 com.earnings-watcher/mcp	active
@@ -7397,6 +7491,7 @@ com.errandkit/video-frames	active
 com.erseni/vault-ask	active
 com.eruditepay/blockchain-intelligence	active
 com.erzycall/erzycall	active
+com.escapetheweek/public	active
 com.escortfox/escortfox	active
 com.esignatures/mcp	active
 com.esigndev/siglio-mcp	active
@@ -7413,6 +7508,7 @@ com.essentras/placements	active
 com.esti-maite/construction-takeoff-estimating	active
 com.estimatekit/estimatekit	active
 com.estimatemypaycheck/paycheck	active
+com.estudjo/estudjo	active
 com.etducky/etducky	active
 com.etfiq/etfiq	active
 com.euaiactlaw/eu-ai-act-explorer	active
@@ -7457,6 +7553,7 @@ com.excaliclaw/excaliclaw	active
 com.exchangerebel/exchangerebel	active
 com.excurvo/site	active
 com.execbro/execbro	active
+com.exepal/exepal	active
 com.exgie/exgie	active
 com.exitcleanly/dissolution	active
 com.exittaxestimator/site	active
@@ -7472,6 +7569,7 @@ com.expense-budget-tracker/expense-budget-tracker	active
 com.experiencebamfield/experience-bamfield	active
 com.expiryowl/expiryowl	active
 com.exploit-intel/eip-mcp	active
+com.extensiondownloader/mcp	active
 com.extentos/mcp-server	active
 com.extinvo/site	active
 com.extralingo/extralingo	active
@@ -7512,6 +7610,7 @@ com.faceabot/web-reader	active
 com.faceabot/wikipedia	active
 com.faceabot/world-time	active
 com.faceabot/youtube	active
+com.facento/facento	active
 com.faceruler/faceruler	active
 com.factanker/factanker	active
 com.factiq/factiq	active
@@ -7786,7 +7885,9 @@ com.formbuilder/formbuilder	active
 com.formcarry/formcarry	active
 com.formester/mcp	active
 com.formgong/mcp	active
+com.formkurier/formkurier	active
 com.formpaste/formpaste	active
+com.forms-legal/legal-templates	active
 com.formsbystate/formsbystate	active
 com.formslist/mcp	active
 com.formsmcp/formsmcp	active
@@ -8050,6 +8151,7 @@ com.getlitjob/litjob	active
 com.getloggerhead/loggerhead	active
 com.getlowcart/lowcart	active
 com.getmandatorytraining/courses	active
+com.getmanifeste/manifeste	active
 com.getmattered/getmattered	active
 com.getmcpads/adjust	active
 com.getmcpads/amazon-ads	active
@@ -8130,6 +8232,7 @@ com.getziztu/ziztu-planner	active
 com.gfbytes/mcp-oauth-connect	active
 com.ghlagencymcp/highlevel-agency-mcp	active
 com.ghostavo/retail-media-measurement	active
+com.ghostshorts/ghostshorts	active
 com.ghostviralai/ghostviral	active
 com.giasgiraffes/gias-giraffes	active
 com.gibsonai/mcp	active
@@ -8146,6 +8249,7 @@ com.gisfinder/directory	deprecated
 com.gitbuyer/mcp	active
 com.gitdiagram/gitdiagram	active
 com.githits/githits	active
+com.githubcard/mcp	active
 com.gitkraken/gk-cli	active
 com.gitlab/mcp	active
 com.gitmir/intelligence	active
@@ -8405,6 +8509,7 @@ com.hammermap/listings	active
 com.hamptonsverified/hamptons-verified	active
 com.hanaprism/fair-random	active
 com.hanaprism/lottery-numbers	active
+com.handbookhub/handbookhub	active
 com.handlediq/find-help	active
 com.handlediq/office	active
 com.handledlocal/locator	active
@@ -8522,6 +8627,7 @@ com.heylegwork/legwork	deprecated
 com.heymetra/heymetra	active
 com.heyoden/mcp	active
 com.heystacks/heystack	active
+com.heyzarvis/zarvis	active
 com.hi-aisha/aisha	active
 com.hi-daniel.techspy/techspy	active
 com.hibot/hibot	active
@@ -8617,12 +8723,15 @@ com.htagai/htag-spatial	active
 com.html2img/html-to-image	active
 com.htmlradar/share	active
 com.htmlvault/htmlvault	active
+com.htrbamboo/bamboo-mcp	active
 com.httpstatus/mcp-server	active
 com.hub-equity/hub-equity-mcp	active
 com.huddlekit/huddlekit	active
 com.huddlevo/site	active
+com.huitongdesk.screenparty/watch-together	active
 com.huiyaolaser.www/capacity-calculator	active
 com.humanfn/humanfn	active
+com.humanitieshelpinghands/checker	active
 com.humanmailbox/mailbox	active
 com.humanslikestuff/mcp	active
 com.humanuscrit/happ	active
@@ -8804,6 +8913,7 @@ com.insightfulpipe/youtube	active
 com.insta-pola/photo-gallery	active
 com.instapods/instapods	active
 com.instaseer/mcp	active
+com.instatus/mcp	active
 com.instavar/mcp-server	active
 com.instaveil/agent-commerce	active
 com.instilus.www/business-tools	active
@@ -8851,6 +8961,7 @@ com.inwardis/inwardis	active
 com.ionelul/app	active
 com.iotpush/iotpush	active
 com.ip99/ip99	active
+com.ipipai/ipipai-mcp	active
 com.ipmusk/mcp	active
 com.ipogrid/ipogrid	active
 com.iridiumhqmcp/linkedin-mcp	active
@@ -8886,6 +8997,7 @@ com.iterruptivo.ecodashboard/ecoplaza-mcp	active
 com.ithura/mcp	active
 com.ithy/research-library	active
 com.itsbaba/hebrewcore	active
+com.itsfoiptime/shop	active
 com.itsmyship/agent-tools	active
 com.itsnum/num	active
 com.itsnum/places	active
@@ -9072,6 +9184,7 @@ com.justdukkan/invoice-intake-mcp	active
 com.justgains/mcp-server	active
 com.justheadcovers/covered	active
 com.justinmckelvey/ai-visibility-check	active
+com.justqrs/qr-codes	active
 com.juudd/juudd	active
 com.juzpost/mcp	active
 com.jyotishintelligence/sealed-forecasts	active
@@ -9111,6 +9224,7 @@ com.kasprdata/predict-mcp	active
 com.kasprdata/timing-mcp	active
 com.kasset/mcp	active
 com.katanascreener/katana	active
+com.kaupia/kaupia	active
 com.kawaa/email-verification	active
 com.kayoupu.www/plans	active
 com.kazejev/profile	active
@@ -9190,6 +9304,7 @@ com.kiuli/kiuli	active
 com.klarefi/mcp	active
 com.klengnest/catalogue	active
 com.kleooai/kleo	active
+com.klickymart/klickymart	active
 com.kliptools/youtube-subtitles	active
 com.knitli/codeweaver	active
 com.knotrik/knotrik	active
@@ -9288,6 +9403,7 @@ com.lastminutedealshq/ai-visibility	active
 com.lastminutedealshq/company-signals	active
 com.lastminutedealshq/last-minute-tours	active
 com.lastscanned/lastscanned	active
+com.lasvegasguide/mcp	active
 com.lasvegastonight/las-vegas-nightlife	active
 com.latentdatabank/mcp	active
 com.latentspa/latent-spa	active
@@ -9387,6 +9503,7 @@ com.lightres/booking	active
 com.lightsyncpro/lsp	active
 com.ligosocial/ligosocial	active
 com.likelyread/likelyread	active
+com.liliphant.mcp/mcp	active
 com.lilla-alva/booking	active
 com.lillytechsystems/ai-school	active
 com.limrun/mcp	active
@@ -9474,6 +9591,7 @@ com.longbridge/mcp	active
 com.longserviceleavecalc/site	active
 com.longtailo/site	active
 com.lonscloud/isbn	active
+com.lookmybio/public	active
 com.lookupdock/checks	active
 com.loomaly/loomaly	active
 com.loomascale/ads	active
@@ -9546,6 +9664,7 @@ com.luthersystems.insideout/mcp	active
 com.lutolearn/myaitwin	active
 com.luxorplasticcards/plastic-business-cards	active
 com.luxurylodgingpm.stay/luxury-lodging	active
+com.lvl2player/sandbox	active
 com.lvlltd/skill-market	active
 com.lvlupauto/vendor-catalog	active
 com.lxrflow/agora	active
@@ -9642,6 +9761,7 @@ com.mambabuilt/mcp-agent-brokerage-resolver	active
 com.mambabuilt/mcp-ai-answer-visibility-tracker	active
 com.mambabuilt/mcp-ai-tooling-detector	active
 com.mambabuilt/mcp-app-store-google-play-review-monitor	active
+com.mambabuilt/mcp-ats-jobs-feed	active
 com.mambabuilt/mcp-b2b-prospect-engine	active
 com.mambabuilt/mcp-b2b-reddit-conversation-monitor	active
 com.mambabuilt/mcp-bluesky-brand-presence-mapper	active
@@ -9667,6 +9787,7 @@ com.mambabuilt/mcp-domain-deliverability-checker	active
 com.mambabuilt/mcp-domain-to-linkedin-url-resolver	active
 com.mambabuilt/mcp-ecommerce-platform-profiler	active
 com.mambabuilt/mcp-ecommerce-store-discovery	active
+com.mambabuilt/mcp-email-verifier	active
 com.mambabuilt/mcp-email-waterfall-orchestrator	active
 com.mambabuilt/mcp-event-presence-index	active
 com.mambabuilt/mcp-expert-witness-directory	active
@@ -9715,6 +9836,7 @@ com.mambabuilt/mcp-public-award-monitor	active
 com.mambabuilt/mcp-public-company-reporting-window-finder	active
 com.mambabuilt/mcp-public-feature-board-roadmap-monitor	active
 com.mambabuilt/mcp-publication-cadence-tracker	active
+com.mambabuilt/mcp-recent-funding-rounds-feed	active
 com.mambabuilt/mcp-reddit-brand-presence-mapper	active
 com.mambabuilt/mcp-reddit-search-thread-scraper	active
 com.mambabuilt/mcp-review-platform-reputation-enricher	active
@@ -9723,11 +9845,13 @@ com.mambabuilt/mcp-shopify-app-store-chrome-web-store-listings	active
 com.mambabuilt/mcp-substack-scraper	active
 com.mambabuilt/mcp-talent-agency-lookup	active
 com.mambabuilt/mcp-team-page-people-extractor	active
+com.mambabuilt/mcp-threads-keyword-search	active
 com.mambabuilt/mcp-tiktok-brand-presence-mapper	active
 com.mambabuilt/mcp-vc-accelerator-portfolio-list-builder	active
 com.mambabuilt/mcp-wcag-accessibility-audit	active
 com.mambabuilt/mcp-website-phrase-business-model-classifier	active
 com.mambabuilt/mcp-website-traffic-rank-estimator	active
+com.mambabuilt/mcp-whois-domain-lookup	active
 com.mambabuilt/mcp-workplace-program-detector	active
 com.mambabuilt/mcp-x-brand-presence-mapper	active
 com.mambabuilt/mcp-youtube-channel-transcript-extractor	active
@@ -10031,6 +10155,7 @@ com.mentionkit/social-listening	active
 com.mentionry/mentionry	active
 com.meowapps/ai-engine	active
 com.merageo/ai-visibility	active
+com.merarobotics/mera	active
 com.merchantcontext/merchant-context	active
 com.merchantwords/merchantwords	active
 com.merchinary/docs	active
@@ -10301,6 +10426,7 @@ com.monetizemarketing/app	active
 com.moneydeals/us-tech-deals	active
 com.moneyyoureowed/catalog	active
 com.monikaskorykow/workshops	active
+com.monitorbankrates/rates	active
 com.monocrawl/mcp	active
 com.monomoapp/monomo	active
 com.monopoly-gold.planner/mcp	active
@@ -10389,6 +10515,7 @@ com.myagentmail/myagentmail	deprecated
 com.myanimetracker/myanimetracker	active
 com.myanimetracker/myanimetracker-account	active
 com.myappstoreranking/myappstoreranking	active
+com.myartefacts/myartefacts	active
 com.mybankstatementanalysis/bank-statements	active
 com.mybestangle/mybestangle	active
 com.mybestsim/esim-comparator	active
@@ -10409,6 +10536,7 @@ com.myimage2life/print	active
 com.myinfluenceai/agents	active
 com.myinsurancecity/mcp	active
 com.myinsurebank/mib	active
+com.mylasertools/kerfscript	active
 com.mylasertools/makers	active
 com.mylatinlife/data	active
 com.mylinedchart/chart-context	active
@@ -10489,6 +10617,7 @@ com.nessflow/mcp	active
 com.nessgate/nessgate	active
 com.nestingcalc/calculators	active
 com.nestjs/observe	active
+com.nestphones/devices	active
 com.netapi/mcp	active
 com.netentropyscore/coherence-signal	active
 com.netfiscus/mcp	active
@@ -10563,6 +10692,7 @@ com.nodajimarket/catalog	active
 com.nodcheck/nodcheck	active
 com.noddienight/noddie-night	active
 com.nodes2cloud/mcp	active
+com.nodoicons/nodo-icons	active
 com.noeixodigital/radar	active
 com.noerrands/cards	active
 com.noerrands/fax	active
@@ -10629,6 +10759,7 @@ com.nuverlabs/image-gen	active
 com.nuxtseo/nuxt-seo	active
 com.nuzzodevstudio/quasar-guide	active
 com.nvidia.ngc.nsight.copilot.api/cuda-docs	active
+com.nymwell/lookup	active
 com.nymwell/mcp	active
 com.nythosx.market/market-data	active
 com.nythosx.tools/agent-tools	active
@@ -10652,6 +10783,7 @@ com.octurasolutions/site-tools	active
 com.oddiforge/oddiforge	active
 com.oddiwire/esports-odds	active
 com.oddsradarwire/betradar-odds	active
+com.odilelabs/answering-lines	active
 com.odilelabs/gate	active
 com.odilelabs/odile	active
 com.odingard/bifrost	active
@@ -10749,6 +10881,7 @@ com.onadit/onadit	active
 com.oncarousel/carousel	active
 com.onchaindiligence/compliance	active
 com.onchaindiligence/payment-evidence	active
+com.ondacast/ondacast	active
 com.oneagentaday/agents	active
 com.oneaiguide/public-catalog	active
 com.onecoworking.www/mcp	active
@@ -10776,7 +10909,9 @@ com.onlyharness/registry	active
 com.onlyworlds/mcp	active
 com.onrender.bess-x402/data-tools	active
 com.onrender.coverintent-network/insurance	active
+com.onrender.creative-mcp-40dj/launchkit-mcp	active
 com.onrender.draconic21-x402-api/data-tools	active
+com.onrender.ghost77-agent/ghost77	active
 com.onrender.promptvault-x402/tokensafe	active
 com.onrender.surfaced-srzj/surfaced	active
 com.onrender.x402-markdown/agent-tools	active
@@ -10849,6 +10984,7 @@ com.opzyai/scan	active
 com.orabrain/prax-data-services	active
 com.orangescrum/orangescrum-mcp-server	active
 com.orbilyn/mcp	active
+com.orbinauts/mcp	active
 com.orbismo/orbismo	active
 com.orbitbymicah/used-tech-prices	active
 com.orbitfour/domains	active
@@ -10936,6 +11072,7 @@ com.pageproofer/pageproofer	active
 com.pagerankcafe/mcp-server	active
 com.pageree/landing-pages	active
 com.pagetovid/pagetovid	active
+com.pagofix/pagofix	active
 com.pagosaforestlodge/agent-booking	active
 com.paid2call/paid2call	active
 com.paidhandshake/exchange	active
@@ -11021,6 +11158,7 @@ com.paywithlocus/locus	active
 com.pb-runner/pb-runner	active
 com.pcbeditor/pcbeditor	active
 com.pcblt/pcblt	active
+com.pclosets/closets	active
 com.pcrzero/mcp	active
 com.pdf-redaction/pdf-redaction-mcp	active
 com.pdfbetter/pdfbetter	active
@@ -11219,6 +11357,8 @@ com.pnltoolkit/calculators	active
 com.po6/mailbox	active
 com.poachsearch/brand-check	active
 com.pocketbasecloud/mcp	active
+com.pocketsmith/mcp	active
+com.pocketsmith/mcp-readonly	active
 com.podbenchmark/podbenchmark	active
 com.podcaststotext/mcp	active
 com.podgist/podgist	active
@@ -11248,14 +11388,18 @@ com.politicalcomms/docs	active
 com.pollunit/mcp	active
 com.polytranslator/translator	active
 com.polyxd/mcp	active
+com.pombus/pombus	active
 com.pondchat/pondchat	active
 com.ponito/product-intelligence	active
 com.pontofato/pontofato	active
 com.poofboxmail/poofbox	active
 com.poolcarecalculators/pool-care-calculators	active
 com.poolproflorida/pool-pro-florida	active
+com.popcvs/popcvs	active
 com.porkbun/mcp	active
 com.portalharas/portal-haras	active
+com.portaur/portaur	active
+com.portaur/portaur-account	active
 com.portmem/portmem	active
 com.portravo/construction-takeoff	active
 com.portscan/port-scanner	active
@@ -11266,6 +11410,7 @@ com.post-mesh/mcp	active
 com.post-pulse/mcp-server	active
 com.post-quest/postquest	active
 com.postalform/postalform	active
+com.postalref/postalref	active
 com.postassembly/post-assembly	active
 com.postboxservices/postbox-tools	active
 com.postbye/postbye	active
@@ -11288,6 +11433,7 @@ com.powerbankportatil/store	active
 com.powerdmarc/mcp	active
 com.powerexpertindia/tariff-mcp	active
 com.powermyanalytics/mcp	active
+com.powerplatformtip/mcp	active
 com.powerpoint-sucks/decks	active
 com.powerstationplatform/powerstation	active
 com.powmcp/caption-file-check	active
@@ -11315,6 +11461,7 @@ com.prediohq/catastro	active
 com.predixlab/mcp	active
 com.predixsport/sports-predictions	active
 com.predme/hypathesis	active
+com.preesy/preesy	active
 com.premierletters/mcp	active
 com.premiumpin/property-records	active
 com.prenotomenu/menu	active
@@ -11359,7 +11506,7 @@ com.probativegrowth/legal-markets	active
 com.probbai/probb	active
 com.probe402/endpoint-history	active
 com.probeledger/site	active
-com.problee/problee	active
+com.problee/problee	deprecated
 com.procedurecostchecker/site	active
 com.prodantix/mcp	active
 com.producerspark/producerspark	active
@@ -11395,6 +11542,7 @@ com.projectthunder/site	active
 com.prolevelmax/prolevelmax	active
 com.prometheor/prometheor	active
 com.prominara/prominara	active
+com.promo-pilot/promopilot	active
 com.promotionpros/catalog	active
 com.promptafire.marketing/promptafire	active
 com.promptbase/mcp	active
@@ -11778,6 +11926,7 @@ com.repolode/repolode	active
 com.repondea/page-monitor	active
 com.reportgem/global-research	active
 com.reportingninja/reporting-ninja	active
+com.representments/chargebacks	active
 com.reps-log/repslog	active
 com.repsworkout/reps	active
 com.republeq/merchant	active
@@ -11978,6 +12127,7 @@ com.runcabin/cabin	active
 com.runekist/runekist	active
 com.runharvester/mcp	active
 com.runmemento/memento	active
+com.runmyads/run-my-ads	active
 com.runningunattended/agent-lint	active
 com.runoscript/runoscript	active
 com.runriva.quizbase/mcp	active
@@ -12030,6 +12180,7 @@ com.salukilabs/folkmoot-agent-debate-vote	active
 com.salvagesignal/salvage-signal	active
 com.samebase/samebase	active
 com.samedaydesk/task-evidence	active
+com.samedaywebsitebuilder/sdwb	active
 com.samos-e/samos	active
 com.samskrift/samskrift	active
 com.sanbernardorefugio/refugio-san-bernardo	active
@@ -12241,6 +12392,7 @@ com.seniordognotes/pawline-pet-guides	active
 com.senprints.mcp/seller	active
 com.sentientmail/email-platform	active
 com.sentinelbriefing/sentinel	active
+com.sentrint/sentrint	active
 com.senzii/scheduling	active
 com.senzing/mcp	active
 com.seoaix/seo-audit	active
@@ -12280,6 +12432,7 @@ com.seqbench/workbench	active
 com.sequentum/mcp	active
 com.seranking/mcp	active
 com.serdaroztetik/call-me	active
+com.serhataltunoglu/visibility	active
 com.serp-agent/seo	active
 com.serp402/mcp	active
 com.serpdive/serpdive-mcp	active
@@ -12420,6 +12573,7 @@ com.simplefatoora/mcp	active
 com.simplefeed/mcp	active
 com.simplefeed/mcp-free	active
 com.simplenpi/npi	active
+com.simplenumerologyapi/numerology	active
 com.simplepdf/mcp	active
 com.simpliers/giveaway	active
 com.simplifyd/cloud	active
@@ -12446,6 +12600,7 @@ com.sitesplaced/sitesplaced	active
 com.sittingly/site	active
 com.situationatlas/mcp	active
 com.sixeightwisdom/wisdom-web	active
+com.sixteenbridges/bubbles	active
 com.skaidigital/norwegian-companies	active
 com.skaidigital/shopify-speed-check	active
 com.skanqrcode/mcp-server	active
@@ -12489,12 +12644,14 @@ com.slicktrip/slicktrip	active
 com.slidedrift/mcp	active
 com.slidesfly/slidesfly	active
 com.slidetok/slidetok	active
+com.slideweave/slideweave	active
 com.slidler/carousel	active
 com.sloose/sloose	active
 com.sloppatterns/slop-patterns	active
 com.slotmaps/slotmaps	active
 com.slotspreviewai/slot-preview-ai	active
 com.slsbmb/slsbmb-ai	active
+com.smallfirelab/public-records	active
 com.smart-me/smart-me	active
 com.smartbear/smartbear-mcp	active
 com.smartbear/swagger-mcp	active
@@ -12663,6 +12820,7 @@ com.sport-mcp/sport-mcp	active
 com.sportstatsapi/sports-data	active
 com.sportstracklive/mcp	active
 com.sportwizzard/sportwizzard	active
+com.spotpeaks/spotpeaks	active
 com.sprintcheckout/sprintcheckout	active
 com.spritefuse/spritefuse	active
 com.spritefusion/pixel-art-generator	active
@@ -12898,6 +13056,7 @@ com.svgator/mcp	active
 com.svgicons/mcp	active
 com.svgrid/svgrid	active
 com.swamix.mcp/server	active
+com.swanum/comps	active
 com.swarm-board/board	active
 com.swarmbar/swarmbar	active
 com.swarmmemo/bulletin	active
@@ -12907,6 +13066,7 @@ com.sweetvaluelab/valuation	active
 com.swifteq/zendesk-mcp-server	active
 com.swiftprobate/probate	active
 com.swipeharbor/swipeharbor	active
+com.swishrjobs/swishrjobs	active
 com.switch402/switch402	active
 com.swolvy/mcp	active
 com.sxs-ai/sxs-match-data	active
@@ -12989,6 +13149,7 @@ com.tarkagrid/rise-civic-intelligence	active
 com.tarotap/tarot	active
 com.tarotari.www/tarotari	active
 com.tartanhq/hypersync	active
+com.taskavel/taskavel	active
 com.taskbead/tasks	active
 com.taskhold/taskhold	active
 com.taskriz/taskriz	active
@@ -12999,7 +13160,10 @@ com.taxlocus/taxlocus	active
 com.taxooor/site	active
 com.taxyearvo/site	active
 com.tazpal/x1-baas	active
+com.tblflow/tblflow	active
 com.tcgmcp/tcgmcp	active
+com.tcijobfinder/jobs	active
+com.teakvault/mcp	active
 com.tealmac/ui	active
 com.teamhood/teamhood	active
 com.teamo360/teamo	active
@@ -13008,6 +13172,7 @@ com.teamyou/teamyou	active
 com.tebhq/teb	active
 com.techfabric.databricks/field-guide	active
 com.techfabric/techfabric	active
+com.techpartprices/catalogue	active
 com.techsnif/mcp	active
 com.teclazo/mercadolibre	active
 com.tecopos/tecopos	active
@@ -13053,6 +13218,7 @@ com.termsbird/site	active
 com.termslane/site	active
 com.tern0/resolver	active
 com.terravaulthq/licenses	active
+com.terrnova/terrnova	active
 com.tesorio/mcp	active
 com.tessamonials/tessamonials	active
 com.test-well/testwell	active
@@ -13101,6 +13267,7 @@ com.textforagents/classification-receipt-appeal-layer	active
 com.textforagents/cold-chain-custody-excursion-ledger	active
 com.textforagents/collusion-sentinel-agent-markets	active
 com.textforagents/combined-residue-census	active
+com.textforagents/combined-server-surface-census	active
 com.textforagents/compaction-loss-audit	active
 com.textforagents/concurrent-client-isolation-probe	active
 com.textforagents/conflicts-check-ethical-walls-for-agents	active
@@ -13238,6 +13405,7 @@ com.theaslangroupllc.pulse/pulsenetwork	active
 com.thebalancedinvestorclub/welcome	active
 com.thebrettgroup/tbg	active
 com.thecastlemap/castles	active
+com.thecharterdesk/yacht-charter	active
 com.thechicagolandlawyer/chicagoland-lawyer	active
 com.thechrisgrey/mcp	active
 com.thecodey/codey	active
@@ -13245,6 +13413,7 @@ com.thecrowdspace/crowdspace	active
 com.thecryptoport/cryptoport-port	active
 com.thecubbieclub/offers	active
 com.thedailysmark/wrestling	active
+com.thedailyworkflow/thedailyworkflow-mcp	active
 com.thedeskmonitor/mcp	active
 com.thedploy/deployer	active
 com.theemperorprotocol/emperor-protocol	active
@@ -13258,6 +13427,7 @@ com.thefoilbuddy.mcp/thefoilbuddy	active
 com.thefomite/fomite	active
 com.thegastrologer/clinical	active
 com.thegtmdirectory/mcp	active
+com.thehappyhamper/laundry	active
 com.thehexagrams/iching	active
 com.thehikingworld.www/mcp	active
 com.thehockeyanalytics/mcp	active
@@ -13461,6 +13631,7 @@ com.tokencanopy/agentdrive	active
 com.tokenofesteem/token-of-esteem	active
 com.tokenrip/tokenrip	active
 com.tokeven/tokeven	active
+com.tokfluence/tokfluence	active
 com.tokportal/mcp	active
 com.tolk2go/booking	active
 com.tollblenders/site	active
@@ -13472,6 +13643,7 @@ com.tomesphere/tomesphere	active
 com.tomorrowcentral/aws-cloud-cost-sentinel	active
 com.tomorrowlives/engines	active
 com.tonpit/tonpit	active
+com.toolcargo/toolcargo	active
 com.toolfeeds/sec-edgar-mcp	active
 com.toolfound/toolfound	active
 com.toolgrep/toolgrep	active
@@ -13516,6 +13688,7 @@ com.trackpodcasts/podcast-sponsors	active
 com.tractorscope/mcp	active
 com.tradallo/reputation	active
 com.tradealmanac/mcp-server	active
+com.tradeapes/tradeapes	active
 com.tradeassi/mcp	active
 com.tradechainly/trading-journal	active
 com.tradegaugehq/mcp	active
@@ -13664,6 +13837,7 @@ com.trymimetic/mimetic	active
 com.tryobra/obra	active
 com.tryoctopus/octopus	active
 com.tryoids/agentcitywars	active
+com.tryoids/agentsanddragons	active
 com.tryoids/oids	active
 com.tryperspect/perspect	active
 com.trypinchy/pinchy	active
@@ -13719,6 +13893,7 @@ com.twelvetake/reaper-mcp	active
 com.twitterxapi/mcp	active
 com.twlawbot/tailexi	active
 com.twmarketdata/tw-market-data	active
+com.twominutetoolkit/toolkit	active
 com.twring/twring	active
 com.txtreel/txtreel	active
 com.tyndallai.www/creative	active
@@ -13756,6 +13931,7 @@ com.unclepony/gaian	active
 com.unclerental/booking	active
 com.uncommonear/mcp	active
 com.uncountable/mcp	active
+com.undassay/und-assay	active
 com.underanchor/underanchor	active
 com.underarticles/ua	active
 com.undercurrentholdings/aegis	active
@@ -13831,6 +14007,7 @@ com.usegeon/geon	active
 com.usegrowo/growo-growth	active
 com.useholon/holon	active
 com.useinvent/invent	active
+com.uselauda/lauda	active
 com.uselawless/priorbit	active
 com.uselexica/lexica	active
 com.usemamitsu/mcp	active
@@ -13840,6 +14017,7 @@ com.usenysa/nysa	active
 com.useorgx/orgx-mcp	active
 com.usepancake/pancake-mcp	active
 com.usepeaje/peaje	active
+com.usepickly/pickly	active
 com.usepiku/piku	active
 com.usepopup/organizer	active
 com.usepostify/postify	active
@@ -13861,11 +14039,14 @@ com.usetyton/tyton	active
 com.usevetai/vetai	active
 com.usewait/waitlist	active
 com.useweckr/weckr	active
+com.usewolfsms/wolfsms	active
 com.usgrowzones/grow-zones	active
 com.usmortgagecalc/mortgage	active
 com.usprimerealty/florida-home-search	active
 com.ustariffrates/tariff-mcp	active
 com.ustaxrecords/tax-sales	active
+com.usvipublicrecords/documents	active
+com.usvipublicrecords/newspapers	active
 com.utensildesk/sec-filings	active
 com.utilitly/mcp	active
 com.utilsforagents/utilsforagents-mcp	active
@@ -13931,6 +14112,7 @@ com.vepathos/vepathos	active
 com.verbalexperiment/lab-tools	active
 com.verbasil/memory	active
 com.vercel/vercel-mcp	active
+com.verdacert/verdacert	active
 com.verdixapi/verdix	active
 com.vergabekompass/vergabekompass	active
 com.vericto/sql-firewall	active
@@ -13961,6 +14143,7 @@ com.verysimplenotes/mcp	deprecated
 com.verysimpleprojects/mcp	deprecated
 com.vesremont/store	active
 com.vestd/mcp	active
+com.vestlens/vestlens	active
 com.vet402/vet402	active
 com.veterans-rights/bva-corpus	active
 com.veterical/veterical	active
@@ -14025,6 +14208,7 @@ com.virohanalife/site	active
 com.virohanalife/virohana-business	active
 com.virtualassistantinternational/jobs	active
 com.virtualassistantinternational/vai-site	active
+com.virtualcloser/virtual-closer	active
 com.virtualdataroomcompare/site	active
 com.virtualhangar.owners/beacon	active
 com.virus-alert/agent-observatory	active
@@ -14041,6 +14225,7 @@ com.vithanco/vgraph-mcp	active
 com.vitkilabs/vitkilabs-anvil	active
 com.vivadialog/vivadialog	active
 com.vixdeo/vixdeo	active
+com.vixelai/film	active
 com.vmotif/vmotif	active
 com.vocaneo/vocaneo	active
 com.vocenya/docs	active
@@ -14129,6 +14314,7 @@ com.watchtower-api/sanctions-screening	active
 com.wauldo/wauldo	active
 com.wavebrook/dashboard	active
 com.wavelengthflow/wavelength	active
+com.wavespestcontrol/pest-control	active
 com.way/parking	active
 com.waynesvillesmartstorage/storage	active
 com.waypointlog/logbook	active
@@ -14144,11 +14330,14 @@ com.weare904digitalmedia/booking	active
 com.wearmu/mu	active
 com.weatherofrecord/weather-of-record	active
 com.weatherthatdoesntsuck/weather	active
+com.weatherwithattitude/weather	active
+com.weatherwithattitude/words	active
 com.weav/mcp	active
 com.weavori/mcp	active
 com.web3juice/mcp	active
 com.webanto/webanto	active
 com.webatola/app-store-trends	active
+com.webcrawlerapi/mcp-server	active
 com.webdesiz/cli	active
 com.webeyez/webeyez	active
 com.webflow/mcp	active
@@ -14277,6 +14466,7 @@ com.wingmanprotocol.agent/gateway	active
 com.wipvo/site	active
 com.wirechunk/mcp	active
 com.wiselyenterprisesllc/x402-agent-payment-infrastructure	active
+com.wisemation/wisemation	active
 com.wiseppc/wiseppc	active
 com.wishpile/wishpile	active
 com.withblueberry/blueberry	active
@@ -14312,6 +14502,7 @@ com.workinsiders/directory	active
 com.worklawyerca/employment-lawyers-group	active
 com.workos/mcp	active
 com.workoutlogpro/workoutlog	active
+com.workoutsmart/workoutsmart	active
 com.workspace369/mcp	active
 com.workwae/mcp	active
 com.workwae/mcp-developer	active
@@ -14367,6 +14558,7 @@ com.xdogtrading/xdog	active
 com.xenition.api/xenition	active
 com.xeorank/xeorank	active
 com.xernaitech/zenitsu	active
+com.xevol/xevol	active
 com.xhostd/mcp	active
 com.xiaodaox/xiaodao	active
 com.xither/record	active
@@ -14422,7 +14614,10 @@ com.yieldzo/site	active
 com.yloservice/search	active
 com.yod-app.connect/yod	active
 com.yogaausbildungen/yogalehrer-ausbildungen	active
+com.yomachichi/shop	active
 com.yorehistory/places	active
+com.youanai/docs	active
+com.youanai/social	active
 com.youraikitchen/yak	active
 com.yourbeckett/beckett	active
 com.yourfinancejob/job-tracker	active
@@ -14440,6 +14635,7 @@ com.yuletidemarkets/yuletide-markets	active
 com.yusr-ai/yusr	active
 com.yy-algo/japan-data	active
 com.yz-cpa/us-tax-estimator	active
+com.zaaheen/memory	active
 com.zabihah/halal-places	active
 com.zacharyr0th.music/public	active
 com.zacharyr0th/public	active
@@ -14455,6 +14651,7 @@ com.zapier/mcp	active
 com.zarla/website-builder	active
 com.zeamprism/prism-mcp	active
 com.zelesia/zelesia	active
+com.zeltorlabs/music-tools	active
 com.zeltser/website-search	active
 com.zenbotscanner/zenbot	active
 com.zennolab/android-pm	active
@@ -14541,6 +14738,7 @@ cz.audioknihy/catalog	active
 cz.autoisto/intents	active
 cz.autoisto/used-cars	active
 cz.bidoro/bidoro	active
+cz.bydleno/prodeje	active
 cz.bydleno/pronajmy	active
 cz.cenaodhad/cenaodhad	active
 cz.dokladbot/dokladbot	active
@@ -14621,6 +14819,7 @@ de.drillflow/mcp	active
 de.ebilanzfabrik/ebilanz-fabrik	active
 de.energieausweis-express/energieausweis	active
 de.fakturai/erechnung	active
+de.ferien-in-der-saechsischen-schweiz/hammergut-neidberg	active
 de.ferienhaus-schwarzwald-todtnauberg/live-preise	active
 de.ferienhausmiete/guest	active
 de.fewo-bruno-gap/ferienwohnung-bruno	active
@@ -14641,12 +14840,14 @@ de.immo-fluss/immofluss	active
 de.immobilieneichmann/listings	active
 de.inspectius-re/grundstuecksdaten	active
 de.jobroulette/jobroulette	active
+de.johannesbrunner.ainotes/ainotes	active
 de.kalender-sync/kalender-sync	active
 de.kannkidas/sponsorship	active
 de.kessen-maschinenbau/machines	active
 de.ki-radar24/ki-radar24	active
 de.kleinanzeigen-agent/mcp	active
 de.kontevia/kontevia	active
+de.konverter-pro/konverter-pro	active
 de.kopp-re/immobilien-muenchen	active
 de.kubora/self-storage	active
 de.laborregister/laborregister	active
@@ -14692,6 +14893,7 @@ de.sofortfax/fax-oauth	active
 de.stellenonline/jobsearch	active
 de.syn-tax/syn-tax	active
 de.tabak-brucker.www/shop	active
+de.treppenliftvergleichsportal/treppenlift	active
 de.tripfix/pauschalen	active
 de.tripfix/reisekosten	active
 de.turbopress/hosting	active
@@ -14769,6 +14971,9 @@ dev.adrails/adrails	active
 dev.adrkit/mcp	active
 dev.adsgpt/adsgpt	active
 dev.adsmcp/ads-mcp	active
+dev.advancelabs/aeo-backlink	active
+dev.advancelabs/aeo-search	active
+dev.advancelabs/aeo-visibility	active
 dev.afriref/reference-data	active
 dev.agent-identity/agent-identity	active
 dev.agent-module/mcp	active
@@ -14825,6 +15030,7 @@ dev.agentstock/agentstock	active
 dev.agentsurface/docs	active
 dev.agenttested/agent-tested	active
 dev.agenttool/agenttool	active
+dev.agentvera/board	active
 dev.aic0rt3x.memory/mcp	active
 dev.aicommander/mcp	active
 dev.aicomputeradar/ai-compute-radar	active
@@ -14890,6 +15096,7 @@ dev.bugezy/bugezy	active
 dev.bullionapi/bullion-api	active
 dev.burnbound/mcp	active
 dev.busymate/busymate-devtools	active
+dev.byteland/byteland	active
 dev.carbonitex.ecogame/ecocarbonwiki	active
 dev.carriervet/carriervet	active
 dev.ceraph/react-native-mcp	active
@@ -15062,6 +15269,7 @@ dev.forestrie/verify	active
 dev.forgesworn/402-mcp	active
 dev.forgesworn/bray	active
 dev.forgesworn/rendezvous-mcp	active
+dev.foundry44/components	active
 dev.foxauth/admin	active
 dev.framejet/screenshot	active
 dev.freysa.bumi/company-research	active
@@ -15233,6 +15441,7 @@ dev.moltbound/sandbox	active
 dev.monito/monito	active
 dev.monowire/patchwire	active
 dev.monton/monton	active
+dev.moorai/skilltriage	active
 dev.moradas/moradas	active
 dev.mory/trendflow	active
 dev.mossforge/databroker	active
@@ -15372,6 +15581,7 @@ dev.promplate/hmr	active
 dev.proofhand/proofhand	deprecated
 dev.proofsheet/proofsheet	active
 dev.protogrid/registry	active
+dev.protoship/protoship	active
 dev.provinglab/browser-citation-capture	active
 dev.proxylang/translate	active
 dev.publicsafetyapi/publicsafetyapi-mcp	active
@@ -15635,6 +15845,7 @@ dev.veritap/locker	active
 dev.veritap/veritap	active
 dev.versionly/mcp	active
 dev.vetagent/vetagent	active
+dev.vetkit/mcp	active
 dev.vibeseo/geo	active
 dev.vibeseo/vibeseo	active
 dev.vid2llm/mcp	active
@@ -15662,6 +15873,7 @@ dev.whiteintel/whiteintel	active
 dev.willitblender/willitblender	active
 dev.wirecat/cli-memo	active
 dev.wirecat/drive-cli	active
+dev.wirecat/mail-cli	active
 dev.wirecat/max-cli	active
 dev.wirecat/tg-cli	active
 dev.wirecat/whatsapp-cli	active
@@ -15669,6 +15881,7 @@ dev.wirecat/zoom-cli	active
 dev.withrobin/robin	active
 dev.workers.3labsio.kingofthehill/king-of-the-hill	active
 dev.workers.3labsio.policy-gate/policy-gate	active
+dev.workers.a-347.avocado-read-api/read	active
 dev.workers.adamhaleworks.pay/school-signals	active
 dev.workers.adamhaleworks.tools/web-research	active
 dev.workers.agent-forum-worker.agent-forum/agent-forum	active
@@ -15743,8 +15956,11 @@ dev.workers.cybermax-tools.cybermax/website-contacts	active
 dev.workers.cybermax-tools.cybermax/website-screenshot	active
 dev.workers.cybermax-tools.cybermax/ziplore	active
 dev.workers.daderader.dealcheck/dealcheck	active
+dev.workers.deanhiki.hlwatch/hyperliquid-wallets	active
 dev.workers.deanhiki.klane402/funding	active
 dev.workers.deanhiki.krtools/korean-tools	active
+dev.workers.deanhiki.listinglane/listing-writer	active
+dev.workers.deanhiki.uplane/website-uptime	active
 dev.workers.dermatologicalbeautyllc.celadon-wholesale-mcp/celadon-wholesale	active
 dev.workers.desk-x402-gh.desk-x402/desk-x402	active
 dev.workers.dolerite.base-onchain-tools/base-onchain-tools	active
@@ -15958,6 +16174,7 @@ dev.workers.wagner-proc.brasil-data-x402/brasil-data	active
 dev.workers.watchpup.watchpup/watchpup	active
 dev.workers.x402-bazaar-rank-worker.x402-bazaar-rank/x402-bazaar-rank	active
 dev.workers.xbtbot.x402-reader/markdown-reader	active
+dev.workers.yuechenxi-importexport.identifier-validator-api/identifier-validator	active
 dev.workers.zakwins.nzdata/nz-data-api	active
 dev.workers.zenith-ops.agentkit-x402/agentkit	active
 dev.workers.zenith-ops.pagewatch/pagewatch	active
@@ -15967,6 +16184,7 @@ dev.worldsignals/worldsignals	active
 dev.wpagent/wpagent-mcp	active
 dev.wraps/docs	active
 dev.wraps/email	active
+dev.x402check/mcp	active
 dev.x402pulse/x402pulse	active
 dev.x402shield/x402shield	active
 dev.xakpc/sqlite-mcp-sidecar	active
@@ -16003,6 +16221,7 @@ directory.brick/mcp	active
 directory.devrel/devrel-directory	active
 directory.douxprocess/white-pages	active
 directory.lots/lotsdirectory	active
+directory.neeed/listings	active
 directory.nohumans/registry	active
 directory.pwa/guichet	active
 directory.tangent/tangent	active
@@ -16070,6 +16289,7 @@ energy.mentor/mentor-energy	active
 energy.ratemate/coned	active
 engineer.calc/calc	active
 engineering.seamless/datev-extf	active
+es.atareao/blog	active
 es.bancada/odoo-mcp	active
 es.beel/mcp	active
 es.beyourspace/data-apis	active
@@ -16385,6 +16605,7 @@ finance.hundo/hundo	active
 finance.laso/laso-finance	active
 finance.maddog/mcp	active
 finance.marx/marx-finance	active
+finance.midni/midni	active
 finance.norman/mcp-server	active
 finance.orbt/intelligence	active
 finance.orla/orla	active
@@ -16499,6 +16720,7 @@ fr.meridal/releves	active
 fr.mesfraisnotaire/frais-notaire	active
 fr.miramo/mcp	active
 fr.missionmuseaux/annonces	active
+fr.mitoyens/pesticides	active
 fr.monappamoi/apps	active
 fr.monbatchcooking/recettes	active
 fr.moqi/moqi	active
@@ -16542,6 +16764,7 @@ fr.symone/symone-moto	active
 fr.symphony/symphony	active
 fr.synergieloc/immobilier	active
 fr.temoinpublic/temoinpublic	active
+fr.tenderwatch/marches-publics	active
 fr.verifier-ma-facture/validateur	active
 fr.vigi-sky/vigisky	active
 fr.vintage-postcard/boutique	active
@@ -16566,6 +16789,8 @@ fun.trnch/trnch	active
 fund.staas/mcp-trust-index	active
 fund.zooid/zooidfund	active
 fyi.adhdevaluations/adhdevaluations	active
+fyi.agentdrop/agentdrop	deprecated
+fyi.agentdrop/ai	deprecated
 fyi.apparent/apparent	active
 fyi.ascension/leaderboard	active
 fyi.barcelona-rent/mcp	active
@@ -16598,6 +16823,7 @@ fyi.selah/rates	active
 fyi.slingshot/brand-kit	active
 fyi.smartfin/smartfin	active
 fyi.toothache/dentists	active
+fyi.verified/trust-reports	active
 fyi.whatsnew/changelogs	active
 gallery.a1/a1-gallery	active
 gallery.lerp/lerpgallery	active
@@ -16768,6 +16994,7 @@ hr.trazimstan/nekretnine	active
 hr.vip-cars/vipcars	active
 hu.ablakarajanlat/nyilaszaro-mcp	active
 hu.eumoney/eu-money	active
+hu.habsziget/habsziget-shop	active
 hu.idosotthonmerleg/idosotthonok	active
 hu.jogsimerleg/autosiskolak	active
 hu.kodvena/kodvena	active
@@ -16975,13 +17202,13 @@ io.agentropolis/agentropolis	active
 io.agentsvc/services	active
 io.agentweather/agent-weather	active
 io.agilehero/agilehero	active
-io.ahel/ahel	active
 io.ai2sql/ai2sql	active
 io.aicharged/aicharged	active
 io.aidc-ai/design-engine	active
 io.aiflowchart/diagrams	active
 io.aimeat/aimeat	active
 io.aimrank/aimrank	active
+io.ainbox/mcp	active
 io.ainsof/mcp	active
 io.aipmlab/ai-pm-lab	active
 io.airpipe/airpipe	active
@@ -17009,6 +17236,7 @@ io.antaeus/antaeus	active
 io.antwork/social	active
 io.anycrm/anycrm	active
 io.aoapps/mcp	active
+io.aotwin/mcp	active
 io.apdf/main	active
 io.aperturex/aperture-wallet-knowledge	active
 io.apidirect/api-direct	active
@@ -17148,6 +17376,7 @@ io.chirpwireless/chirp	active
 io.chorusresearch/chorus	active
 io.clearout/clearout	active
 io.climbcast/climbcast	active
+io.cliplaunch/cliplaunch	active
 io.clipwave/clipwave	active
 io.clipwright/mcp	active
 io.cloudlabels/cloudlabels	active
@@ -17173,6 +17402,7 @@ io.contextstream/mcp	deprecated
 io.conttrole/mcp	active
 io.converly/converly	active
 io.conversiontools/mcp	active
+io.cookiepilot/cookiepilot	active
 io.corpusiq/multi-source-mcp	active
 io.corrie/site-check	active
 io.cortexplus/cortexplus	active
@@ -17456,6 +17686,7 @@ io.github.207studio/chalkieboard-icloud-mcp	active
 io.github.207studio/pptx-mcp	active
 io.github.214140846/skillhub-mcp	active
 io.github.21J3phy/silk	active
+io.github.21prnv/mapcast	active
 io.github.24seagull-beep/sense2-catalogue	active
 io.github.26048608982lp-ai/gamenumerics	active
 io.github.263311487-ux/dsh-verify	active
@@ -17480,6 +17711,7 @@ io.github.32bitsret/demostudio	active
 io.github.330899935/apiary-memory	active
 io.github.330899935/hive-memory	active
 io.github.335/scouter-mcp	active
+io.github.33ai-wq/xh-agents-connector	active
 io.github.34r7h/handoff	active
 io.github.35furkan/maiday	active
 io.github.36412749-collab/routara-mcp	active
@@ -17547,6 +17779,22 @@ io.github.5zjk5/colorwaykit	active
 io.github.6figr-com/jobgpt-mcp-server	active
 io.github.6forwater29/citation-dialogue	active
 io.github.6ixtyy/switchbord	active
+io.github.6mickswagger9/agent-sec-scan	active
+io.github.6mickswagger9/compute-api-mcp	active
+io.github.6mickswagger9/llm-toll-mcp	active
+io.github.6mickswagger9/url-intel-mcp	active
+io.github.6mickswagger9/x402-code-mcp	active
+io.github.6mickswagger9/x402-escrow-mcp	active
+io.github.6mickswagger9/x402-image-mcp	active
+io.github.6mickswagger9/x402-risk-mcp	active
+io.github.6mickswagger9/x402-scan-audit	active
+io.github.6mickswagger9/x402-scan-mcp	active
+io.github.6mickswagger9/x402-scrape-mcp	active
+io.github.6mickswagger9/x402-screenshot-mcp	active
+io.github.6mickswagger9/x402-sec-scan	active
+io.github.6mickswagger9/x402-translate-mcp	active
+io.github.6mickswagger9/x402-vuln	active
+io.github.6mickswagger9/x402-webhook-mcp	active
 io.github.702Exec/agent-data-platform	active
 io.github.710git/course-drift-oracle	active
 io.github.77777R7/octocrawl	active
@@ -17835,6 +18083,7 @@ io.github.Advanced-Binary-Operations/quredec	active
 io.github.Advertflair/threadmap-mcp	active
 io.github.Advocate-Cloud-Solutions/clio-mcp	active
 io.github.Advocate-Cloud-Solutions/filevine-mcp	active
+io.github.Aedelon/davinci-mcp	active
 io.github.Aelethion/agentsocks	active
 io.github.Aelindra/mobile-agent-harness	active
 io.github.Aethelgard-Systems/agent-postbox	active
@@ -17921,6 +18170,7 @@ io.github.AitoDotAI/aito	active
 io.github.AivaStack/vouchtools	active
 io.github.Aiyo28/yzel	active
 io.github.Ajey95/drawarch	active
+io.github.Ajey95/immunograph	active
 io.github.AjiGhufron9999/x402-agent-data	active
 io.github.AjnasNB/skilldash	active
 io.github.Ajshawit/ghostqr	active
@@ -18197,6 +18447,7 @@ io.github.Arbromagency-Sato/phantom-mcp-server	active
 io.github.ArcHelps/arc-free-skills	active
 io.github.ArcadeData/arcadedb	active
 io.github.ArcedeDev/air-sdk	active
+io.github.ArchalisRadar/archalis-radar	active
 io.github.Archerkattri/mathlas	active
 io.github.ArchiPlan-io/production-scheduling-mcp	active
 io.github.Archivarix-com/tube-search-mcp	active
@@ -18204,6 +18455,7 @@ io.github.Archstone-Romania/archstone	active
 io.github.Arenafriends/valerie-mcp	active
 io.github.Arenukvern/flutter-mcp-toolkit	active
 io.github.Areso/safe-ssh-mcp	active
+io.github.Argentic-Labs-AI/argentic	active
 io.github.Argo-RPG-Platform/argo-mcp	active
 io.github.Arielbs/rosetta-mcp-server	active
 io.github.Ariescar/gobkit-free-3d	active
@@ -18233,6 +18485,7 @@ io.github.ArneFfm/nowyourlink-advertiser	active
 io.github.ArneFfm/nowyourlink-docs	active
 io.github.ArneFfm/shared-forest	active
 io.github.AronLEEdev/profitlee-mcp	active
+io.github.AronSoto/verbaly	active
 io.github.ArpitGandhi1934/yugenox-ats-jobs-salaries	active
 io.github.ArpitGandhi1934/yugenox-canada-grocery-prices	active
 io.github.ArpitGandhi1934/yugenox-canada-retail-store-stock	active
@@ -18246,6 +18499,7 @@ io.github.ArpitGandhi1934/yugenox-youtube-scraper	active
 io.github.Arrayo/smart-context-mcp	active
 io.github.Arsh-Kashyap/multiscrape	active
 io.github.ArtBlocks/mcp	active
+io.github.ArtJack/gitdone	active
 io.github.ArtJack/verdict	active
 io.github.ArtKeyAi/bhived-mcp	active
 io.github.Artem1981777/cronus-mcp	active
@@ -18361,6 +18615,7 @@ io.github.Ayo-Fam/mcp-cloudflare-dns	active
 io.github.Ayo-Fam/mcp-google-ads	active
 io.github.Ayo-Fam/mcp-search-console	active
 io.github.AyozeMiguel/lapalma24-mcp	active
+io.github.AytuncYildizli/muhabbit	active
 io.github.AytuncYildizli/yapitalism	active
 io.github.Ayush-yadav11/quillrag	active
 io.github.AzielEliab/aziel-runtime	active
@@ -18510,6 +18765,7 @@ io.github.BlazingCDN/blazingcdn-mcp	active
 io.github.Blite-HQ/qnexus-mcp	active
 io.github.BlockRunAI/blockrun-mcp	active
 io.github.BlogFactoryHQ/ghost-publisher	active
+io.github.Blue-B/memnest	active
 io.github.Blue-Gamma/bluegamma	active
 io.github.BlueStarSystem/aura-ui	active
 io.github.BlueWaterCorp/riskmodels	active
@@ -19332,6 +19588,7 @@ io.github.Chill-AI-Space/vault	active
 io.github.ChiragBachani/context-autopilot	active
 io.github.ChloePark85/kr-groundtruth	active
 io.github.ChloePark85/picright	active
+io.github.ChoYugyeong/memdex	active
 io.github.ChocoData-com/amazon-scraper-api-mcp	active
 io.github.Choppaaahh/interline	active
 io.github.Choppaaahh/sendgrid-mcp-secure	active
@@ -19380,6 +19637,8 @@ io.github.CloudCorpRecords/actionpin	active
 io.github.CloudCorpRecords/agentsfile	active
 io.github.CloudCorpRecords/allfeatures	active
 io.github.CloudCorpRecords/analyticbase	active
+io.github.CloudCorpRecords/answersearch	active
+io.github.CloudCorpRecords/appbase	active
 io.github.CloudCorpRecords/browserdebug	active
 io.github.CloudCorpRecords/browserstage	active
 io.github.CloudCorpRecords/cacheport	active
@@ -19387,14 +19646,17 @@ io.github.CloudCorpRecords/calcport	active
 io.github.CloudCorpRecords/cidiff	active
 io.github.CloudCorpRecords/claimcheck	active
 io.github.CloudCorpRecords/clockport	active
+io.github.CloudCorpRecords/clouddocs	active
 io.github.CloudCorpRecords/commitcheck	active
 io.github.CloudCorpRecords/contextbudget	active
+io.github.CloudCorpRecords/crawlport	active
 io.github.CloudCorpRecords/databridge-kit	active
 io.github.CloudCorpRecords/deepsearch	active
 io.github.CloudCorpRecords/depguard	active
 io.github.CloudCorpRecords/deskcommand	active
 io.github.CloudCorpRecords/diceport	active
 io.github.CloudCorpRecords/docbase	active
+io.github.CloudCorpRecords/edgeport	active
 io.github.CloudCorpRecords/embedbase	active
 io.github.CloudCorpRecords/encyport	active
 io.github.CloudCorpRecords/envdoc	active
@@ -19405,6 +19667,7 @@ io.github.CloudCorpRecords/flowcheck	active
 io.github.CloudCorpRecords/gatefile	active
 io.github.CloudCorpRecords/graphmind	active
 io.github.CloudCorpRecords/greenlight	active
+io.github.CloudCorpRecords/gridbase	active
 io.github.CloudCorpRecords/headlessstage	active
 io.github.CloudCorpRecords/hookcheck	active
 io.github.CloudCorpRecords/inboxwatch	active
@@ -19412,18 +19675,24 @@ io.github.CloudCorpRecords/indexsearch	active
 io.github.CloudCorpRecords/injectcheck	active
 io.github.CloudCorpRecords/installaudit	active
 io.github.CloudCorpRecords/libdocs	active
+io.github.CloudCorpRecords/libdocs-remote	active
 io.github.CloudCorpRecords/linkrot	active
 io.github.CloudCorpRecords/litebase	active
 io.github.CloudCorpRecords/lockdrift	active
 io.github.CloudCorpRecords/logdigest	active
+io.github.CloudCorpRecords/mailsend	active
+io.github.CloudCorpRecords/mapport	active
 io.github.CloudCorpRecords/mcpaudit	active
 io.github.CloudCorpRecords/mcpvet	active
+io.github.CloudCorpRecords/metricwatch	active
 io.github.CloudCorpRecords/muse-marketplace	active
 io.github.CloudCorpRecords/npmpreflight	active
 io.github.CloudCorpRecords/opensourceit	active
 io.github.CloudCorpRecords/pageport	active
 io.github.CloudCorpRecords/paperport	active
+io.github.CloudCorpRecords/payport	active
 io.github.CloudCorpRecords/pdfport	active
+io.github.CloudCorpRecords/pgcloud	active
 io.github.CloudCorpRecords/pgport	active
 io.github.CloudCorpRecords/pkgverdict	active
 io.github.CloudCorpRecords/privatesearch	active
@@ -19431,8 +19700,10 @@ io.github.CloudCorpRecords/prodforge	active
 io.github.CloudCorpRecords/prwatch	active
 io.github.CloudCorpRecords/readmeaudit	active
 io.github.CloudCorpRecords/repoport	active
+io.github.CloudCorpRecords/repowiki	active
 io.github.CloudCorpRecords/reprocheck	active
 io.github.CloudCorpRecords/researchsearch	active
+io.github.CloudCorpRecords/sandboxrun	active
 io.github.CloudCorpRecords/searchport	active
 io.github.CloudCorpRecords/shelfsignal	active
 io.github.CloudCorpRecords/shipcheck	active
@@ -19448,6 +19719,7 @@ io.github.CloudCorpRecords/typosquat	active
 io.github.CloudCorpRecords/vaultnotes	active
 io.github.CloudCorpRecords/vectorsearch	active
 io.github.CloudCorpRecords/videokit	active
+io.github.CloudCorpRecords/voicegen-port	active
 io.github.CloudCorpRecords/wallcheck	active
 io.github.Clousd-Android/clousd-mcp	active
 io.github.Cmoen11/redm-mcp	active
@@ -19477,6 +19749,7 @@ io.github.CognitiveCoreAI/the-remote-suite	active
 io.github.CognitiveCoreAI/the-remote-suite-dev	active
 io.github.Cohexa-ai/stale-write-guard-fs	active
 io.github.CoinRithm/mcp-trading	active
+io.github.CoinVello/coinvello	active
 io.github.Coinlooter/mcp	active
 io.github.Coinversaa/mcp-server	active
 io.github.Coinyak/onchainai	active
@@ -19484,6 +19757,7 @@ io.github.ColinHughes2121/gocreative-agent-api	active
 io.github.ColinHughes2121/gocreative-wedge-mcp	active
 io.github.ColinVaughn/synaptic	active
 io.github.CollectorGuru/newsgurus-intel	active
+io.github.CollinJ0/vendorcheck	active
 io.github.ComPDF-Youna/compdf-mcp	active
 io.github.Combjellyshen/zotero-bridge	active
 io.github.ComeHomeAI/move-helper	active
@@ -19974,6 +20248,7 @@ io.github.Easton-OU/rootpilot-ssh-diagnose	active
 io.github.Easy8com/easy8-mcp	active
 io.github.EasyGerber/easygerber	active
 io.github.Easysend-co/easysend	active
+io.github.EcRal5t/everything-search-mcp	active
 io.github.Echolonius/token-intel	active
 io.github.Echoqili/ssh-licco	active
 io.github.Eclipse-Cj/paper-distill-mcp	active
@@ -20483,6 +20758,7 @@ io.github.FGC-Shreyansh-Chachaundiya/codesherlock-mcp-server	active
 io.github.FMagenticL/fmagenticl	active
 io.github.FRAGnatt/hireseeker	active
 io.github.FROWNINGdev/django-orm-lens	active
+io.github.FROWNINGdev/orm-lens	active
 io.github.FSHolmberg/gridually-mcp	active
 io.github.FSQ-lab/autogenesis-appium	active
 io.github.FSQ-lab/autogenesis-windows	active
@@ -20512,6 +20788,7 @@ io.github.Fazy221/hubort	active
 io.github.Feason-com/context	active
 io.github.FedgeNo/conventions-mcp	active
 io.github.FelixFangX/lakeboard-converter	active
+io.github.FelixMUrphy/taskhub	active
 io.github.FelixWaweru/code-fundi-mcp	active
 io.github.Fengrru/honestcode	active
 io.github.FerhatDundar/aws-mcp-connector	active
@@ -20759,6 +21036,12 @@ io.github.GhostlyGawd/engineering-board	active
 io.github.GigantesHJI/securedact-mcp	active
 io.github.GilbertKamau/fpl-mcp	active
 io.github.Gildaraio/mcp-server	deprecated
+io.github.GillMacedo/chargescout	active
+io.github.GillMacedo/lapsewatch	active
+io.github.GillMacedo/runwaystock	active
+io.github.GillMacedo/samecontact	active
+io.github.GillMacedo/stalemodel	active
+io.github.GillMacedo/tiedout	active
 io.github.Gillinghammer/phonescreen	active
 io.github.GimbalGoats/maya-mcp	active
 io.github.Gingiris-1031/analook	active
@@ -21561,6 +21844,7 @@ io.github.KatyTechnologies/hotelink	active
 io.github.Kavachh/agent-guard-mcp	active
 io.github.Kay0sstheory/currensor	active
 io.github.Kaydeep0/geniusflow-federation	active
+io.github.Kayforkind/pdfstudio	active
 io.github.KazKozDev/abscissa	active
 io.github.KazKozDev/footnote-mcp	active
 io.github.KazKozDev/search	active
@@ -21603,6 +21887,7 @@ io.github.Kevthetech143/chain-signer	active
 io.github.KeyID-AI/keyid	active
 io.github.KeyanGroup/mydanktank	active
 io.github.Keyveve/veqen	active
+io.github.Keyveve/veqen-pricing	active
 io.github.Khamel83/argus	active
 io.github.Khavel/aimodelwatch	active
 io.github.Khavel/futpicks	active
@@ -21977,6 +22262,7 @@ io.github.MInsYang/bioai-rizhi	active
 io.github.MIt9/comfy-ui-builder	active
 io.github.MIt9/silpo-mcp	active
 io.github.MK3Core/flickr-mcp	active
+io.github.MKagesawa/masadeals	active
 io.github.MKirovBG/scribefy-mcp	active
 io.github.MLP-VectorClub/vectorclub	active
 io.github.MLTCorp/convertfilefast	active
@@ -22259,6 +22545,7 @@ io.github.MkThingsHQ/openfree	active
 io.github.MkTurner74/botverse	active
 io.github.Mlartab2/canonicalhash	active
 io.github.Mlcharle518/plumb-data-exchange	active
+io.github.MlkBlk-IT/osiris	active
 io.github.MnemeHQ/mneme	active
 io.github.Mnemosyne-OS/mcp	active
 io.github.Mnexa-AI/mcp-server	active
@@ -22273,6 +22560,7 @@ io.github.Modellix/agent-canvas	active
 io.github.ModelsLab/modelslab	active
 io.github.ModelsLab/modelslab-agents	active
 io.github.ModelsLab/modelslab-v8	active
+io.github.ModernFarm-hub/context-bridge	active
 io.github.Moe03/convocore	active
 io.github.Mogacode-ma/elementor-mcp-agent	active
 io.github.Mogacode-ma/infomaniak-mcp-agent	active
@@ -22396,13 +22684,18 @@ io.github.NaNIsaac/codigest	active
 io.github.NaNMesh/nan-forget	active
 io.github.NabheetCloud/wa-chat-reader	active
 io.github.NacoSolutions/modern-cli-mcp	active
+io.github.NadaHo/ai-search-brand-visibility	active
+io.github.NadaHo/amazon-keyword-research	active
 io.github.NadaHo/backlink-checker	active
+io.github.NadaHo/chatgpt-search-scraper	active
 io.github.NadaHo/domain-authority-checker	active
 io.github.NadaHo/domain-seo-overview	active
 io.github.NadaHo/google-maps-no-website-leads	active
+io.github.NadaHo/google-maps-reviews	active
 io.github.NadaHo/keyword-planner-alternative	active
 io.github.NadaHo/keyword-search-volume	active
 io.github.NadaHo/plainrows-seo	active
+io.github.NadaHo/ppc-competitor-keywords	active
 io.github.Nadeus/toolradar	active
 io.github.Nagarjuna2997/ios-agent-skill	active
 io.github.NagiUnlimited/othermile	active
@@ -22674,6 +22967,7 @@ io.github.Octodamus/market-intelligence	active
 io.github.Octonove/crbro-memory	active
 io.github.Odds7/fia-signals-mcp	active
 io.github.OdinBot33/cce-mcp-server	active
+io.github.Odingard/guardian-mcp	active
 io.github.Odrin/rhizome-mcp	active
 io.github.Odyssey365/mcp-server	active
 io.github.OfficialSpicrawl/mcp	active
@@ -22911,6 +23205,7 @@ io.github.PaulSeth/gitee-mcp-server	active
 io.github.PaulieB14/graph-aave-mcp	active
 io.github.PaulieB14/graph-polymarket-mcp	active
 io.github.PaulieB14/subgraph-registry-mcp	active
+io.github.Pavel-Tk/fittest	active
 io.github.PavelGuzenfeld/gemini	active
 io.github.PavelGuzenfeld/media-forge	active
 io.github.Pavelsiba/yandex-direct-mcp-plus	active
@@ -22998,6 +23293,7 @@ io.github.PostSyncer/postsyncer	active
 io.github.Postcept/mcp	active
 io.github.Postlytllp/trials-drug-resolver	active
 io.github.Potarix/potarix-mcp	active
+io.github.Poudel0/postgres-mcp-safe	active
 io.github.Power-Portals-Pro/powerportalspro-mcp	active
 io.github.PpiNeaPpLe/everydaysoftware-voice-demo	active
 io.github.PpiNeaPpLe/lookuplab	active
@@ -24006,6 +24302,7 @@ io.github.SusanAcharya/design-lounge	active
 io.github.Sushegaad/iso27001-mcp	active
 io.github.SutramX/mcp-server	active
 io.github.SvenLC/historis	active
+io.github.SwaDeshiTech/prodhub	active
 io.github.Swap-API/mcp	active
 io.github.Swarmwage/swarmwage	active
 io.github.Swathi-MuraliSrinivasan/tavily-mcp-server	active
@@ -24116,6 +24413,7 @@ io.github.TemplateFoxPDF/mcp-server	active
 io.github.Temple-of-Epiphany/imap-mcp-pro	active
 io.github.Templetry/templetry-mcp	active
 io.github.TencentCloudBase/cloudbase-mcp	active
+io.github.Tensor-Stacks/tensorbasis	active
 io.github.TensorsWillFlow/verbaterm	active
 io.github.TeodorMCP/universal-connector-mcp	active
 io.github.Termi24/eyeot-erp	active
@@ -24219,6 +24517,13 @@ io.github.TheySaid-Platform/theysaid	active
 io.github.Thezenmonster/agentmem	active
 io.github.Thezenmonster/agentscore	active
 io.github.ThiagoDataEngineer/l402-kit	active
+io.github.ThiagoJacobLannes/carris-metropolitana-mcp	active
+io.github.ThiagoJacobLannes/google-flights-mcp	active
+io.github.ThiagoJacobLannes/kuantokusta-mcp	active
+io.github.ThiagoJacobLannes/portugal-fuel-ev-mcp	active
+io.github.ThiagoJacobLannes/portugal-medicines-mcp	active
+io.github.ThiagoJacobLannes/sns-portugal-mcp	active
+io.github.ThiagoJacobLannes/vinted-mcp	active
 io.github.Thingscorp/thatmgmt-mcp	active
 io.github.Thinkode/thinkreview	active
 io.github.This-Is-Hellgate/secondeye-mcp-unblock	active
@@ -24248,6 +24553,7 @@ io.github.TiM00R/remote-terminal	active
 io.github.TickDB/tickdb-market-data	active
 io.github.TickTockBent/charlotte	active
 io.github.Tickets-dot-dev/ai	active
+io.github.Tifdt/port402-memory	active
 io.github.TikTop-Data/company-signals	active
 io.github.TillaCrypto/tilla-mcp	active
 io.github.Tim-Projekt/agent-router	active
@@ -24435,6 +24741,7 @@ io.github.Unselfisheologism/supercarto	active
 io.github.UpstageAI/korean-report-hwpx	active
 io.github.UpstageAI/korean-tax-calc-mcp	active
 io.github.UpstageAI/korean-tax-mcp	active
+io.github.UsamaSarwar121/gomobsec-mcp	active
 io.github.UseJunior/email-agent-mcp	active
 io.github.UseJunior/safe-docx	active
 io.github.User0856/snaprender	active
@@ -24859,6 +25166,7 @@ io.github.Yveshby27/brick-bacnet-mcp	active
 io.github.Z-Han-Z/apple-music-playlists	active
 io.github.Z333Q/p402	active
 io.github.Z4KARY/upgrowth-mcp	active
+io.github.ZIZKA-AI-SL/zizkadb-mcp	active
 io.github.ZKStamp/agentwallet	active
 io.github.ZKStamp/proof100	active
 io.github.ZLDR/identitate-md	active
@@ -24948,6 +25256,7 @@ io.github.aahlijia/dekko	active
 io.github.aanari/loacare-healthcare-pricing	active
 io.github.aapd-studio/omnideck	active
 io.github.aar-ont/soldstack	active
+io.github.aarbchen/camberdesk-mcp	active
 io.github.aarbchen/signaltender-mcp	active
 io.github.aardappvark/gridscoot	active
 io.github.aarif86/nsd-sg	active
@@ -24991,6 +25300,7 @@ io.github.abeljumanuel/axiom-meridian	active
 io.github.abelljs/abell	active
 io.github.abelreqma/oxiploitability-mcp	active
 io.github.abenassi/argentina-data	active
+io.github.abernathyinnovations-ship-it/suppressor	active
 io.github.abhaymettu/bodylog	active
 io.github.abhibavishi/rankparse-mcp	active
 io.github.abhichandra21/promptheus	active
@@ -25153,6 +25463,7 @@ io.github.afaaq-io/computer-use-turbo	active
 io.github.afable702/vault-mcp-tools	active
 io.github.afanasenkoa/instagram-profile-mcp-server	active
 io.github.afanasenkoa/zillow-mcp-server	active
+io.github.afeezadebayo/google-keyword-planner	active
 io.github.afferens/mcp-server	active
 io.github.affset/mcp	active
 io.github.afghanfansmedia-ai/songcheck-mcp	active
@@ -25163,6 +25474,7 @@ io.github.afredenslund/fredenslund-workshop-tools	active
 io.github.africa-api/africa-api-mcp	active
 io.github.africanmarketos591/mvr-api	active
 io.github.africanuspanga/cv-chap-chap	active
+io.github.afrotools/afrotools	active
 io.github.afrowvibecoding/lucky-x402	active
 io.github.afsozer/dayanak	active
 io.github.afsozer/doktor-mcp	active
@@ -25253,6 +25565,7 @@ io.github.agteo/goyondo	active
 io.github.agtrepo/agtrepo-memory	active
 io.github.agustincf/arcade1v1	active
 io.github.agustinmoscoso/datos-uy-ar	active
+io.github.agzyazilim/rust-mcp	active
 io.github.ah-developer-pro/vitur-mcp	active
 io.github.ahamdjin/automation-auditor-mcp	active
 io.github.ahmad-codex/workstream-mcp	active
@@ -25404,7 +25717,6 @@ io.github.akshatnerella/arduino-mcp-server	active
 io.github.akshaycu777-ui/bouncelens-email-check	active
 io.github.akshayjain3450/depot-mcp	active
 io.github.akshaykylas94/kylas-crm	active
-io.github.akshitkrnagpal/toolstile	active
 io.github.akshitkrnagpal/typesensekit	active
 io.github.aksp200/useful-utilities	active
 io.github.akta-pro/akta.pro-MCP	active
@@ -25438,6 +25750,7 @@ io.github.alejooroncoy/campus-cli	active
 io.github.aleksUIX/pixellint	active
 io.github.aleksUIX/rtblint	active
 io.github.aleksUIX/vastlint	active
+io.github.aleksandarperak33-hub/flori	active
 io.github.alekskram/arcus-agent-gateway	active
 io.github.alekskram/aster-agent-gateway	active
 io.github.alekskram/dydx-agent-gateway	active
@@ -25472,6 +25785,7 @@ io.github.alexar76/aimarket-oracle-gateway	active
 io.github.alexar76/aimarket-plugins	active
 io.github.alexar76/argus3	active
 io.github.alexar76/attested-memory	active
+io.github.alexar76/histor	active
 io.github.alexar76/warden	active
 io.github.alexboissAV/artefact-revenue-intelligence	active
 io.github.alexbypa/github-projectpulse-mcp	active
@@ -25498,6 +25812,7 @@ io.github.alexpota/cloudscope	active
 io.github.alexslkgit/own-words	active
 io.github.alexsu1212/freebazi	active
 io.github.alexvesely18-dot/ranger	active
+io.github.alfa-reza/cvss-calculator-mcp	active
 io.github.alfongj-com/aislesignal	deprecated
 io.github.alfongj-com/canishop-agent-checkout	active
 io.github.alfongj-com/yo	active
@@ -25549,9 +25864,9 @@ io.github.alliecatowo/git-why	active
 io.github.allooloo/acm-signals	active
 io.github.allooloo/cm-kg	active
 io.github.allooloo/eco	active
+io.github.allooloo/getorderability	active
 io.github.allooloo/issuerwire	active
 io.github.allooloo/rco-records	active
-io.github.allscreenshots/allscreenshots	active
 io.github.allxsmith/bestax-mcp	active
 io.github.almaestilo/newswake	active
 io.github.almega-ai/almega-mcp	active
@@ -26097,6 +26412,7 @@ io.github.arthiqlabs/vedaksha	deprecated
 io.github.arthiqlabs/vedaksha-vedic-astrology	active
 io.github.arthurcarlsonn/aeo-mcp	active
 io.github.arthurpanhku/dvalincode	active
+io.github.arthurrenardB/luseri	active
 io.github.arthursantosmedia-stack/mestrepratico-brazil-prices-mcp	active
 io.github.arthuryuzbashev/mediafast	active
 io.github.artokun/comfyui-mcp	active
@@ -26116,6 +26432,7 @@ io.github.aryaminus/astro	active
 io.github.aryaminus/controlkeel	active
 io.github.aryamthecodebreaker/fixmap	active
 io.github.aryanduntley/aifp	active
+io.github.aryanduntley/aimfp	active
 io.github.aryanduntley/pwa-debug-layer	active
 io.github.aryankumar06/infimium	active
 io.github.aryanspv/har-forensics-mcp	active
@@ -26151,6 +26468,7 @@ io.github.ashishdesai0592/replyatlas	active
 io.github.ashishrao-4/vaultguard	active
 io.github.ashishsinha1602/schemagate	active
 io.github.ashlesh-t/cognirepo	active
+io.github.ashlrai/ashlr-stack	active
 io.github.ashlrai/lexicon	active
 io.github.ashlrai/phantom-secrets-mcp	active
 io.github.ashlrai/webfetch	active
@@ -26429,6 +26747,8 @@ io.github.baalimago/slivingdoc	active
 io.github.babakovn/beacon-commons	active
 io.github.babelize/mcp	active
 io.github.babelwrap/babelwrap-mcp	active
+io.github.babo072/kpetinfo	active
+io.github.babo072/ktourinfo	active
 io.github.baccaraaa/tavero	active
 io.github.back1ply/agent-skill-loader	active
 io.github.backblaze-labs/b2-mcp	active
@@ -26462,6 +26782,7 @@ io.github.balt1794/alttextgeneratorai-mcp	active
 io.github.balthasarspeyr/catalogue	active
 io.github.bamchi/scrapi	active
 io.github.bamwor-dev/bamwor-mcp-server	active
+io.github.bananohands/moltclub	active
 io.github.bankstatemently/bankstatemently-mcp	active
 io.github.bannerify/bannerify	active
 io.github.baobabcat/demandscope	active
@@ -27306,6 +27627,7 @@ io.github.charleskremer-hub/resolve402	active
 io.github.charleslucas/poe-data-mcp	active
 io.github.charleslucas/poemcp	deprecated
 io.github.charlesrapp/pruna	active
+io.github.charleswei118/web2mcp	active
 io.github.charlie-morrison/indie-founder-mcp	active
 io.github.charliemtnez/ghost-inspector-mcp	active
 io.github.charmshots/mcp-server	active
@@ -27460,6 +27782,7 @@ io.github.christianclaudio/sigma	active
 io.github.christianclaudio/smartsheet-rm	active
 io.github.christianclaudio/taxcode	active
 io.github.christianhonap7-sys/sector-pulse	active
+io.github.christianmatumona/treasury-risk-mcp	active
 io.github.christophe77/netatmo-energy-mcp	active
 io.github.christophjonetzko-stack/kranvergleich	active
 io.github.chriswu727/argus	active
@@ -27540,6 +27863,7 @@ io.github.clayseal/clayseal	active
 io.github.clayton/docdiffai	active
 io.github.claytono/go-unifi-mcp	active
 io.github.clearcheck-uk/voltix-mcp	active
+io.github.clearcotelabs/clearcote-mcp	active
 io.github.clearcrawl/clearcrawl	active
 io.github.clearline-labs/public-data-mcp	active
 io.github.cleburn/aegis-mcp	active
@@ -27593,6 +27917,7 @@ io.github.cloudsprite-io/cloudsprite	active
 io.github.cloudwise-app/cloudcostwise	active
 io.github.clssck/dataiku-mcp	active
 io.github.cluefinch/mcp	active
+io.github.clyr-inc/casually	active
 io.github.cmcgrabby-hue/syndicate-links	active
 io.github.cmd8/excalidraw-mcp	active
 io.github.cmdenney/logicnodes-mcp	active
@@ -27862,6 +28187,7 @@ io.github.composingkeys/loopsmith	active
 io.github.compscidr/sair	active
 io.github.compute-finance/mcp	active
 io.github.computeflux2026isgod/mcp-computeflux	active
+io.github.computenexa-gpuInfrastructure/computenexa-mcp	active
 io.github.computer-agent-labs/terminal-use	active
 io.github.computron/fulltext-article-downloader	active
 io.github.con-scribe/penny-press	active
@@ -27926,6 +28252,7 @@ io.github.cookiechain/cookie-mcp	active
 io.github.cookinfun/cookin-mcp	active
 io.github.coolnico/lovemarkdown-mcp	active
 io.github.coopergwrenn/postals-mcp	active
+io.github.cooyun/etuki-finops-mcp	active
 io.github.copperline-labs/rendex-mcp	active
 io.github.copus-io/copus	active
 io.github.copyleftdev/fabric-atelier	active
@@ -28606,6 +28933,7 @@ io.github.davidmosiah/withingsmcp	active
 io.github.davidmosiah/youtube-shorts-agent	active
 io.github.davidpreid/deliverd	active
 io.github.davidscoreal/univercity-mcp	active
+io.github.davidscotttufts/tracegate-ci	active
 io.github.davidsiegel59/4bots-content	active
 io.github.davidweb3-ctrl/git-enhanced	active
 io.github.davidweb3-ctrl/github	active
@@ -28852,6 +29180,7 @@ io.github.diecoscai/hevy-mcp	active
 io.github.diegobruegger-prog/shortformkit	active
 io.github.diegogcl72/unodos	active
 io.github.diegoperezg7/evalsmith-mcp	active
+io.github.diegouqz/namegen	active
 io.github.diemoeve/mcpampel	active
 io.github.digidenone/synapse-audit	active
 io.github.digital-wisdom-ai/wondercal	active
@@ -28951,6 +29280,7 @@ io.github.dkanster/samotpravil-mcp	active
 io.github.dl-eigenart/agentshield-mcp	active
 io.github.dlamarre-dev/perigee	active
 io.github.dlbolshov/yandex-wiki-search-mcp	active
+io.github.dleon55/ai-sdlc-prompts	active
 io.github.dllio/dll-execution	active
 io.github.dlrjsdl200-byte/mgo-mcp-server	active
 io.github.dlsforge/aegov-mcp	active
@@ -28963,6 +29293,7 @@ io.github.dmitrii-nino/akmon	active
 io.github.dmkorj/umlout	active
 io.github.dmsnavin/grandline-mcp	active
 io.github.dmytrome/groundhog-mcp	active
+io.github.dnncha/tankful	active
 io.github.dnotitia/akb	active
 io.github.dns-aid/dns-aid	active
 io.github.dnsreicht/mcp-operation-risk	active
@@ -29355,6 +29686,7 @@ io.github.eCardWidget/ecardwidget-mcp	active
 io.github.eSimfly-Official/esimfly-mcp	active
 io.github.eZhing/runik-ai	active
 io.github.eabz/tirith	active
+io.github.eagles2000/ask-hawaii	active
 io.github.eaisdevelopment/cc-bridge-mcp-server	active
 io.github.eaisdevelopment/mcp-multi-edit	active
 io.github.eamondidier-ux/agent-utility-api	active
@@ -29644,6 +29976,7 @@ io.github.epinethrone/icloud-mcp	active
 io.github.epinnock/scry-mcp	active
 io.github.epistemedeus/ai-readiness	active
 io.github.epistemedeus/ein-llc	active
+io.github.epistemedeus/page-change	active
 io.github.epistemedeus/x402-data-gateway	active
 io.github.epolat/rankjot-mcp	active
 io.github.epsteinj/inkbloc	active
@@ -29663,6 +29996,7 @@ io.github.eranfinish/ezatwork	active
 io.github.eranimore/surf-session-finder	active
 io.github.erashev-fedor/gemsift-mcp	active
 io.github.erayendes/asc-mcp	active
+io.github.eren23/attocode-code-intel	active
 io.github.ergoracloud/ergora-specialists	active
 io.github.eric-tijerina/trollbridge-mcp	active
 io.github.ericblair1903/nutrients-mcp	active
@@ -29867,6 +30201,7 @@ io.github.fairquery/sanctions-watchlist-screener	active
 io.github.fairquery/website-contact-company-enricher	active
 io.github.fairquery/website-tech-seo-ai-readiness	active
 io.github.faisal-maverick/aayat-ai	active
+io.github.faizu526/github-copilot-mcp	active
 io.github.fakhruldeen/tasleemat	active
 io.github.faktry/faktry-mcp	active
 io.github.falsalama/mylegend	active
@@ -29877,6 +30212,7 @@ io.github.fantasyce/agent-recall-trail	active
 io.github.fantasyce/agent-residue-evidence	active
 io.github.fantasyce/agent-runtime-proof	active
 io.github.farbodghasemlu/darkweb-mcp	active
+io.github.farenberglord-star/orb-studio	active
 io.github.farestrabs/agentnet	active
 io.github.faridmth/screenshotrender-mcp	active
 io.github.farshadmomo/lan-direct	active
@@ -29947,6 +30283,7 @@ io.github.feely0208/mcp-dsh-plugins	active
 io.github.feelyday/kadlint	active
 io.github.feenmile/quotecheck	active
 io.github.fegalvezg/skaut-mcp	active
+io.github.feifeizhao25-ship-it/tj-mcp	active
 io.github.feimacode/open-design	active
 io.github.feiyanglyy-stack/projectkeeper	active
 io.github.fel123/quantoracle	active
@@ -29964,6 +30301,7 @@ io.github.fenrici1/brafinder	active
 io.github.fenrici1/periodfinder	active
 io.github.fenrici1/sanctuary-mcp	active
 io.github.fentz26/envcp	active
+io.github.fergonsan/normaradar	active
 io.github.ferm-ai/agentwork-mcp	active
 io.github.fernando-moretes/moretes-aws-architect-mcp	active
 io.github.fernandogarzaaa/agent-as-model	active
@@ -30064,6 +30402,7 @@ io.github.fisher98kim/nsw-roads	active
 io.github.fisher98kim/nsw-transport	active
 io.github.fisnik/kongen-mcp	active
 io.github.fitzyracing1/superuser	active
+io.github.fivebar-xyz/fivebar	active
 io.github.fixed-width/glass	active
 io.github.fjacquet/nano-banana-mcp	active
 io.github.fjnunezp75/gpu-bridge	active
@@ -30093,6 +30432,7 @@ io.github.flashdata-dev/youtube-search	active
 io.github.flashdata-dev/youtube-trainability	active
 io.github.flashdata-dev/youtube-transcript	active
 io.github.flat-cash/flatcash	active
+io.github.flatbread-cli/flatbread	active
 io.github.flath12/bot-rooms	active
 io.github.flatrow-data-studio/hotel-and-product-prices	active
 io.github.flexiblepackage/bryg	active
@@ -30113,6 +30453,7 @@ io.github.flohoeller/affectui	active
 io.github.flomio/passninja-cli	active
 io.github.floomhq/floom	active
 io.github.floortomproductions-droid/agentx-x402-gateway	active
+io.github.floortomproductions-droid/agentx-x402-services	active
 io.github.flop-labs/technocore-chat	active
 io.github.florentine-ai/mcp	active
 io.github.florentleveque/mural-mcp-serveur	active
@@ -30399,6 +30740,7 @@ io.github.gal-a/qikly	active
 io.github.galavoxx/phaedo-mcp	deprecated
 io.github.galaxy-nebula/nebula-mcp	active
 io.github.galaxyproject/galaxy-mcp	active
+io.github.galeaxe5/pasportoo	active
 io.github.gamaze-labs/hicortex	active
 io.github.gambadio/apple-productivity-mcp	active
 io.github.gambadio/onepassword-agent-mcp	active
@@ -30581,6 +30923,7 @@ io.github.ghcpuman902/tfl-ts	active
 io.github.ghdejr11-beep/bazi-api	active
 io.github.ghdejr11-beep/numerology-api	active
 io.github.ghdejr11-beep/saju-mcp	active
+io.github.gheima/mcp	active
 io.github.ghlee0786/flow-learning-system	active
 io.github.ghorbelhamdi/buddy-phone-bridge	active
 io.github.ghost-in-the-droid/android-agent	active
@@ -30700,6 +31043,10 @@ io.github.goklab/guardvibe	active
 io.github.gokmengokhan/endnote-mcp	active
 io.github.goldbergyoni/test-coverage-mcp	active
 io.github.goldmembrane/codesafer	active
+io.github.golegally/accounting-mcp	active
+io.github.golegally/compliance-mcp	active
+io.github.golegally/crm-mcp	active
+io.github.golegally/forms-mcp	active
 io.github.golf-data/golf	active
 io.github.gollumw/telcoladder	active
 io.github.gomessoaresemmanuel-cpu/stresszero-mcp	active
@@ -31200,6 +31547,7 @@ io.github.hnt504/chatatlas-local	active
 io.github.ho11-bit/donvi108-research	active
 io.github.hoainho/podium-mcp	active
 io.github.hoanglt1223/mnema	active
+io.github.hodgen-ai/freedom-rave-wear	active
 io.github.hodlxxi/hodlxxi-readonly	active
 io.github.hodoolabs/aitocall	active
 io.github.hoftlab/kr-realestate-mcp	active
@@ -31320,6 +31668,7 @@ io.github.hummingbot/mcp	active
 io.github.hungledatatyk/hyperai-mcp	active
 io.github.hungnguyenhtbvn-max/autron-core	active
 io.github.hunta-ai/gather	active
+io.github.huntercarver24/pumpfun-trends	active
 io.github.huntercarver24/signal-desk	active
 io.github.hunterpercival/apex	active
 io.github.hunterzai16z/ai-hunterz	active
@@ -31328,7 +31677,6 @@ io.github.huoshuiai42/huoshui-file-converter	active
 io.github.huoshuiai42/huoshui-file-search	active
 io.github.huoshuiai42/huoshui-pdf-converter	active
 io.github.huoshuiai42/huoshui-pdf-translator	active
-io.github.hurcanNansen/nansen-mcp	active
 io.github.huruki-geo/voxeldraft	active
 io.github.husain-zaidi/ros-mcp	active
 io.github.huseyincig/nc-mcp	active
@@ -31557,6 +31905,7 @@ io.github.imrane2019/alphabotpro	active
 io.github.imshadow/launcholio	active
 io.github.imshaikot/browsentic	active
 io.github.imsovikde/anneal	active
+io.github.imsrvstv/fixledger-mcp	active
 io.github.imviky-ctrl/tickerr	active
 io.github.imysfylmz/xrechnung-mcp	active
 io.github.inSideos-designs/cowork-qa	active
@@ -31761,6 +32110,7 @@ io.github.isiomaC/memstack	active
 io.github.islobodan/cotforce-mcp	active
 io.github.islobodan/cruncher-mcp	active
 io.github.ismailperim/briefd	active
+io.github.israeldi/flamingo-file-tools	active
 io.github.israrulhaq7013-web/re-culture-public-guidance	active
 io.github.issuecapture/mcp-server	active
 io.github.istefox/dt-mcp	active
@@ -31787,6 +32137,7 @@ io.github.itsikzizov/grow-usa-mcp	active
 io.github.itsmeadamdamroma/mazzagrp	active
 io.github.itsoft7/egrul-mcp	active
 io.github.itsonu/flutter-lamp	active
+io.github.itulo/eu-nordic-open-data-mcp	active
 io.github.itunified-io/cloudflare	active
 io.github.itunified-io/opnsense	active
 io.github.itunified-io/postgres	active
@@ -31838,6 +32189,7 @@ io.github.j0hanz/filesystem-mcp	active
 io.github.j0hanz/memory-mcp	active
 io.github.j0hanz/superfetch	active
 io.github.j0n777/gasnow	active
+io.github.j209509/bacotto	active
 io.github.j4ckxyz/recall	active
 io.github.j4flmao/slim-sheet	active
 io.github.j4th/mtg-mcp-server	active
@@ -31853,6 +32205,7 @@ io.github.jackfioru92/aruba-email	active
 io.github.jackfriks/post-bridge	active
 io.github.jackgillen15-dev/scope-mcp	active
 io.github.jackkatzman/genflik	active
+io.github.jacklee1000/avideoai-mcp	active
 io.github.jacklenzotti/pullpush-mcp	active
 io.github.jackmmaher/sic-codes	active
 io.github.jackmmaher/ukdatapi	active
@@ -32067,7 +32420,7 @@ io.github.jdhart81/smartscale	active
 io.github.jdhart81/subscriptions	active
 io.github.jdhart81/taxcredit-engine	active
 io.github.jdhart81/verdigraph	active
-io.github.jdhart81/verdigraph-mcp	active
+io.github.jdhart81/verdigraph-mcp	deprecated
 io.github.jdhart81/viridisos	active
 io.github.jdhart81/wavefunction-search	active
 io.github.jdhart81/wu-wei-router	active
@@ -32105,6 +32458,7 @@ io.github.jennipro-engineering/jockeyvc-gmc-engine	active
 io.github.jens-saturation/saturation	active
 io.github.jentic/mcp-server	active
 io.github.jeongho54/loadbench	active
+io.github.jeonghun917/readfirst	active
 io.github.jeremdecustovox/custovox-emotion	active
 io.github.jeremdecustovox/custovox-review-analyzer	active
 io.github.jeremdecustovox/custovox-sentiment	active
@@ -32169,6 +32523,7 @@ io.github.jhicks935-lab/opsdoctor	active
 io.github.jhonpork1233-beep/win-mind	active
 io.github.jhonychain/rasterly-mcp	active
 io.github.jhtjernsmo/fjord	active
+io.github.jiahongq/qsignals	active
 io.github.jiangqizheng/vaneform-mcp	active
 io.github.jiankn/jackpot-calculator	active
 io.github.jiankn/nbmecalc	active
@@ -32230,6 +32585,7 @@ io.github.jmavid/time-mcp	deprecated
 io.github.jmbremer/manymeet	active
 io.github.jmcentire/kindex	active
 io.github.jmcentire/signet-eval	active
+io.github.jmcitrin/milyoo	active
 io.github.jmedure/talkback	active
 io.github.jmendozapuche/latam-fintech-synthetic-data	active
 io.github.jmeyer1980/neurodivergent-memory	active
@@ -32576,6 +32932,7 @@ io.github.jpol34/chuckle	active
 io.github.jqknono/pic-gen	active
 io.github.jqy-yo/gptimagehub	active
 io.github.jrainsberger/orthotomeo	active
+io.github.jrapakko/scree	active
 io.github.jrcumminsent/a2a402	active
 io.github.jrelph/ripe-atlas	active
 io.github.jrenc2002/iterx	active
@@ -32616,6 +32973,7 @@ io.github.juanklagos/sdd-mcp	active
 io.github.juanquiservin/canaireadme	active
 io.github.jucasoliveira/huebr	active
 io.github.jueluddinsf/handoff	active
+io.github.jueluddinsf/nyc-property-facts	active
 io.github.juftin/lunchmoney-app	active
 io.github.jugbeep/lustre	active
 io.github.juh5ng/k-data-mcp	active
@@ -32912,6 +33270,7 @@ io.github.kevnk/brandnamemaker	active
 io.github.kevynf/akbridge	active
 io.github.kewelin/ecpro-mcp	active
 io.github.keyline-dev/keyline	active
+io.github.keyvwin/mcp	active
 io.github.kfiram/huddle	active
 io.github.kfireliyahu/emerald	active
 io.github.kfuras/notipo	active
@@ -32939,6 +33298,7 @@ io.github.kieransimkin/stemlab	active
 io.github.kiki830621/che-apple-mail-mcp	active
 io.github.kiki830621/che-ical-mcp	active
 io.github.kiki830621/che-word-mcp	active
+io.github.kikutano/tinyprobe	active
 io.github.killbridge/startupjobs-mcp	active
 io.github.kimbo128/drain-mcp	active
 io.github.kimbobmarley03/devpick	active
@@ -32969,6 +33329,7 @@ io.github.king-of-the-grackles/reddit-research-mcp	active
 io.github.kingbbs/yiditu-mcp	active
 io.github.kingdt1991-netizen/kai-network	active
 io.github.kingdt1991-netizen/kai-router	active
+io.github.kingjamesch/davinci-resolve-mcp	active
 io.github.kingleosgold/troystack	active
 io.github.kingplaybookHQadmin1/kingsplaybook-mcp	active
 io.github.kingsleyzissougdi/check-x402-payment-readiness	active
@@ -33242,6 +33603,7 @@ io.github.kvenanzi/terrarium	active
 io.github.kvoltmer/audionaut	active
 io.github.kwizzlesurp10-ctrl/x402-mcp	active
 io.github.kwizzlesurp10-ctrl/x402orcle	active
+io.github.kyl3kan3/leaselineage	active
 io.github.kylastech/kylas-crm	active
 io.github.kyle641320/true-memory-fragments	active
 io.github.kylehawke-stack/locationlists	active
@@ -33706,6 +34068,7 @@ io.github.lorenzo-cambiaghi/lynx	active
 io.github.lorenzopi/mtgmon	active
 io.github.lorismascio17/droste-memory	active
 io.github.lostnumber07/shearline	active
+io.github.lottshin/dingcard	active
 io.github.louis49/melchizedek	active
 io.github.louisblythe/cockatoo	active
 io.github.louislili/geo-agent-mcp	active
@@ -33853,6 +34216,7 @@ io.github.madjik-io/mcp-server	active
 io.github.madlabs-tech/onchain-data-mcp	active
 io.github.madrobotnet/proactive-mcp	active
 io.github.madrzak/rankgoat	active
+io.github.maebsy/72hours	active
 io.github.maemreyo/zamery-browser	active
 io.github.mafaq229/pbirb-mcp	active
 io.github.mafedelahoz/cuddlynest-mcp	active
@@ -35666,6 +36030,7 @@ io.github.menot-you/n-memory	active
 io.github.mentu-ai/metamcp	active
 io.github.meob/euclid-mcp	active
 io.github.meob/pg-cve-mcp	active
+io.github.meowsigma/botsesh	active
 io.github.mepsopti/sprout-mcp	active
 io.github.mercadosclaro-eng/payguard	active
 io.github.mercuryx402/mercury-x402-mcp	active
@@ -35795,6 +36160,7 @@ io.github.midagedev/gadak	active
 io.github.midasflowai-lab/midasflow-mcp-quickstart	active
 io.github.middleBrick/mcp-server	active
 io.github.midnight-rgb/mcp	active
+io.github.midnight232/crypto-pulse	active
 io.github.miduo100/agent-virtual-world	active
 io.github.mifactory-bot/mifactory-agent-memory	active
 io.github.mifactory-bot/mifactory-contratos	active
@@ -36051,6 +36417,7 @@ io.github.mnemoverse/mcp-memory-server	active
 io.github.mnemox-ai/idea-reality-mcp	active
 io.github.mnemox-ai/tradememory-protocol	active
 io.github.mnvhmslf/aet-machine-commerce	active
+io.github.mo-cmyk/mazarbul	active
 io.github.mo-grantsmith/agora	active
 io.github.mo9652962-ai/circuit-agent-client	active
 io.github.mo9652962-ai/esq-builder-mcp	active
@@ -37352,6 +37719,7 @@ io.github.mtjandra/mcp-weather-server	active
 io.github.muad-yasin/the-high-council	active
 io.github.muaviamohammed/mizan	active
 io.github.muba00/gitstandup	active
+io.github.muchiny/mcp-legifrance	active
 io.github.mudrex/mcp-server	active
 io.github.muend/arcgis-mcp-bridge	active
 io.github.mufmo130/ai-search-visibility	active
@@ -37468,6 +37836,7 @@ io.github.nacrissi/celestium-cosmic-compass	active
 io.github.nad33mahm3d/mcp-crypto-toolkit	active
 io.github.nadine302324-commits/lexicon	active
 io.github.naeem-jtr/jtr-holidays	active
+io.github.nafadza14/apizie-finance	active
 io.github.nagameTW/mcp-server-malcolm	active
 io.github.nagarjunr/aws-iot-core	active
 io.github.nagarjunr/azure-iot-hub	active
@@ -37550,6 +37919,7 @@ io.github.negm17111995/maqami-travel	active
 io.github.neilberkman/ccrider	active
 io.github.neilberkman/clippy	active
 io.github.neilberkman/sidereon	active
+io.github.neilmorse/spring-runtime-mcp	active
 io.github.neiltron/apple-health-mcp	active
 io.github.nelsonjordanme/clypt	active
 io.github.nelsonsantryhkd/terrarium	active
@@ -37753,6 +38123,7 @@ io.github.nimitt-IN/india-cyber-regulations	active
 io.github.ninadphalak/chunk-invariance	active
 io.github.ninefiveonefive/autobus	deprecated
 io.github.ninefiveonefive/citation-check	deprecated
+io.github.ninelegsdog/qualityforge	active
 io.github.ninetails-io/gnucash-mcp	active
 io.github.ninihen1/flowstudio-mcp	active
 io.github.ninjatrader542/flop-independent-verification	active
@@ -38015,6 +38386,7 @@ io.github.numbererikson/shinobi	active
 io.github.nuncaeslupus/comparador-luz-gas	active
 io.github.nuncaeslupus/doc-control	active
 io.github.nuncaeslupus/drawspec	active
+io.github.nuncaeslupus/numerador-facturas	active
 io.github.nunolima/gitlab-docs-mcp	active
 io.github.nushey/agents-md-generator	active
 io.github.nushey/context-manager	active
@@ -38022,6 +38394,7 @@ io.github.nuteee/brandpresence	active
 io.github.nutriandrea/indesign-nutria-mcp	active
 io.github.nvasilevv/pensiata	active
 io.github.nvdigitalsolutions/nvoos-mcp-bridge	active
+io.github.nvdigitalsolutions/nvoos-mcp-gateway	active
 io.github.nveil-ai/nveil	active
 io.github.nvlang/verso	active
 io.github.nwjnjjj/smart-token-guard	active
@@ -38361,6 +38734,7 @@ io.github.osama-ata/p6xer-mcp-server	active
 io.github.osamaadam/genie-expense-tracker	active
 io.github.osauer/canary	active
 io.github.osauer/ibkr	deprecated
+io.github.osbytes/reelsaw	active
 io.github.oscal-compass/compliance-trestle-mcp	active
 io.github.oscardvs/anamnesis	active
 io.github.oscardvs/zoteus	active
@@ -38564,6 +38938,7 @@ io.github.paulieb89/property-shared	active
 io.github.paulieb89/uk-due-diligence-mcp	active
 io.github.paulieb89/uk-legal-mcp	active
 io.github.paulo2tab/certidao	active
+io.github.paulocesaaars/nix	active
 io.github.paulovitorti/amazon-brasil-vendedores-cnpj	active
 io.github.paulovitorti/booking-brasil-hoteis	active
 io.github.paulovitorti/brazil-company-data-enrichment	active
@@ -38800,11 +39175,13 @@ io.github.philpof102-svg/tokenizedblock	active
 io.github.philpof102-svg/xsignal	active
 io.github.philrox/ris	deprecated
 io.github.phoenice-labs/universal-test-framework	active
+io.github.phoneburner/meetingburner-mcp	active
 io.github.phonology024/babelscribe	active
 io.github.photofresco/photofresco	active
 io.github.photoxpedia/bolor-brain-mcp	active
 io.github.phpranga/math-to-code-mcp	active
 io.github.phrase/mcp	active
+io.github.phreakocious/ebcdic	active
 io.github.phuocdu/agentpay-vn	active
 io.github.phuongddx/codeintel	active
 io.github.phuongddx/jarvis	active
@@ -39789,6 +40166,7 @@ io.github.pipeworx-io/horizons-nasa	active
 io.github.pipeworx-io/horoscope	active
 io.github.pipeworx-io/hospital-prices	active
 io.github.pipeworx-io/housing-intel	active
+io.github.pipeworx-io/hpms-aadt	active
 io.github.pipeworx-io/hpo-api	active
 io.github.pipeworx-io/hsa-singapore	active
 io.github.pipeworx-io/hsr-notices	active
@@ -40266,6 +40644,7 @@ io.github.pipeworx-io/performance-review	active
 io.github.pipeworx-io/perilpulse	active
 io.github.pipeworx-io/perm	active
 io.github.pipeworx-io/permid	active
+io.github.pipeworx-io/peru-sunat-ruc	active
 io.github.pipeworx-io/pexels	active
 io.github.pipeworx-io/pharma-intel	active
 io.github.pipeworx-io/phillips	active
@@ -40789,6 +41168,7 @@ io.github.piprail/mcp	active
 io.github.pironjulien/nexus-agymail	active
 io.github.pironjulien/nexus-android	active
 io.github.pironjulien/nexus-browser	active
+io.github.pironjulien/nexus-indesign	active
 io.github.pironjulien/nexus-relay	active
 io.github.pironjulien/nexus-windows	active
 io.github.pironjulien/nexus-windows-antigravity	active
@@ -40855,6 +41235,7 @@ io.github.pocketlantern/pocketlantern	active
 io.github.podop29/shotpipe-mcp	active
 io.github.pofky/appstore-connect-mcp	deprecated
 io.github.pofky/asc-mcp	active
+io.github.pokerai-bet/mcp	active
 io.github.polaris-smart/agent-mailbox	active
 io.github.polgoide/irmu	active
 io.github.poliakarmai/gsc-scanner	active
@@ -40935,6 +41316,7 @@ io.github.pooriaarab/voiceagents	active
 io.github.pooriaarab/winecellarbuilders	active
 io.github.popapidev/pop-mcp	active
 io.github.popcraft-ai/popcraft-mcp	active
+io.github.popnow-ai/popnow-api-mcp	active
 io.github.popnow-ai/popnow-mcp	active
 io.github.popularzb/aylento	active
 io.github.portdeveloper/gulltoppr	active
@@ -41286,6 +41668,7 @@ io.github.questionpunk/questionpunk	active
 io.github.quickchatai/quickchat	active
 io.github.quickman924/plushsource-mcp	active
 io.github.quicknode/mcp	active
+io.github.quietbranch88/ai-workflow-feed	active
 io.github.quietforgestudio/x402-tools	active
 io.github.quietnotion/barevalue	active
 io.github.quirna/mcp	active
@@ -41352,12 +41735,15 @@ io.github.rafaelomarques/seurastreio	active
 io.github.rafalpodles/board-planner	active
 io.github.rafapra3008/lu-mcp-server	active
 io.github.rafavecchi/grantd	active
+io.github.rafe-walker/kronicle-lite	active
+io.github.rafe-walker/sea-lite	active
 io.github.rafsilva85/credit-optimizer	active
 io.github.rafsilva85/skillflow	active
 io.github.raghibrm/remote-pc-mcp	active
 io.github.ragionex/memory-mcp	active
 io.github.rahul05ranjan/web-search	active
 io.github.rahuljava2807/claude-bridge-mcp	active
+io.github.rahulparathy/saas-puppy	active
 io.github.rahulphenomenon/careermax	active
 io.github.railwayapp/mcp-server	deprecated
 io.github.railyai/raily	active
@@ -41602,6 +41988,7 @@ io.github.rezearcher/cve-triage	active
 io.github.rezearcher/jobs-mcp-server	active
 io.github.rezearcher/tech-risk	active
 io.github.rezearcher/unified-jobs-mcp	active
+io.github.rezearcher/web-extract-mcp	active
 io.github.rezmeplxrf/insightsentry_mcp	active
 io.github.rfdez/pvpc-mcp-server	active
 io.github.rflukerii-dev/docbot-mcp	active
@@ -41717,6 +42104,7 @@ io.github.robbhimself-1337/claude-army	active
 io.github.robdomain/doti-mcp	active
 io.github.robdomain/iform-mcp	active
 io.github.robert19001-cmyk/mcp-lint	active
+io.github.robertdoneill/jmap-calendar-mcp	active
 io.github.robertglools/nooxus-mcp	active
 io.github.robertisaak/nepternship	active
 io.github.robertn702/webmcp-today	active
@@ -41942,6 +42330,7 @@ io.github.rsweeting1/pixelvault	active
 io.github.rsys-vtiwari/weather-mcp	active
 io.github.rt1966/showmestepbystep	active
 io.github.rtahabas/gatewards	active
+io.github.rtp-coder/stake-analyzer	active
 io.github.rubato103/kci-openapi-mcp	active
 io.github.rubato103/nl-openapi-mcp	active
 io.github.rubatoyd/kci-openapi-mcp	active
@@ -44513,6 +44902,7 @@ io.github.sadri-dridi/zone-count	active
 io.github.sadrmanesh/woocommerce-mcp	active
 io.github.saeedfaai/taminyaran-engineering	active
 io.github.saeedmsdi-ugchooks/mcp-server	active
+io.github.saeedsepehr/jobinja-employer-mcp	active
 io.github.saezbaldo/lmgram	active
 io.github.safedep/vet-mcp	active
 io.github.safeswapglobal-prog/safeswapglobal-mcp	active
@@ -44550,6 +44940,7 @@ io.github.samad001z/norn	active
 io.github.samarmstrong/openmep	active
 io.github.samarthanalytics-sj/samarth-gtm-mcp	active
 io.github.samiel-azmaien/totem	active
+io.github.samihalawa/email-smtp-imap-mcp	active
 io.github.samihalawa/magicinterview	active
 io.github.samisouabni/exoscale-mcp	active
 io.github.samith14/mcp-cantina	active
@@ -44908,34 +45299,49 @@ io.github.seongwon030/velog	active
 io.github.seotrader/speedcontent-social	active
 io.github.sepehr071/30book-mcp	active
 io.github.sepehr071/asalbanoo-mcp	active
+io.github.sepehr071/balad-mcp	active
 io.github.sepehr071/bale-mcp	active
+io.github.sepehr071/bama-ir-mcp	active
 io.github.sepehr071/baneh-mcp	active
 io.github.sepehr071/banimode-mcp	active
 io.github.sepehr071/basalam-mcp	active
+io.github.sepehr071/codal-mcp	active
+io.github.sepehr071/darukade-mcp	active
 io.github.sepehr071/digikala-mcp	active
 io.github.sepehr071/divar-mcp	active
 io.github.sepehr071/doctoreto-mcp	active
+io.github.sepehr071/emalls-ir-mcp	active
 io.github.sepehr071/fidibo-mcp	active
 io.github.sepehr071/flytoday-mcp	active
+io.github.sepehr071/gamefa-mcp	active
+io.github.sepehr071/hamrah-mechanic-mcp	active
 io.github.sepehr071/iran-apps-mcp	active
+io.github.sepehr071/iran-cloud-status-mcp	active
 io.github.sepehr071/iran-crypto-mcp	active
 io.github.sepehr071/iran-downloads-mcp	active
 io.github.sepehr071/iran-gold-mcp	active
 io.github.sepehr071/iran-news-mcp	active
 io.github.sepehr071/iran-quake-mcp	active
 io.github.sepehr071/iran-tax-mcp	active
+io.github.sepehr071/iranketab-mcp	active
 io.github.sepehr071/jabama-mcp	active
+io.github.sepehr071/jobinja-mcp	active
+io.github.sepehr071/jobvision-mcp	active
+io.github.sepehr071/karnameh-mcp	active
 io.github.sepehr071/khanoumi-mcp	active
 io.github.sepehr071/maktabkhooneh-mcp	active
 io.github.sepehr071/masterkala-mcp	active
 io.github.sepehr071/mcpsmith	active
 io.github.sepehr071/milligold-mcp	active
+io.github.sepehr071/mobile-ir-mcp	active
 io.github.sepehr071/mrbilit-mcp	active
+io.github.sepehr071/neshan-mcp	active
 io.github.sepehr071/okala-mcp	active
 io.github.sepehr071/otaghak-mcp	active
 io.github.sepehr071/payping-mcp	active
 io.github.sepehr071/paziresh24-mcp	active
 io.github.sepehr071/qavanin-mcp	active
+io.github.sepehr071/sheypoor-mcp	active
 io.github.sepehr071/shopino-mcp	active
 io.github.sepehr071/snapp-mcp	active
 io.github.sepehr071/taaghche-mcp	active
@@ -44945,6 +45351,7 @@ io.github.sepehr071/tgju-mcp	active
 io.github.sepehr071/toolsmelt	active
 io.github.sepehr071/torob-mcp	active
 io.github.sepehr071/tsetmc-mcp	active
+io.github.sepehr071/zoomit-mcp	active
 io.github.sepehrkeyhani00/bashoor-menu	active
 io.github.sequico/server-noonien	active
 io.github.sercanmetalore/ai-act-compliance-mcp	active
@@ -45018,7 +45425,7 @@ io.github.seukwoo/nudg	active
 io.github.seungdori/tickscope-mcp	active
 io.github.seunghan91/ainote	active
 io.github.seungmiyoon/korean-tax-mcp	deprecated
-io.github.sevalla-hosting/mcp	active
+io.github.sevalla/mcp	active
 io.github.severus-sys/mt5-mcp-quant	active
 io.github.sexylin/hipo-work	active
 io.github.seynurmammad0v/obsidian-mcp	active
@@ -45184,6 +45591,7 @@ io.github.shinzarou-eng/codebase-chat	active
 io.github.shinzarou-eng/dsh-codebase-chat	deprecated
 io.github.shipmail-to/shipmail-mcp	active
 io.github.shipping-ship-it/laytime-calculator-pro	active
+io.github.shipvo/shipvo	active
 io.github.shisongsong/oh-my-share	active
 io.github.shitianfang/jev-use	active
 io.github.shittuay/devops-agent	active
@@ -45235,6 +45643,7 @@ io.github.shuji-bonji/s1000d-brex-mcp	active
 io.github.shuji-bonji/s1000d-reader-mcp	active
 io.github.shuji-bonji/s1000d-verify-mcp	active
 io.github.shuji-bonji/s1000d-writer-mcp	active
+io.github.shukiv/jabali-mcp	active
 io.github.shulex-voc/smart-crawler	active
 io.github.shunyagatha/vecline	active
 io.github.shuotao/revit-mcp-server	active
@@ -45524,6 +45933,7 @@ io.github.solaix/wordstat-mcp-server	active
 io.github.solaradex/advan	active
 io.github.solargptnz-dev/agent-experience-network	active
 io.github.solarx56/vyrl	active
+io.github.soldanoandrea/agent-risk-desk	active
 io.github.soldgraph/soldgraph	active
 io.github.solhammer/agent-toolbox	active
 io.github.solidmade-co/hire-solidmade	active
@@ -45581,6 +45991,7 @@ io.github.soyeladice-svg/burs-ia	active
 io.github.soyeladice-svg/bursia	deprecated
 io.github.soyeladice-svg/bursia-canary	active
 io.github.soyeladice-svg/bursia-tools	active
+io.github.soyeladice-svg/bursia-utils	active
 io.github.sp0oby/zkshare	active
 io.github.sp3ak/safenode-mcp-gateway	active
 io.github.space-bacon/blackwindow-weave-mcp	active
@@ -45750,6 +46161,7 @@ io.github.stableotto/scrubshifts	active
 io.github.staccDOTsol/staccbot-tg	active
 io.github.stackin-io/stackin	active
 io.github.stackql/stackql-mcp	active
+io.github.stackscribe-ai/coding-agent-audit	active
 io.github.stackunseen/codemcp	active
 io.github.stackvitals/stackvitals	active
 io.github.stag-build/phonebook	active
@@ -45990,6 +46402,7 @@ io.github.suped-com/suped	active
 io.github.superagents-lab/search1api	active
 io.github.superaihuman/evocrawl-mcp	active
 io.github.superbigroach/obol	active
+io.github.superclonica/superclonica-mcp	active
 io.github.superdesigndev/treg	active
 io.github.superduperbundle/game-prices	active
 io.github.superlcr/bilibili-huasheng-video	active
@@ -46117,7 +46530,9 @@ io.github.tacps126/webdata-tools-mcp	active
 io.github.tacticalnoot/agent-embassy	active
 io.github.tactual-dev/tactual	active
 io.github.tadas-github/a2asearch-mcp	active
+io.github.tadis174/ilens	active
 io.github.taehyeonglim/korean-elementary-learning-map-mcp	active
+io.github.taewankung/ai-rover-mcp	active
 io.github.tago-io/mcp-server	active
 io.github.tagpilot/ga4-mcp	active
 io.github.tagpilot/search-console-mcp	active
@@ -46392,13 +46807,21 @@ io.github.thegridwork/license	active
 io.github.thegridwork/privacy	active
 io.github.thegridwork/siteaudit	active
 io.github.theguysaccount/3ndgam3	active
+io.github.theguysaccount/arcade-fun	active
+io.github.theguysaccount/charitology	active
 io.github.theguysaccount/colabio	active
 io.github.theguysaccount/creditable	active
 io.github.theguysaccount/election-org	active
 io.github.theguysaccount/geminilaunch	active
+io.github.theguysaccount/impactline	active
+io.github.theguysaccount/internets	active
+io.github.theguysaccount/landosaur	active
+io.github.theguysaccount/realrep	active
+io.github.theguysaccount/swissmote	active
 io.github.theguysaccount/syncbook	active
 io.github.theguysaccount/teammeet	active
 io.github.theguysaccount/tellscreen	active
+io.github.theguysaccount/unredactus	active
 io.github.theharrisontruong-web/geo-audit	active
 io.github.theharrisontruong-web/storefront-grader	active
 io.github.thehesiod/aa	active
@@ -46711,6 +47134,7 @@ io.github.theone55/jfs	active
 io.github.theopenco/llmgateway	active
 io.github.thepianistdirector/humanops	active
 io.github.theprodsde/agent-memory	active
+io.github.thepros2014/socialwtf-mcp	active
 io.github.therawlogs/kineti	active
 io.github.therealMrFunGuy/changelog-hq	active
 io.github.therealMrFunGuy/clubhouse	active
@@ -46756,6 +47180,7 @@ io.github.thinksuitesolution-coder/visibilityai	active
 io.github.thirdtrail/thirdtrail	active
 io.github.thisis-najeeb/api-test-mcp	active
 io.github.thisismerlin/yourno2-fpl	active
+io.github.thisisnotinsideout-byte/veldo	active
 io.github.thlg057/mo5-mcp-server	active
 io.github.thomas-villani/all2md	active
 io.github.thomas0369/wortwert	active
@@ -46950,6 +47375,7 @@ io.github.toolhail/gateway	active
 io.github.tools-mcp/vessel-traffic-mcp	active
 io.github.toolstem/toolstem-mcp-server	active
 io.github.toolstem/toolstem-sec-mcp-server	active
+io.github.toolstile/toolstile	active
 io.github.toolweather/paycheck	active
 io.github.toolweather/spendgate	active
 io.github.toolweather/toolweather	active
@@ -46996,6 +47422,7 @@ io.github.tradewr333-lgtm/degenscan-intel	active
 io.github.tradingale/mcp	active
 io.github.trafalmejo/oscar	active
 io.github.traffiycom-ui/paidsync	deprecated
+io.github.trahloff/aldine	active
 io.github.trainmyagent/machinehearts	active
 io.github.trajectiq-ai/E2E	deprecated
 io.github.trakkr-aisearch/openai-ads-mcp	active
@@ -47230,6 +47657,7 @@ io.github.ulazai/media	active
 io.github.ulebule/clipgrab	active
 io.github.umagestaointeligente/packvalue-tools	active
 io.github.umairalisadaqat/weinc	active
+io.github.umakhanpro/vocalingo	active
 io.github.umbraco/Umbraco-CMS-MCP-Dev	active
 io.github.umitkavala/mindpm	active
 io.github.unaibamir/agent-abilities-for-mcp	active
@@ -47724,6 +48152,7 @@ io.github.vsh5dvsch7-png/yueying	active
 io.github.vshulcz/deja-vu	active
 io.github.vukvukovich/hammerspoon-mcp	active
 io.github.vulinh1704/mantis	active
+io.github.vulinh1704/spend-guard	active
 io.github.vulkanr/lastbluetape-mcp	active
 io.github.vulncheck-oss/mcp	active
 io.github.vulnersCom/vulners-mcp	active
@@ -47770,6 +48199,7 @@ io.github.wangjingjing1026uwh-hub/zaoqiniaoer	active
 io.github.wangkant/corroborate	active
 io.github.wangkuangkuang/jev-mcp-server	active
 io.github.waqarulwahab/llm-cost-estimator	active
+io.github.warewithall2/gage	active
 io.github.warfare-hub/revenue-mcp	active
 io.github.warmachine2121/silent-brief-mcp	active
 io.github.warmcoding/sonicaura-mcp	active
@@ -47785,6 +48215,7 @@ io.github.wathba-org/wathba	active
 io.github.wati-io/wati-mcp	active
 io.github.wavyrai/rm-mcp	active
 io.github.waxsway/agentresolver	active
+io.github.wayfronthq/wayfront	active
 io.github.waytzhang/pantry-relay	active
 io.github.wazap-ai/wazapi	active
 io.github.wazionapps/mcp-server	active
@@ -47998,6 +48429,8 @@ io.github.wolfschram/archive35-photography	active
 io.github.wonderwhy-er/desktop-commander	active
 io.github.wong13977-oss/messnomore-data-tools	active
 io.github.woodcoal/searchhub	active
+io.github.woodpeng/mindmax	active
+io.github.woodpeng/mindmax-write	active
 io.github.woodydaniel/fedtally	active
 io.github.woodydaniel/whodoicallfor	active
 io.github.woonstadrotterdam/monumenten	active
@@ -48268,6 +48701,7 @@ io.github.xtell-cn/xtell-serial	active
 io.github.xtrustinfo/company-lookup	active
 io.github.xu-c0/cybersec-mcp	active
 io.github.xultrax-web/agent-memory-mcp	active
+io.github.xultrax-web/dogpolicies-mcp	active
 io.github.xxxoooxoxo/wiff	active
 io.github.xyun1996/ocular	active
 io.github.xyzxinlu-max/verbatim-transcribe-mcp	active
@@ -48548,6 +48982,8 @@ io.github.zelentsov-dev/apple-ads-mcp	active
 io.github.zeluizr/adobe-commerce-mcp	active
 io.github.zeluizr/vtex-io-mcp	active
 io.github.zemloai-ctrl/elecz	active
+io.github.zen-studio-labs/goofish-mcp	active
+io.github.zen-studio-labs/rednote-xiaohongshu-mcp	active
 io.github.zengineco/gonzalgo	deprecated
 io.github.zenitheditor/zenith	active
 io.github.zenlee123/ppt-ai-api	active
@@ -48739,6 +49175,7 @@ io.guestgraph/mental-model	active
 io.gunspec/mcp	active
 io.gvnr/enforcer-governor	deprecated
 io.hamla/hamla	active
+io.hanoo/hanoo	active
 io.harmony/harmony	active
 io.hashiq/hashiq	active
 io.haulista/load-assistant	active
@@ -48937,6 +49374,7 @@ io.n3xt/mcp	active
 io.namefi/mcp	active
 io.nameintel/server	active
 io.namiq/lattice	active
+io.nana800/mcp-server	active
 io.narrador/narrador	active
 io.nearer/nearer	active
 io.neleto/cms	active
@@ -49115,6 +49553,7 @@ io.roundhouseai/roundhouse	active
 io.routemarket/routemarket	active
 io.routescore/mcp	active
 io.roxskin/hyrox	active
+io.royally/royally	active
 io.rtkmotion/data	active
 io.ruddr/mcp	active
 io.runbear/runbear	active
@@ -49177,6 +49616,7 @@ io.shingou/sentiment	active
 io.shipbook/mcp	active
 io.shipwork/seo-checks	active
 io.shotstack/mcp	active
+io.shroomlabs/shroom-labs	active
 io.sifting/mcp	active
 io.sigmaprep/worksheets	active
 io.signado/mcp	active
@@ -49321,6 +49761,7 @@ io.tickwire/metatrader	active
 io.tigersystem/tigersystem	active
 io.tightly/mcp	active
 io.tinyfn/tinyfn	active
+io.tiquiz/quiz-funnel	active
 io.tkllabs.bh.mcp-servers/ethereum-toolkit	active
 io.tkllabs.bh.mcp-servers/ipfs-toolkit	active
 io.tkllabs.bh.mcp-servers/navigation-toolkit	active
@@ -49486,6 +49927,7 @@ io.usefulapi/bokio	active
 io.usefulapi/bol-com	active
 io.usefulapi/bookafy	active
 io.usefulapi/bookeo	active
+io.usefulapi/bookingkit	active
 io.usefulapi/bookingmood	active
 io.usefulapi/booqable	active
 io.usefulapi/boulevard	active
@@ -49505,8 +49947,10 @@ io.usefulapi/buttondown	active
 io.usefulapi/canvas-medical	active
 io.usefulapi/cashctrl	active
 io.usefulapi/castle	active
+io.usefulapi/cats-ats	active
 io.usefulapi/census	active
 io.usefulapi/centralstationcrm	active
+io.usefulapi/centrecareos	active
 io.usefulapi/channable	active
 io.usefulapi/chaport	active
 io.usefulapi/chargebee	active
@@ -49538,6 +49982,7 @@ io.usefulapi/constructiononline	active
 io.usefulapi/copper	active
 io.usefulapi/corsizio	active
 io.usefulapi/courtreserve	active
+io.usefulapi/craftboxx	active
 io.usefulapi/craftmypdf	active
 io.usefulapi/cratejoy	active
 io.usefulapi/cronitor	active
@@ -49566,6 +50011,7 @@ io.usefulapi/dnsimple	active
 io.usefulapi/docparser	active
 io.usefulapi/docraptor	active
 io.usefulapi/documenso	active
+io.usefulapi/doorloop	active
 io.usefulapi/drchrono	active
 io.usefulapi/dropbox-sign	active
 io.usefulapi/drupal	active
@@ -49576,9 +50022,11 @@ io.usefulapi/easypost	active
 io.usefulapi/easystore	active
 io.usefulapi/ecwid	active
 io.usefulapi/edesk	active
+io.usefulapi/egestor	active
 io.usefulapi/elation-health	active
 io.usefulapi/elvanto	active
 io.usefulapi/emailable	active
+io.usefulapi/emailchef	active
 io.usefulapi/emailoctopus	active
 io.usefulapi/emma	active
 io.usefulapi/enchant	active
@@ -49623,6 +50071,7 @@ io.usefulapi/freeagent	active
 io.usefulapi/freshdesk	active
 io.usefulapi/freshsales	active
 io.usefulapi/funraise	active
+io.usefulapi/galaxy-digital	active
 io.usefulapi/gelato	active
 io.usefulapi/geoapify	active
 io.usefulapi/getfly-crm	active
@@ -49630,17 +50079,22 @@ io.usefulapi/getresponse	active
 io.usefulapi/gift-up	active
 io.usefulapi/gingr	active
 io.usefulapi/gitbook	active
+io.usefulapi/givecloud	active
 io.usefulapi/givingfuel	active
+io.usefulapi/gladly	active
 io.usefulapi/glue-up	active
 io.usefulapi/gocanvas	active
 io.usefulapi/goformz	active
 io.usefulapi/gooten	active
+io.usefulapi/gorelo	active
 io.usefulapi/goteamup	active
+io.usefulapi/gripp	active
 io.usefulapi/groove-hq	active
 io.usefulapi/gumroad	active
 io.usefulapi/halaxy	active
 io.usefulapi/happyfox	active
 io.usefulapi/harvest	active
+io.usefulapi/hdphotohub	active
 io.usefulapi/health-gorilla	active
 io.usefulapi/healthchecksio	active
 io.usefulapi/healthie	active
@@ -49662,6 +50116,7 @@ io.usefulapi/hub-planner	active
 io.usefulapi/humanitix	active
 io.usefulapi/hypertune	active
 io.usefulapi/icontact	active
+io.usefulapi/idosell	active
 io.usefulapi/idx-broker	active
 io.usefulapi/increase	active
 io.usefulapi/infermedica	active
@@ -49677,6 +50132,7 @@ io.usefulapi/inv-bg	active
 io.usefulapi/inventory-planner	active
 io.usefulapi/invoice-ninja	active
 io.usefulapi/invoiced	active
+io.usefulapi/ipapi-is	active
 io.usefulapi/ipdetective	active
 io.usefulapi/jackrabbit-class	active
 io.usefulapi/jet-hr	active
@@ -49693,6 +50149,7 @@ io.usefulapi/kinsta	active
 io.usefulapi/kiotviet	active
 io.usefulapi/kisi	active
 io.usefulapi/kiwihr	active
+io.usefulapi/kledo	active
 io.usefulapi/klippa-dochorizon	active
 io.usefulapi/knack	active
 io.usefulapi/knowledgeowl	active
@@ -49703,6 +50160,7 @@ io.usefulapi/laposta	active
 io.usefulapi/laravel-forge	active
 io.usefulapi/laudus	active
 io.usefulapi/lawcus	active
+io.usefulapi/leagueapps	active
 io.usefulapi/learnworlds	active
 io.usefulapi/lemonsqueezy	active
 io.usefulapi/less-annoying-crm	active
@@ -49710,16 +50168,19 @@ io.usefulapi/lessonspace	active
 io.usefulapi/lexware-office	active
 io.usefulapi/lightspeed-r-series	active
 io.usefulapi/lightspeed-x-series	active
+io.usefulapi/limoexpress	active
 io.usefulapi/linear	active
 io.usefulapi/lingohub	active
 io.usefulapi/linnworks	active
 io.usefulapi/little-green-light	active
 io.usefulapi/lob	active
 io.usefulapi/localazy	active
+io.usefulapi/locate2u	active
 io.usefulapi/loops	active
 io.usefulapi/loox	active
 io.usefulapi/loyverse	active
 io.usefulapi/magicbell	active
+io.usefulapi/maidcentral	active
 io.usefulapi/mailblaze	active
 io.usefulapi/mailbluster	active
 io.usefulapi/mailchimp	active
@@ -49742,6 +50203,7 @@ io.usefulapi/missive	active
 io.usefulapi/mistral	active
 io.usefulapi/mixpanel	active
 io.usefulapi/modern-treasury	active
+io.usefulapi/moego	active
 io.usefulapi/momence	active
 io.usefulapi/moonclerk	active
 io.usefulapi/moosend	active
@@ -49768,10 +50230,12 @@ io.usefulapi/onfido	active
 io.usefulapi/open-to-close	active
 io.usefulapi/openfda	active
 io.usefulapi/openphone	active
+io.usefulapi/operto	active
 io.usefulapi/optimoroute	active
 io.usefulapi/orb	active
 io.usefulapi/order-desk	active
 io.usefulapi/ordoro	active
+io.usefulapi/otter-waiver	active
 io.usefulapi/oura	active
 io.usefulapi/ownerrez	active
 io.usefulapi/packagecloud	active
@@ -49806,9 +50270,11 @@ io.usefulapi/printify	active
 io.usefulapi/prodigi	active
 io.usefulapi/propertyware	active
 io.usefulapi/propstack	active
+io.usefulapi/qashier	active
 io.usefulapi/qgiv	active
 io.usefulapi/quaderno	active
 io.usefulapi/quinyx	active
+io.usefulapi/quipu	active
 io.usefulapi/rackbeat	active
 io.usefulapi/raisely	active
 io.usefulapi/rapidmail	active
@@ -49825,6 +50291,7 @@ io.usefulapi/release-radar	active
 io.usefulapi/remotelock	active
 io.usefulapi/reoon-email-verifier	active
 io.usefulapi/repairdesk	active
+io.usefulapi/reservio	active
 io.usefulapi/rev-ai	active
 io.usefulapi/revamp-crm	active
 io.usefulapi/reviews-io	active
@@ -49833,6 +50300,7 @@ io.usefulapi/rex-software	active
 io.usefulapi/rinkel	active
 io.usefulapi/robly	active
 io.usefulapi/rotacloud	active
+io.usefulapi/run-my-accounts	active
 io.usefulapi/runcloud	active
 io.usefulapi/rxnorm	active
 io.usefulapi/safefood-360	active
@@ -49858,6 +50326,8 @@ io.usefulapi/sendpost	active
 io.usefulapi/senta	active
 io.usefulapi/service-fusion	active
 io.usefulapi/servicemonster	active
+io.usefulapi/servicetrade	active
+io.usefulapi/setora	active
 io.usefulapi/sevdesk	active
 io.usefulapi/shiftbase	active
 io.usefulapi/shipcloud	active
@@ -49884,6 +50354,7 @@ io.usefulapi/smoobu	active
 io.usefulapi/sms-everyone	active
 io.usefulapi/smsglobal	active
 io.usefulapi/smsmode	active
+io.usefulapi/solo	active
 io.usefulapi/sorry-app	active
 io.usefulapi/sortly	active
 io.usefulapi/sos-inventory	active
@@ -49900,6 +50371,7 @@ io.usefulapi/starshipit	active
 io.usefulapi/status-io	active
 io.usefulapi/statuscake	active
 io.usefulapi/statuspal	active
+io.usefulapi/stiply	active
 io.usefulapi/storerocket	active
 io.usefulapi/stream	active
 io.usefulapi/street-co-uk	active
@@ -49927,10 +50399,14 @@ io.usefulapi/teamup-calendar	active
 io.usefulapi/text-em-all	active
 io.usefulapi/text-request	active
 io.usefulapi/textline	active
+io.usefulapi/textus	active
+io.usefulapi/thinkreservations	active
 io.usefulapi/tick	active
 io.usefulapi/ticketsauce	active
 io.usefulapi/ticketspice	active
 io.usefulapi/tillhub	active
+io.usefulapi/timetac	active
+io.usefulapi/timetap	active
 io.usefulapi/tinypng	active
 io.usefulapi/tinyurl	active
 io.usefulapi/tito	active
@@ -49940,10 +50416,14 @@ io.usefulapi/tokeet	active
 io.usefulapi/tookan	active
 io.usefulapi/track-pod	active
 io.usefulapi/trackingmore	active
+io.usefulapi/traffit	active
+io.usefulapi/trekksoft	active
 io.usefulapi/trengo	active
 io.usefulapi/trigger-dev	active
 io.usefulapi/trumpia	active
 io.usefulapi/twenty	active
+io.usefulapi/twice-commerce	active
+io.usefulapi/universe	active
 io.usefulapi/unkey	active
 io.usefulapi/unleashed-software	active
 io.usefulapi/upcloud	active
@@ -49984,10 +50464,12 @@ io.usefulapi/zenbooker	active
 io.usefulapi/zendesk	active
 io.usefulapi/zenfulfillment	active
 io.usefulapi/zenserp	active
+io.usefulapi/zettle	active
 io.usefulapi/zylvie	active
 io.usero/usero	active
 io.userpilot/mcp	active
 io.userport/userport	active
+io.useventuri/venturi	active
 io.usewire/chocolate-recipes	active
 io.usewire/christmas-carol	active
 io.usewire/lennys-podcast	active
@@ -50028,6 +50510,7 @@ io.webcapture/webcapture	active
 io.webshare/mcp	active
 io.webz/news-search	active
 io.weirapp/weir	active
+io.weproxy/mcp	active
 io.whatic/datasheets	active
 io.whereabot/whereabot	active
 io.whowhy/whowhy	active
@@ -50202,12 +50685,14 @@ kr.co.klisten.api/schemashield	active
 kr.co.klisten.api/toolguard	active
 kr.co.klisten.api/toolrank	active
 kr.co.mlpc/cite-gate	active
+kr.co.onpress/onpress	active
 kr.co.paperee/paperee-mcp	active
 kr.co.presales/proposal-knowhow	active
 kr.co.reevl/reevl-mcp	active
 kr.co.softbowl/sbchart2	active
 kr.co.softbowl/sbgrid3	active
 kr.co.wooktech/led-sign-quote	active
+kr.daiw/daiw	active
 kr.drafters/drafters	active
 kr.eocpa/mydart	active
 kr.eocpa/myfss	active
@@ -50372,6 +50857,7 @@ link.neronewrecklive/haven	active
 link.obfus/utility-grid	active
 link.onchainalphamcp.mcp/onchain-alpha-lab	active
 link.policypal/policypal	active
+link.qray/qray	active
 link.rentgpu/gpu-market	active
 link.sinkto/sinkto	active
 link.smirnov/mcp-oura	active
@@ -50451,6 +50937,7 @@ live.bitcoinintel/signal-api	active
 live.botmural/mural	active
 live.brontide/mech-arena	active
 live.calensync/calensync	active
+live.cashboard/signals	active
 live.catchaset/catchaset	active
 live.cityalert/cityalert	active
 live.daydream.gen/music	active
@@ -50488,6 +50975,7 @@ llc.facet/ucp-shopping	active
 lol.agentarena/arena	active
 lol.bestbid/sponsorship	active
 lol.bodylab/body-lab	active
+lol.botplaza/skills	active
 lol.breakroom/arena	active
 lol.fantasypundit/mcp	active
 lol.memepad/memepad	active
@@ -50541,6 +51029,7 @@ market.mundane/mundane	active
 market.nostos/nostos	active
 market.payapi/marketplace	active
 market.plati.mcp/digimarket	active
+market.populardemand/popular-demand	active
 market.sofala/sofala	active
 market.waxed/mcp	active
 marketing.wall/platform	active
@@ -50568,6 +51057,7 @@ md.granite/granite	active
 md.iasig/mcp	active
 md.install/try	active
 md.keep/keep	active
+md.layers/workspace	active
 md.lichidare/catalog	active
 md.marble/marble	active
 md.microservice/catalog	active
@@ -50582,6 +51072,7 @@ me.ai-know/memory	active
 me.apiai/apiai	active
 me.atendi/atendime	active
 me.bekkevard/focus	active
+me.bestbus/bestbus	active
 me.besthotels4/reservas	active
 me.blinkhost/platform	active
 me.brainrotify/brainrotify	active
@@ -50600,6 +51091,7 @@ me.drwho/tools	active
 me.earlyfra/earlyframe-mcp	active
 me.eenable/shop	active
 me.euphronios/euphronios	active
+me.evaly/evalyme	active
 me.faxer/faxer	active
 me.filot/gold	active
 me.finlight/news	active
@@ -50661,6 +51153,7 @@ me.triphook/triphook	active
 me.tripmo/tripmo	active
 me.untype/aboard	active
 me.urlinks/urlinks	active
+me.vedara/vedara	active
 me.vpnhub/mcp	active
 me.wacli/whatsapp	active
 me.walalook/tools	active
@@ -50817,12 +51310,14 @@ net.duffergolf/duffer-golf	active
 net.dxrating/dxrating	active
 net.dynv6.1rbt1/rbt	active
 net.effecthub/catalog	active
+net.equitest/equitest	active
 net.esimsos/esimsos	active
 net.exercisebank/exercisebank-mcp	active
 net.explorersmap/explorersmap	active
 net.fantasize/cruise-finder	active
 net.fastcrawl/fastcrawl	active
 net.fatstack/registry	active
+net.festivaltimes/festivals	active
 net.ffxf/cloud	active
 net.fidren/counterparty	active
 net.firstdig/firstdig	active
@@ -50873,6 +51368,7 @@ net.kitbench/kitbench	active
 net.kokofinance/koko-finance	active
 net.kubikos/kubikos	active
 net.lawyerd/takedown	active
+net.letsbot/mcp	active
 net.livingprojects/living-projects	active
 net.llm-broker/broker	active
 net.lnx/lnx	active
@@ -51067,6 +51563,7 @@ network.pocket/agentic-portal-mcp	active
 network.roster/mcp	active
 network.rsnc/reward-agent	active
 network.shodai/agreements	active
+network.skv/skv	active
 network.smartgate/smartgate	active
 network.stigmer/stigmer-mcp	active
 network.tagit/nfc-verify	active
@@ -51122,16 +51619,19 @@ nl.marketingburos/marketingburos	active
 nl.morgenklaar/mcp	active
 nl.nationalevacaturebank.www/jobs	active
 nl.nltaxcalculator/dutch-tax	active
+nl.nltaxcalculator/living-nl	active
 nl.praatmetjeboekhouding/exact-online	active
 nl.prijsprofeet/prijsprofeet	active
 nl.prijsprofeet/prijsprofeet-be	active
 nl.ragently/crm	active
+nl.robskan/site	active
 nl.scamchecker/scamchecker	active
 nl.schappy/supermarkt	active
 nl.schipholherrie/schipholherrie	active
 nl.sportpoeder/agent	active
 nl.staalptkram/staalptkram	active
 nl.stroomwekker/stroomprijzen	active
+nl.struq/struq	active
 nl.supplementenscanner/scanner	active
 nl.svv-schatzoekers/public-selling-agent	active
 nl.switchje/open-data	active
@@ -51304,6 +51804,7 @@ online.paperlink/mcp	active
 online.patroltech/patroltech	active
 online.pricefeed/pricefeed	active
 online.projectstate/projectstate	active
+online.promptsaver/prompt-saver	active
 online.putit/put-it-online	active
 online.rendezboard/agent-rendezvous	active
 online.ringguard/ringguard	active
@@ -51357,6 +51858,7 @@ org.autoshort/autoshort	active
 org.aviationhs/private-jet-charter	active
 org.belgium-art/guide-and-transfer	active
 org.benevolabs/irenictable	active
+org.bettyapp/bettyapp	active
 org.bibooks/bibooks	active
 org.biketherail/trails	active
 org.billcommons/bill-commons	active
@@ -51378,6 +51880,7 @@ org.celo/celo-mcp	active
 org.celo/docs-mcp	active
 org.celo/x402-facilitator	active
 org.chainoftitle/chain-of-title	active
+org.chronodrawer/chronodrawer	active
 org.cieltech.pathguard/pathguard	active
 org.citizenofnowhere.rankings/global-metro-power-rankings	active
 org.climateinsightsdirectory/climate-energy-research	active
@@ -51450,6 +51953,7 @@ org.ipjudge/ipjudge	active
 org.istointents/registry	active
 org.jainebooks/catalogue	active
 org.jam-jam/convert-mcp	active
+org.japanlaw/japanese-law	active
 org.jobbi/gigs	active
 org.jobopportunitiesapi/mcp	active
 org.journeyed/hotels	active
@@ -51552,6 +52056,7 @@ org.parcelsheet/parcelsheet	active
 org.pennyforge.api/sendcheck	active
 org.peptigraph/mcp	active
 org.pinnacleblooms/ask	active
+org.pixelworkers/site	active
 org.polyform/polyform	active
 org.portproof/mcp	active
 org.projectnoosphere/noosphere	active
@@ -51639,6 +52144,7 @@ org.virtualflybrain/vfb3-mcp	active
 org.vivesca/vivesca	active
 org.vr/vr-mcp	active
 org.walkably/walkably	active
+org.warminbox/mcp	active
 org.warriorsfund/wounded-warriors	active
 org.web2md/web2md	active
 org.webgcp/catalog	active
@@ -51674,6 +52180,7 @@ page.stride/stride	active
 page.stub/stub-page	active
 page.twocents/twocents	active
 page.vink/vink	active
+page.wordy/wordy-page	active
 partners.vela.breakout/breakout	active
 party.cartelera/cartelera	active
 pe.comparadolar/tasas	active
@@ -52169,6 +52676,7 @@ shop.sampo/catalog	active
 shop.theothers/theothers	active
 shop.tier1/tier1-shop	active
 si.agentkernel/models	active
+si.agentmaverick/news	active
 si.ayastudio/aya-studio	active
 si.bloki/mcp	active
 si.bozos/bozos	active
@@ -52196,6 +52704,7 @@ si.fourzerotwo/uk-public-services	active
 si.fourzerotwo/web	active
 si.hivex/names	active
 si.humancollab/humancollab	active
+si.imagecompressor/images	active
 si.kalen/kalen	active
 si.karou/karou	active
 si.klevo/klevo	active
@@ -52270,12 +52779,14 @@ site.cryptofeed402/feed	active
 site.failegal/fai-legal	active
 site.guidelines/guidelines	active
 site.jiebang.www/tools	active
+site.jigwell/jigwell	active
 site.lanlan/website-builder	active
 site.liberated/agent-utility-lab	active
 site.mailly/mcp	active
 site.marketnow/marketnow	active
 site.measuremy/analytics	active
 site.meniscus/meniscus	active
+site.moddl/moddl	active
 site.pdfzen/render	active
 site.qrrapido/qr-generator	active
 site.rudko/vertebrolog	active
@@ -52431,6 +52942,7 @@ store.slopapp/slopstore	active
 store.wizbi/prices	active
 stream.aidata/aidata	active
 stream.aidata/site-search	active
+stream.onlyfins/trout-talk	active
 studio.agoria/registry	active
 studio.ai3d/ai3d-studio	active
 studio.altessa/altessa	active
@@ -52554,6 +53066,15 @@ tech.michaelbarber/site-mcp	active
 tech.monarkgate/monark	active
 tech.mydev-tools/habitscore	active
 tech.neurodynamic/audio-llm	active
+tech.noahsarch/business-day-oracle	active
+tech.noahsarch/einvoice-preflight	active
+tech.noahsarch/email-verifier	active
+tech.noahsarch/hr-payroll-oracle	active
+tech.noahsarch/id-format-oracle	active
+tech.noahsarch/sanctions-screener	active
+tech.noahsarch/text-number-toolkit	active
+tech.noahsarch/uae-calendar-oracle	active
+tech.noahsarch/website-contact-extractor	active
 tech.novtriq/engineering	active
 tech.omnidev/omniprovider	active
 tech.openfinance/trading	active
@@ -52564,6 +53085,7 @@ tech.prismnetwork/mcp	active
 tech.progeofde/vps-deals	active
 tech.quantplay/quantplay	active
 tech.ratlabs/rat-radar	active
+tech.rovy/dirfast	active
 tech.saasoffers/deals	active
 tech.searchpipe/searchpipe	active
 tech.searlo/searlo	active
@@ -52701,6 +53223,7 @@ top.comunicate/publishing	active
 top.contextlm/context-os	active
 top.jsnjlingdong/sports	active
 top.lain42/spine-render	active
+top.myreach/myreach	active
 top.novelmcp/novel-factory	active
 top.petalpal/plant-care	active
 top.placepack/placepack	active
@@ -52719,6 +53242,7 @@ tours.yournext/guide	active
 town.argus/argus	active
 town.liars/arena	active
 town.val/mcp	active
+tr.com.isinn.www/isinn	active
 tr.com.kariwood.www/catalog	active
 tr.com.metasearch/metasearch-mcp	active
 trade.axel/filing	active
@@ -53152,6 +53676,7 @@ us.artificl/liftlog	active
 us.artificl/subproof	active
 us.artificl/vendorping	active
 us.briefme/agenda-timer	active
+us.buildability/mcp	active
 us.colacloud/mcp	active
 us.corpuslaw/corpus-legal	active
 us.detritus/account	active
@@ -53183,6 +53708,7 @@ us.srv.vehcdj664efetfrsolne5umanq/quoteproof-mcp	active
 us.stratly/townsquare	active
 us.telcodata/telcodata	active
 us.thistripbtw/trips	active
+us.unfreeze/atlas	active
 us.uphealth/mcp	active
 uz.b2bmarket/marketplace	active
 uz.birinchishop/partner	active
@@ -53405,6 +53931,7 @@ xyz.noonbarbari/backtesting	active
 xyz.obolpay/jp-verify	active
 xyz.orkidlabs/orkid-swap	active
 xyz.outsend/outsend	active
+xyz.owlgate/fair-price	active
 xyz.paystage/auth-watch	active
 xyz.paystage/mcp	active
 xyz.paystage/preflight	active
@@ -53426,6 +53953,7 @@ xyz.railfi/payout-plans	active
 xyz.redstringapp/red-string	active
 xyz.regimeshift/mcp	active
 xyz.regimetoken/regime	active
+xyz.revunda/app-complaints	active
 xyz.rillora/rillora	active
 xyz.routheus/routheus	active
 xyz.rubenayla.partle/marketplace	active
@@ -53505,4 +54033,4 @@ za.co.zaroniacalculator.api/verify	active
 zip.favicon/favicon	active
 zone.blocks/blocks	active
 zone.waggle/waggle	active
-#end	53504
+#end	54032
