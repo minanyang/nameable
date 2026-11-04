@@ -19,8 +19,11 @@
 // The list is split into SHARDS files by a hash of the name, so the channel downloads only the one a name
 // is in. They are plain text, so the `data` branch keeps each refresh as a small change.
 //
+// .github/workflows/tw-trademarks.yml runs both twice a month and publishes the list; a build refuses to
+// replace one in the output directory with a list more than MAX_SHRINK smaller, unless given --force.
+//
 // Usage: node scripts/tw-trademarks.ts fetch <directory>
-//        node scripts/tw-trademarks.ts build <directory> <output directory>
+//        node scripts/tw-trademarks.ts build <directory> <output directory> [--force]
 import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
@@ -261,6 +264,7 @@ export function entriesFrom(
 }
 
 export const SHARDS = 16;
+const MAX_SHRINK = 0.1;
 
 /** Which file a name is in: FNV-1a of its UTF-8 bytes, as two hex digits. */
 export function shardOf(key: string): string {
@@ -281,17 +285,51 @@ export function formatList(entries: Entry[], asOf: string, shard: string): strin
   ].join("\n");
 }
 
+const FIELDS = [
+  "appl-no",
+  "appl-date",
+  "tmark-name",
+  "tmark-draft-c",
+  "tmark-draft-e",
+  "tmark-draft-j",
+  "goodsclasses",
+  "deadline",
+  "del-reason",
+] as const;
+
+/** Every mark in a set's pages, keeping only the fields the list is built from. */
 async function readPages(dir: string, set: Set): Promise<MarkRecord[]> {
   const files = (await readdir(join(dir, set.name))).filter((f) => f.endsWith(".json.gz")).sort();
   const marks: MarkRecord[] = [];
   for (const file of files) {
     const body = JSON.parse(gunzipSync(await readFile(join(dir, set.name, file))).toString("utf8"));
-    marks.push(...(body[set.key].tmarkcontent as MarkRecord[]));
+    for (const record of body[set.key].tmarkcontent as Record<string, any>[]) {
+      const mark: Record<string, unknown> = {};
+      for (const field of FIELDS) mark[field] = record[field];
+      mark.goodsclasses = (record.goodsclasses ?? []).map((g: Record<string, unknown>) => ({
+        "goodsclass-code": g["goodsclass-code"],
+      }));
+      marks.push(mark as MarkRecord);
+    }
   }
   return marks;
 }
 
-async function build(dir: string, outDir: string): Promise<void> {
+/** How many entries the shards in `dir` hold, or undefined when there are none to compare with. */
+async function previousCount(dir: string): Promise<number | undefined> {
+  let total = 0;
+  for (let i = 0; i < SHARDS; i++) {
+    const text = await readFile(join(dir, `${i.toString(16).padStart(2, "0")}.tsv`), "utf8").catch(
+      () => undefined,
+    );
+    const end = text && /\n#end\t(\d+)\n/.exec(text)?.[1];
+    if (!end) return undefined;
+    total += Number(end);
+  }
+  return total;
+}
+
+async function build(dir: string, outDir: string, force: boolean): Promise<void> {
   const state = JSON.parse(await readFile(join(dir, "state.json"), "utf8")) as State;
   const read: Record<string, MarkRecord[]> = {};
   for (const set of sets(state.date)) {
@@ -315,6 +353,13 @@ async function build(dir: string, outDir: string): Promise<void> {
     graceFrom,
   );
   const asOf = `${date.replaceAll("/", "-")}T00:00:00.000Z`;
+  // Two weeks change few of a million marks; a list that shrinks more than this is more likely a bad read.
+  const before = await previousCount(outDir);
+  if (before && !force && entries.length < before * (1 - MAX_SHRINK)) {
+    throw new Error(
+      `${entries.length} entries, down from ${before}; run with --force to publish it`,
+    );
+  }
   const shards = new Map<string, Entry[]>();
   for (let i = 0; i < SHARDS; i++) shards.set(i.toString(16).padStart(2, "0"), []);
   for (const entry of entries) shards.get(shardOf(entry.key))!.push(entry);
@@ -327,13 +372,13 @@ async function build(dir: string, outDir: string): Promise<void> {
 }
 
 if (import.meta.main) {
-  const [command, dir, output] = process.argv.slice(2);
+  const [command, dir, output, flag] = process.argv.slice(2);
   if (command === "fetch" && dir) await fetchAll(dir);
-  else if (command === "build" && dir && output) await build(dir, output);
+  else if (command === "build" && dir && output) await build(dir, output, flag === "--force");
   else {
     console.error(
       "usage: node scripts/tw-trademarks.ts fetch <directory>\n" +
-        "       node scripts/tw-trademarks.ts build <directory> <output directory>",
+        "       node scripts/tw-trademarks.ts build <directory> <output directory> [--force]",
     );
     process.exit(64);
   }

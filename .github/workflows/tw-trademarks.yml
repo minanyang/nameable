@@ -1,0 +1,65 @@
+name: Taiwan trademarks
+
+# Publishes the Taiwan trademark list the trademark-tw channel downloads, on the `data` branch, twice a month a few
+# days after TIPO updates its open data on the 1st and 16th (scripts/tw-trademarks.ts). Every run reads every mark
+# again, about 300 pages and two and a half hours: the list keeps no terms or statuses to update it from.
+on:
+  schedule:
+    - cron: "41 2 4,19 * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Publish even if the list shrank by more than a tenth
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency: tw-trademarks
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # A full read takes about two and a half hours; a stalled API should not hold the job to GitHub's 6-hour limit.
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Download every mark
+        run: node scripts/tw-trademarks.ts fetch "$RUNNER_TEMP/pages"
+      # The previous list is read only to compare its size, so a shallow copy of the branch is enough.
+      - name: Check out the previous list
+        run: |
+          git init -q data && cd data
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git fetch -q --depth=1 origin data
+          git checkout -q -b data FETCH_HEAD
+      - name: Build the list
+        run: node scripts/tw-trademarks.ts build "$RUNNER_TEMP/pages" data/tw-trademarks ${FORCE:+--force}
+        env:
+          FORCE: ${{ inputs.force && '1' || '' }}
+      # The MCP servers workflow commits to the same branch every day; if it did so while this ran, the push is
+      # refused, so the list is committed again on top of the branch as it is now.
+      - name: Publish the list
+        run: |
+          cp -R data/tw-trademarks "$RUNNER_TEMP/list"
+          asof="$(sed -n 's/^#asof\t//p' data/tw-trademarks/00.tsv)"
+          for _ in 1 2 3; do
+            rm -rf data && git init -q data && cd data
+            git fetch -q --depth=1 "https://github.com/${GITHUB_REPOSITORY}.git" data
+            git checkout -q -b data FETCH_HEAD
+            rm -rf tw-trademarks && cp -R "$RUNNER_TEMP/list" tw-trademarks
+            git add -A tw-trademarks
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -qm "data: Taiwan trademarks as of $asof"
+            if git push -q "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data; then exit 0; fi
+            cd .. && sleep 30
+          done
+          exit 1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
