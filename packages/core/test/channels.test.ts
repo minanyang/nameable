@@ -10,7 +10,8 @@ import {
 import { Gate } from "../src/gate.js";
 import { appNameMatch, storefronts } from "../src/channels/app-names.js";
 import { fakeFetch, fakeWhois, seq, zipArchive, rangeReply, type Reply } from "./fake-fetch.js";
-import { CRATES_DUMP, cratesDump, mcpList } from "./fixtures.js";
+import { shardOf } from "../src/channels/trademark-tw.js";
+import { CRATES_DUMP, cratesDump, mcpList, twList } from "./fixtures.js";
 
 const NPM = "https://registry.npmjs.org";
 const searchUrl = (name: string) => `${NPM}/-/v1/search?text=${name}&size=50`;
@@ -1101,6 +1102,90 @@ describe("packagist typo rule", () => {
   });
 });
 
+describe("trademark-tw", () => {
+  const LIST = "https://raw.githubusercontent.com/minanyang/nameable/data/tw-trademarks";
+  const url = (key: string) => `${LIST}/${shardOf(key)}.tsv`;
+  const run = (name: string, list: string, now?: number) =>
+    check(name, selectChannels({ only: ["trademark-tw"] }), {
+      fetch: fakeFetch({ [url("claude")]: () => new Response(list) }),
+      whois: fakeWhois(),
+      backoffMs: 0,
+      ...(now ? { now: () => now } : {}),
+    });
+  const claude = (marks: string[]) => twList(shardOf("claude"), marks);
+
+  it("downloads only the file the name is in, and leads with a mark in force", async () => {
+    const fetch = fakeFetch({
+      [url("claude")]: () =>
+        new Response(
+          claude([
+            "claude\tCLAUDE 設計圖\told:9\tapplied\t112000001",
+            "claude\tCLAUDE\t9,42\tregistered\t113003982",
+            "claude\tClaude\t25\texpiring\t105000001",
+          ]),
+        ),
+    });
+    const [r] = await check("Claude", selectChannels({ only: ["trademark-tw"] }), {
+      fetch,
+      backoffMs: 0,
+    });
+    expect(fetch.calls).toEqual([url("claude")]);
+    expect(r).toMatchObject({
+      status: "taken",
+      note: "clash, not a block: CLAUDE (classes 9, 42, registered) and 2 more; a mark limits the name only for goods and services like its own",
+      meta: { marks: 3 },
+    });
+    expect(r!.url).toMatch(/\/TmarkRights\?tk=[0-9a-f-]+&format=json&applno=113003982$/);
+    expect((r!.meta!.examples as { status: string }[]).map((e) => e.status)).toEqual([
+      "registered",
+      "expiring",
+      "applied",
+    ]);
+  });
+
+  it("leads, among marks in force, with today's classes and then the latest filed", async () => {
+    const [r] = await run(
+      "claude",
+      claude([
+        "claude\tCLAUDE 設計圖\told:4\tregistered\t081000001",
+        "claude\tCLAUDE\t42\tregistered\t112054212",
+        "claude\tCLAUDE\t9\tregistered\t113003982",
+      ]),
+    );
+    expect(r!.note).toMatch(/^clash, not a block: CLAUDE \(class 9, registered\) and 2 more;/);
+  });
+
+  it("names the old classes and links an application to its own record", async () => {
+    const [r] = await run("claude", claude(["claude\tCLAUDE\told:5\tapplied\t112000001"]));
+    expect(r!.note).toMatch(
+      /^clash, not a block: CLAUDE \(class 5 of the scheme before 1994, applied for\);/,
+    );
+    expect(r!.url).toMatch(/\/TmarkAppl\?.*applno=112000001$/);
+  });
+
+  it("dates a free answer by the list, and says when the list has not been updated", async () => {
+    const [r] = await run("claude", claude([]), Date.parse("2026-11-10T00:00:00Z"));
+    expect(r).toMatchObject({
+      status: "available",
+      certainty: "probable",
+      note: "no Taiwan trademark uses exactly this name as of 2026-11-03; marks that look or sound alike are not checked",
+    });
+    const [late] = await run("claude", claude([]), Date.parse("2027-01-01T00:00:00Z"));
+    expect(late!.note).toContain("as of 2026-11-03, and the list has not been updated since;");
+  });
+
+  it.each([
+    ["another file", "<html>Not Found</html>"],
+    ["another shard", twList(shardOf("claude") === "00" ? "01" : "00")],
+    ["a list cut short", claude([]).split("\n").slice(0, 500).join("\n")],
+    ["a list without its date", claude([]).replace(/#asof[^\n]*\n/, "")],
+    ["a list with a date that does not parse", claude([]).replace(/#asof[^\n]*/, "#asof\tsoon")],
+  ])("does not read %s as a register with no marks", async (_, list) => {
+    const [r] = await run("claude", list);
+    expect(r).toMatchObject({ status: "unknown" });
+  });
+});
+
 describe("selectChannels", () => {
   it("defaults to every channel with .com and .dev", () => {
     expect(selectChannels().map((c) => c.id)).toEqual([
@@ -1124,6 +1209,7 @@ describe("selectChannels", () => {
       "jetbrains",
       "app-store",
       "google-play",
+      "trademark-tw",
       "domain:com",
       "domain:dev",
     ]);

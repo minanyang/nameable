@@ -15,6 +15,23 @@ export const LIST_KEYS = [
   "gemini-extensions",
   "mcp-servers",
   "openvsx-namespaces",
+  // The Taiwan trademark list, one file per shard (channels/trademark-tw.ts).
+  "tw-trademarks-00",
+  "tw-trademarks-01",
+  "tw-trademarks-02",
+  "tw-trademarks-03",
+  "tw-trademarks-04",
+  "tw-trademarks-05",
+  "tw-trademarks-06",
+  "tw-trademarks-07",
+  "tw-trademarks-08",
+  "tw-trademarks-09",
+  "tw-trademarks-0a",
+  "tw-trademarks-0b",
+  "tw-trademarks-0c",
+  "tw-trademarks-0d",
+  "tw-trademarks-0e",
+  "tw-trademarks-0f",
 ] as const;
 export type ListKey = (typeof LIST_KEYS)[number];
 

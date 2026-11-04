@@ -20,6 +20,7 @@ import { packagist } from "./packagist.js";
 import { pypi } from "./pypi.js";
 import { rubygems } from "./rubygems.js";
 import { smithery } from "./smithery.js";
+import { trademarkTw } from "./trademark-tw.js";
 import { vscode } from "./vscode.js";
 
 export const DEFAULT_TLDS: string[] = ["com", "dev"];
@@ -45,6 +46,7 @@ const fixed = [
   jetbrains,
   appStore,
   googlePlay,
+  trademarkTw,
 ];
 
 export type Selection = {

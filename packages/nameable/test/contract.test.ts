@@ -51,6 +51,7 @@ describe("public contract", () => {
         "jetbrains",
         "app-store",
         "google-play",
+        "trademark-tw",
         "domain",
         "domain:<tld>",
       ]),

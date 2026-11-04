@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { a as clearStore, c as findProject, i as checkMany, l as selectChannels, n as GENERAL_CHANNELS, o as defaultCacheDir, r as channelIds, s as fileStore, t as DEFAULT_TLDS } from "./dist-CRL9h0G_.mjs";
+import { a as clearStore, c as findProject, i as checkMany, l as selectChannels, n as GENERAL_CHANNELS, o as defaultCacheDir, r as channelIds, s as fileStore, t as DEFAULT_TLDS } from "./dist-DuWfWjTC.mjs";
 import { createRequire } from "node:module";
 import { execFile } from "node:child_process";
 import { parseArgs, promisify, styleText } from "node:util";
@@ -279,7 +279,7 @@ async function run(argv, io) {
 		if (values.version) return io.stdout.write(`${version}\n`), 0;
 		if (mcp) {
 			if (Object.values(values).some((v) => v !== void 0)) throw new UsageError("`mcp` takes no options; the agent chooses them in each call");
-			const { serveMcp } = await import("./mcp-D3Kb8A74.mjs");
+			const { serveMcp } = await import("./mcp-BzNisibL.mjs");
 			const { githubToken, fetch, whois, cacheDir, mcpTransport } = io;
 			serveMcp({
 				version,

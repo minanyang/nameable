@@ -42,6 +42,8 @@ Check only what matters, and say which channels you picked and why.
 | Mobile app                             | `app-store`, `google-play`, `domain` with `com` first, `github`                      |
 | Consumer app or brand                  | `domain` with `com` first, `github`                                                  |
 
+Add `trademark-tw` when the project will be sold or marketed in Taiwan, or when the user asks about trademarks.
+
 Add TLDs the project would really use (`io`, `sh`, `app`, `ai`, a country code). Not every channel matters
 equally:
 
@@ -71,15 +73,21 @@ Read each result exactly:
 - `reclaimable`: released and can be taken again.
 - `taken`: held. Open `url` or read `note` to see by whom and whether it is active. Where names are not
   exclusive, `taken` means another entry already uses the name, and `note` says it does not block you: the MCP
-  Registry (another namespace's server), Google Play (titles are not unique) and the Gemini CLI gallery. Treat
-  these as a risk of confusion to weigh, not as a reason to drop the name on their own.
+  Registry (another namespace's server), Google Play (titles are not unique), the Gemini CLI gallery and
+  trademarks. Treat these as a risk of confusion to weigh, not as a reason to drop the name on their own.
 - `unavailable`: nobody holds it exactly, but the registry refuses it; `note` says why (reserved, too similar to an
   existing name, blocked after a recent deletion). Treat it like taken, unless `note` gives a date when the block
   ends (npm after an unpublish, crates.io after a deletion); then say when it frees.
 - `unknown`: the check failed. It is not free. Retry once, then report it as not checked.
 
-These channels are not checked by the tool yet: social handles and trademarks. When one matters for this
-project, check it with the tools you have (web search, the directory's own search) or list it under "not checked".
+A `trademark-tw` match names the mark's classes (Nice classes, or Taiwan's own before 1994) and whether it is
+registered, expired but still renewable, or only applied for. A registered mark in a class that covers what the
+project does (class 9 for software, 42 for software services, 41 for education and entertainment) is a hard
+constraint; one in an unrelated class is a clash to mention. An application may since have been refused or
+withdrawn: say so. A free answer only covers marks with exactly this name in Taiwan.
+
+These channels are not checked by the tool yet: social handles and trademarks outside Taiwan. When one matters for
+this project, check it with the tools you have (web search, the office's own search) or list it under "not checked".
 
 App store answers are never certain. An App Store name is reserved as soon as someone creates the app record, before
 release, and search does not show unreleased apps, so a free answer is only probable. Google Play titles are not

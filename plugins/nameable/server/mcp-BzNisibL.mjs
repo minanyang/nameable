@@ -1,4 +1,4 @@
-import { i as checkMany, l as selectChannels, r as channelIds, s as fileStore, t as DEFAULT_TLDS } from "./dist-CRL9h0G_.mjs";
+import { i as checkMany, l as selectChannels, r as channelIds, s as fileStore, t as DEFAULT_TLDS } from "./dist-DuWfWjTC.mjs";
 import { Readable } from "node:stream";
 import { McpServer } from "@modelcontextprotocol/server";
 import { StdioServerTransport, serveStdio } from "@modelcontextprotocol/server/stdio";
@@ -26,14 +26,14 @@ const output = z.object({
 		results: z.array(result)
 	}))
 });
-const DESCRIPTION = `Check whether names are free on package registries, GitHub, agent and editor directories, app stores and domains.
+const DESCRIPTION = `Check whether names are free on package registries, GitHub, agent and editor directories, app stores, Taiwan trademarks and domains.
 
 Each result has a status:
 - available: nobody holds it and the registry would accept it. certainty "confirmed" means every rule
   that public data allows was checked; "probable" means one could not be, and note says which.
 - reclaimable: held before but released; it can be taken again.
 - taken: someone holds it; url shows who. Where names are not exclusive (MCP Registry, Google Play, Gemini
-  CLI gallery) it means another entry uses the name, and note says it does not block a new one.
+  CLI gallery, trademarks) it means another entry uses the name, and note says it does not block a new one.
 - unavailable: nobody holds it exactly, but the registry would refuse it (invalid, reserved, too
   similar to an existing name, or blocked for now after a deletion); note says why.
 - unknown: no trustworthy answer (network error, rate limit). Never treat it as free.

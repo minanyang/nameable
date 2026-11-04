@@ -377,6 +377,33 @@ live("MCP Registry", () => {
   });
 });
 
+live("Taiwan trademarks", () => {
+  const LIST = "https://raw.githubusercontent.com/minanyang/nameable/data/tw-trademarks";
+  const API = "https://cloud.tipo.gov.tw/S220/opdataapi/api";
+  const TOKEN = "43b47d07-4795-45d9-819a-9c71c72e4105";
+  it("has every shard of the list scripts/tw-trademarks.ts builds, built within the last 45 days", async () => {
+    for (const id of ["00", "0f"]) {
+      const lines = (await (await fetch(`${LIST}/${id}.tsv`, { headers: UA })).text()).split("\n");
+      expect(lines[0]).toBe("#nameable-data tw-trademarks v1");
+      expect(lines).toContain(`#shard\t${id}/16`);
+      expect(lines.length).toBeGreaterThan(50_000);
+      const asOf = Date.parse(lines.find((l) => l.startsWith("#asof\t"))!.slice(6));
+      expect(Date.now() - asOf).toBeLessThan(45 * 24 * 60 * 60 * 1000);
+    }
+  }, 60_000);
+
+  it("answers one mark by its application number with the access code on data.gov.tw", async () => {
+    const body = await json(`${API}/TmarkRights?tk=${TOKEN}&format=json&applno=113003982`);
+    expect(body.status).toBe("ok");
+    expect(body.tmarkrights.tmarkcontent[0]["tmark-draft-e"]).toBe("CLAUDE");
+  });
+
+  it("answers sample data, not an error, to an access code it does not accept", async () => {
+    const body = await json(`${API}/TmarkRights?tk=nope&format=json&top=1`);
+    expect(body.status).toBe("sample");
+  });
+});
+
 live("Smithery", () => {
   const list = (ns: string) => json(`https://api.smithery.ai/servers?namespace=${ns}&pageSize=1`);
   it("filters servers by whole namespace, ignoring case, without a key", async () => {

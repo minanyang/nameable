@@ -1,3 +1,4 @@
+import { normalizeMark } from "../src/channels/trademark-tw.js";
 import { selectChannels, type Channel, type Status } from "../src/index.js";
 import { rangeReply, zipArchive, type Headers, type Reply } from "./fake-fetch.js";
 
@@ -288,6 +289,39 @@ export function mcpList(names: string[] = [], status = "active"): string {
     "",
   ].join("\n");
 }
+/**
+ * One shard of the Taiwan trademark list the channel downloads, with a thousand other marks around
+ * `marks` (`key\tname\tclasses\tstatus\tapplication` lines).
+ */
+export function twList(id: string, marks: string[] = []): string {
+  const others = Array.from(
+    { length: 1000 },
+    (_, i) => `othermark${i}\tOTHER\t9\tregistered\t1${i}`,
+  );
+  return [
+    "#nameable-data tw-trademarks v1",
+    "#source\tTaiwan Intellectual Property Office open data",
+    `#shard\t${id}/16`,
+    "#asof\t2026-11-03T00:00:00.000Z",
+    ...others,
+    ...marks,
+    `#end\t${1000 + marks.length}`,
+    "",
+  ].join("\n");
+}
+const shardIn = (url: string) => /\/([0-9a-f]{2})\.tsv$/.exec(url)?.[1] ?? "";
+/** Every name the standard inputs fold to, held as a registered mark. */
+const twTaken = (keys: string[]): Service => ({
+  http: (u) =>
+    new Response(
+      twList(
+        shardIn(u),
+        keys.map((k) => `${k}\t${k.toUpperCase()}\t9\tregistered\t113000001`),
+      ),
+    ),
+  whois: noWhois,
+});
+const twFree: Service = { http: (u) => new Response(twList(shardIn(u))), whois: noWhois };
 const mcpFree = (names: string[] = ["io.github.x/nameable-tools"]): Service => ({
   http: () => new Response(mcpList(names)),
   whois: noWhois,
@@ -1228,6 +1262,35 @@ FIXTURES.push({
       why: "another namespace's server, compared ignoring case",
       expect: "taken",
       service: mcpFree(["com.example/nameable"]),
+    },
+  ],
+});
+
+FIXTURES.push({
+  channel: only("trademark-tw"),
+  freeCertainty: "probable",
+  free: twFree,
+  taken: twTaken(Object.values(INPUTS).map(normalizeMark).filter(Boolean)),
+  // Marks are compared by their letters and digits, in any script; a name with neither has nothing to
+  // compare.
+  accepts: {
+    ...Object.fromEntries(Object.keys(INPUTS).map((k) => [k, true])),
+    emoji: false,
+    loneSurrogate: false,
+    empty: false,
+  } as Record<InputClass, boolean>,
+  refused: [
+    {
+      name: "Name Able!",
+      why: "a mark written with other spacing, case and punctuation",
+      expect: "taken",
+      service: twTaken(["nameable"]),
+    },
+    {
+      name: "ｎａｍｅａｂｌｅ",
+      why: "a mark in full-width letters",
+      expect: "taken",
+      service: twTaken(["nameable"]),
     },
   ],
 });

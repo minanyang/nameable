@@ -445,7 +445,23 @@ const LIST_KEYS = [
 	"cursor-plugins",
 	"gemini-extensions",
 	"mcp-servers",
-	"openvsx-namespaces"
+	"openvsx-namespaces",
+	"tw-trademarks-00",
+	"tw-trademarks-01",
+	"tw-trademarks-02",
+	"tw-trademarks-03",
+	"tw-trademarks-04",
+	"tw-trademarks-05",
+	"tw-trademarks-06",
+	"tw-trademarks-07",
+	"tw-trademarks-08",
+	"tw-trademarks-09",
+	"tw-trademarks-0a",
+	"tw-trademarks-0b",
+	"tw-trademarks-0c",
+	"tw-trademarks-0d",
+	"tw-trademarks-0e",
+	"tw-trademarks-0f"
 ];
 const FORMAT = 1;
 /** The first line of a stored list, naming the list and its format. */
@@ -1233,8 +1249,8 @@ const homebrew = defineChannel({
 });
 const MCP_SERVERS = "https://raw.githubusercontent.com/minanyang/nameable/data/mcp-servers.tsv";
 const API$3 = "https://registry.modelcontextprotocol.io/v0.1";
-const HEADER = "#nameable-data mcp-servers v1";
-const STALE_AFTER_MS = 2592e5;
+const HEADER$1 = "#nameable-data mcp-servers v1";
+const STALE_AFTER_MS$1 = 2592e5;
 const VALID$8 = /^[a-zA-Z0-9._-]+$/;
 /**
 * Every server in the published list, one `name part\tfull name\tstatus` line each, then `#asof\t<time>`:
@@ -1247,7 +1263,7 @@ async function serverList(ctx) {
 	const asOf = lines.find((l) => l.startsWith("#asof	"))?.slice(6) ?? "";
 	const servers = lines.slice(1).filter((l) => l && !l.startsWith("#"));
 	const end = lines.find((l) => l.startsWith("#end	"))?.slice(5);
-	if (lines[0] !== HEADER || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(asOf) || servers.length < 1e3 || Number(end) !== servers.length) throw new Error("the MCP Registry list is not in the expected shape");
+	if (lines[0] !== HEADER$1 || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(asOf) || servers.length < 1e3 || Number(end) !== servers.length) throw new Error("the MCP Registry list is not in the expected shape");
 	return `\n${servers.flatMap((line) => {
 		const [full, status] = line.split("	");
 		const part = full?.split("/")[1];
@@ -1280,7 +1296,7 @@ const mcpRegistry = defineChannel({
 		return {
 			status: "available",
 			certainty: "probable",
-			note: `no server uses this name in the registry as of ${time.slice(0, 10)}${(ctx.now?.() ?? Date.now()) - Date.parse(time) > STALE_AFTER_MS ? ", and the list has not been updated since" : ""}`
+			note: `no server uses this name in the registry as of ${time.slice(0, 10)}${(ctx.now?.() ?? Date.now()) - Date.parse(time) > STALE_AFTER_MS$1 ? ", and the list has not been updated since" : ""}`
 		};
 	}
 });
@@ -4424,6 +4440,89 @@ const smithery = defineChannel({
 		};
 	}
 });
+const LIST = "https://raw.githubusercontent.com/minanyang/nameable/data/tw-trademarks";
+const RECORD = "https://cloud.tipo.gov.tw/S220/opdataapi/api";
+const TOKEN = "43b47d07-4795-45d9-819a-9c71c72e4105";
+const HEADER = "#nameable-data tw-trademarks v1";
+const STALE_AFTER_MS = 3888e6;
+/** The form marks are compared in: full-width folded, lower case, letters and digits only. */
+function normalizeMark(text) {
+	return text.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+}
+/** Which file a mark's words are in: FNV-1a of their UTF-8 bytes, as two hex digits. */
+function shardOf(key) {
+	let hash = 2166136261;
+	for (const byte of new TextEncoder().encode(key)) hash = Math.imul(hash ^ byte, 16777619);
+	return ((hash >>> 0) % 16).toString(16).padStart(2, "0");
+}
+/** One shard as `key\tname\tclasses\tstatus\tapplication` lines, then `#asof\t<time>`. */
+async function shard(ctx, id) {
+	const res = await get(ctx, `${LIST}/${id}.tsv`, { timeoutMs: 6e4 });
+	if (!res.ok) throw new Error(`the Taiwan trademark list returned HTTP ${res.status}`);
+	const lines = (await res.text()).split("\n");
+	const field = (name) => lines.find((l) => l.startsWith(`#${name}\t`))?.slice(name.length + 2);
+	const asOf = field("asof") ?? "";
+	const marks = lines.slice(1).filter((l) => l && !l.startsWith("#"));
+	if (lines[0] !== HEADER || field("shard") !== `${id}/16` || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(asOf) || marks.length < 1e3 || Number(field("end")) !== marks.length) throw new Error("the Taiwan trademark list is not in the expected shape");
+	return `\n${marks.join("\n")}\n#asof\t${asOf}\n`;
+}
+const ORDER = [
+	"registered",
+	"expiring",
+	"applied"
+];
+const STATUS = {
+	registered: "registered",
+	expiring: "expired, still renewable",
+	applied: "applied for"
+};
+/** "classes 9, 42" or "class 5 of the scheme before 1994". */
+function classes(list) {
+	if (!list) return "no class given";
+	const codes = list.split(",");
+	const old = codes[0].startsWith("old:");
+	const numbers = codes.map((c) => c.replace(/^old:/, "")).join(", ");
+	return `${codes.length > 1 ? "classes" : "class"} ${numbers}${old ? " of the scheme before 1994" : ""}`;
+}
+const trademarkTw = defineChannel({
+	id: "trademark-tw",
+	label: "Trademarks (TW)",
+	category: "trademark",
+	rules: (name) => normalizeMark(name) ? void 0 : "trademarks are compared by their letters and digits",
+	async lookup(name, ctx) {
+		const key = normalizeMark(name);
+		const id = shardOf(key);
+		const list = await cachedList(ctx, `tw-trademarks-${id}`, () => shard(ctx, id));
+		const old = (m) => Number(m[1].startsWith("old:"));
+		const marks = linesFor(list.text, key).sort((a, b) => ORDER.indexOf(a[2]) - ORDER.indexOf(b[2]) || old(a) - old(b) || (b[3] > a[3] ? 1 : b[3] < a[3] ? -1 : 0));
+		if (marks.length) {
+			const [mark, classList, status, application] = marks[0];
+			const lead = `${mark} (${classes(classList)}, ${STATUS[status] ?? status})`;
+			const more = marks.length > 1 ? ` and ${marks.length - 1} more` : "";
+			return {
+				status: "taken",
+				url: `${RECORD}/${status === "applied" ? "TmarkAppl" : "TmarkRights"}?tk=${TOKEN}&format=json&applno=${application}`,
+				note: `clash, not a block: ${lead}${more}; a mark limits the name only for goods and services like its own`,
+				meta: {
+					marks: marks.length,
+					examples: marks.slice(0, 10).map(([m, c, s, a]) => ({
+						name: m,
+						classes: c,
+						status: s,
+						application: a
+					}))
+				}
+			};
+		}
+		const time = linesFor(list.text, "#asof")[0]?.[0] ?? "";
+		const behind = (ctx.now?.() ?? Date.now()) - Date.parse(time) > STALE_AFTER_MS;
+		return {
+			status: "available",
+			certainty: "probable",
+			note: `no Taiwan trademark uses exactly this name as of ${time.slice(0, 10)}${behind ? ", and the list has not been updated since" : ""}; marks that look or sound alike are not checked`
+		};
+	}
+});
 const SITE = "https://marketplace.visualstudio.com";
 const VALID = /^[a-z0-9][a-z0-9-]*$/i;
 /** The extensions a text search finds, from the gallery API the marketplace site uses itself. */
@@ -4506,7 +4605,8 @@ const fixed = [
 	openVsx,
 	jetbrains,
 	appStore,
-	googlePlay
+	googlePlay,
+	trademarkTw
 ];
 function channelIds() {
 	return [

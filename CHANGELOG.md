@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- New channel `trademark-tw`: marks registered with Taiwan's Intellectual Property Office and in force, expired less
+  than six months ago (still renewable), or applied for in the last three years, compared by the words in the mark.
+  A match names the mark's classes and status and is a clash, not a block; a free answer is probable. A check
+  downloads only the part of the list its name is in (about 2 MB), which this project rebuilds from TIPO's open
+  data. Included in `--all` and in the MCP tool's default, not in the channels picked from a project.
+
 ## 2.1.1 — 2026-10-30
 
 - Depends on Zod 4.6.7, past the advisory
