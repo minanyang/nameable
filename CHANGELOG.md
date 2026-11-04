@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.2.0 — 2026-11-04
 
 - New channel `trademark-tw`: marks registered with Taiwan's Intellectual Property Office and in force, expired less
   than six months ago (still renewable), or applied for in the last three years, compared by the words in the mark.
