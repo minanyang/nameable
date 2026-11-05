@@ -1,6 +1,6 @@
 {
   "name": "nameable",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Is the name really free? Nameable checks every registry, store and domain your project needs.",
   "keywords": [
     "agent-skill",

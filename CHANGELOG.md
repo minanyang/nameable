@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.3.0 — 2026-11-05
 
 - New channel `github-repo`: repositories named exactly the name, ignoring case, among the first 100 results of
   GitHub's search, most recently active first. Repository names are unique only within an account, so a match is a
