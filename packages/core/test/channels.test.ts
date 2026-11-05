@@ -364,6 +364,95 @@ describe("github", () => {
   });
 });
 
+describe("github-repo", () => {
+  const url = "https://api.github.com/search/repositories?q=%22monibar%22%20in%3Aname&per_page=100";
+  const NOW = Date.parse("2026-11-05T00:00:00Z");
+  const repo = (full: string, stars: number, pushed: string, archived = false) => ({
+    name: full.split("/")[1],
+    full_name: full,
+    html_url: `https://github.com/${full}`,
+    description: null,
+    stargazers_count: stars,
+    pushed_at: pushed,
+    archived,
+  });
+
+  it("names the clash, active repositories first, then the most starred", async () => {
+    const r = await one(
+      "github-repo",
+      "monibar",
+      {
+        [url]: [
+          200,
+          {
+            incomplete_results: false,
+            items: [
+              repo("old/monibar", 50, "2020-01-01T00:00:00Z"),
+              repo("someone/monibar-app", 99, "2026-11-01T00:00:00Z"),
+              repo("shelved/Monibar", 80, "2026-10-01T00:00:00Z", true),
+              repo("quiet/monibar", 1, "2026-10-27T00:00:00Z"),
+              repo("busy/monibar", 3, "2026-09-01T00:00:00Z"),
+            ],
+          },
+        ],
+      },
+      {},
+      NOW,
+    );
+    expect(r).toMatchObject({
+      status: "taken",
+      url: "https://github.com/busy/monibar",
+      note: "clash, not a block: busy/monibar (★3, pushed 2026-09-01) and 3 more; repository names are unique only within an account",
+      meta: { count: 4 },
+    });
+    expect((r.meta!.repositories as { name: string }[]).map((x) => x.name)).toEqual([
+      "busy/monibar",
+      "quiet/monibar",
+      "shelved/Monibar",
+      "old/monibar",
+    ]);
+  });
+
+  it("is only probably free when no repository has exactly the name", async () => {
+    const r = await one("github-repo", "monibar", {
+      [url]: [
+        200,
+        { incomplete_results: false, items: [repo("a/monibar-x", 1, "2026-01-01T00:00:00Z")] },
+      ],
+    });
+    expect(r).toMatchObject({ status: "available", certainty: "probable" });
+  });
+
+  it("is unknown when the search did not finish and found nothing", async () => {
+    const r = await one("github-repo", "monibar", {
+      [url]: [200, { incomplete_results: true, items: [] }],
+    });
+    expect(r.status).toBe("unknown");
+  });
+
+  it("is unknown when rate limited or the token is rejected, never available", async () => {
+    expect((await one("github-repo", "monibar", { [url]: 403 })).status).toBe("unknown");
+    expect((await one("github-repo", "monibar", { [url]: 401 })).note).toContain(
+      "rejected the token",
+    );
+  });
+
+  it("searches a name that is a search operator as a term", async () => {
+    const r = await one("github-repo", "NOT", {
+      "https://api.github.com/search/repositories?q=%22NOT%22%20in%3Aname&per_page=100": [
+        200,
+        { incomplete_results: false, items: [repo("someone/not", 1, "2026-01-01T00:00:00Z")] },
+      ],
+    });
+    expect(r.status).toBe("taken");
+  });
+
+  it("refuses the names GitHub's form refuses, without a request", async () => {
+    expect((await one("github-repo", "..", {})).status).toBe("unavailable");
+    expect((await one("github-repo", "café", {})).status).toBe("unavailable");
+  });
+});
+
 describe("rubygems", () => {
   const GEMS = "https://rubygems.org";
   const names = (...extra: string[]) =>
@@ -1199,6 +1288,7 @@ describe("selectChannels", () => {
       "nuget",
       "docker",
       "github",
+      "github-repo",
       "mcp-registry",
       "smithery",
       "claude-plugins",

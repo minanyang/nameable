@@ -41,6 +41,7 @@ describe("public contract", () => {
         "nuget",
         "docker",
         "github",
+        "github-repo",
         "mcp-registry",
         "smithery",
         "claude-plugins",

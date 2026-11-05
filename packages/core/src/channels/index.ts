@@ -8,6 +8,7 @@ import { docker } from "./docker.js";
 import { domain } from "./domain.js";
 import { gemini } from "./gemini.js";
 import { github } from "./github.js";
+import { githubRepo } from "./github-repo.js";
 import { googlePlay } from "./google-play.js";
 import { homebrew } from "./homebrew.js";
 import { mcpRegistry } from "./mcp-registry.js";
@@ -36,6 +37,7 @@ const fixed = [
   nuget,
   docker,
   github,
+  githubRepo,
   mcpRegistry,
   smithery,
   claudePlugins,

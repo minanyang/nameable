@@ -79,6 +79,22 @@ const reject: Record<InputClass, boolean> = Object.fromEntries(
   Object.keys(INPUTS).map((k) => [k, false]),
 ) as Record<InputClass, boolean>;
 
+/** A GitHub repository search answer holding repositories with these names. */
+const ghSearch = (names: string[], repo: Record<string, unknown> = {}) => ({
+  incomplete_results: false,
+  items: names.map((name, i) => ({
+    name,
+    full_name: `owner${i}/${name}`,
+    html_url: `https://github.com/owner${i}/${name}`,
+    description: null,
+    stargazers_count: 0,
+    pushed_at: "2026-10-01T00:00:00Z",
+    archived: false,
+    ...repo,
+  })),
+});
+const searched = (u: string) => new URL(u).searchParams.get("q")!.replace(/^"(.*)" in:name$/, "$1");
+
 const BOOTSTRAP = "https://data.iana.org/rdap/dns.json";
 const bootstrap: Reply = [200, { services: [[["dev"], ["https://rdap.example/"]]] }];
 
@@ -582,6 +598,38 @@ export const FIXTURES: Fixture[] = [
     },
     maxLength: 39,
     refused: [],
+  },
+  {
+    channel: only("github-repo"),
+    freeCertainty: "probable",
+    free: { http: () => [200, ghSearch(["other"])], whois: noWhois },
+    taken: { http: (u) => [200, ghSearch([searched(u)])], whois: noWhois },
+    // GitHub's new-repository form: letters, digits, `.`, `-` and `_`, at most 100.
+    accepts: {
+      ...reject,
+      typical: true,
+      uppercase: true,
+      digits: true,
+      leadingDigit: true,
+      hyphen: true,
+      doubleHyphen: true,
+      reservedHyphens: true,
+      underscore: true,
+      dot: true,
+      leadingHyphen: true,
+      trailingHyphen: true,
+      single: true,
+      punycode: true,
+    },
+    maxLength: 100,
+    refused: [
+      {
+        name: "NameAble",
+        why: "a repository named the same in other case",
+        expect: "taken",
+        service: { http: () => [200, ghSearch(["nameable"])], whois: noWhois },
+      },
+    ],
   },
   {
     channel: only("rubygems"),

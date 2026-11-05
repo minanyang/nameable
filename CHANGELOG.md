@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- New channel `github-repo`: repositories named exactly the name, ignoring case, among the first 100 results of
+  GitHub's search, most recently active first. Repository names are unique only within an account, so a match is a
+  clash, not a block, and names the repository, its stars and its last push; `meta` lists up to ten with their
+  descriptions. A free answer is probable. Picked from a project wherever `github` is, and included in the general
+  set, `--all` and the MCP tool's default. It uses the same GitHub token as `github`; without one, GitHub allows ten
+  searches a minute.
+
 ## 2.2.0 — 2026-11-04
 
 - New channel `trademark-tw`: marks registered with Taiwan's Intellectual Property Office and in force, expired less

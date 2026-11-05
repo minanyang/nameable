@@ -573,7 +573,7 @@ async function remoteZipFiles(ctx, url, wanted) {
 	if (missing.length) throw new Error(`${url} has no ${missing.join(", ")}`);
 	return files;
 }
-const VALID$12 = /^[a-z][a-z0-9_-]{0,63}$/i;
+const VALID$13 = /^[a-z][a-z0-9_-]{0,63}$/i;
 const canon = (name) => name.toLowerCase().replace(/-/g, "_");
 const RESERVED = new Set([
 	"alloc",
@@ -691,7 +691,7 @@ const crates = defineChannel({
 	label: "crates.io",
 	category: "package",
 	rules: (name) => {
-		if (!VALID$12.test(name)) return "crate names start with a letter and use letters, digits, - and _ (max 64)";
+		if (!VALID$13.test(name)) return "crate names start with a letter and use letters, digits, - and _ (max 64)";
 	},
 	refuses: (name) => RESERVED.has(canon(name)) ? "crates.io reserves this name" : void 0,
 	async lookup(name, ctx) {
@@ -741,7 +741,7 @@ const crates = defineChannel({
 		};
 	}
 });
-const VALID$11 = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
+const VALID$12 = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
 /**
 * Every plugin in Cursor's marketplace, one name per line. There is no API: the marketplace page,
 * asked for its React Server Components payload, lists each plugin's `fullRef` (about 2 MB).
@@ -760,7 +760,7 @@ const cursor = defineChannel({
 	id: "cursor",
 	label: "Cursor plugins",
 	category: "agent",
-	rules: (name) => VALID$11.test(name.toLowerCase()) ? void 0 : "Cursor plugin names are letters, digits, - and ., starting and ending with a letter or digit",
+	rules: (name) => VALID$12.test(name.toLowerCase()) ? void 0 : "Cursor plugin names are letters, digits, - and ., starting and ending with a letter or digit",
 	refuses: (name) => name === name.toLowerCase() ? void 0 : "Cursor plugin names are lowercase",
 	async lookup(name, ctx) {
 		const list = await cachedList(ctx, "cursor-plugins", () => pluginList(ctx));
@@ -777,13 +777,13 @@ const cursor = defineChannel({
 	}
 });
 const API$5 = "https://hub.docker.com/v2";
-const VALID$10 = /^[a-z0-9]{4,30}$/i;
+const VALID$11 = /^[a-z0-9]{4,30}$/i;
 const docker = defineChannel({
 	id: "docker",
 	label: "Docker Hub",
 	category: "package",
 	rules: (name) => /^[a-z0-9][a-z0-9._-]{0,254}$/i.test(name) ? void 0 : "Docker Hub names are letters, digits, . _ and -",
-	refuses: (name) => VALID$10.test(name) ? void 0 : "new Docker IDs are 4 to 30 letters and digits",
+	refuses: (name) => VALID$11.test(name) ? void 0 : "new Docker IDs are 4 to 30 letters and digits",
 	async lookup(raw, ctx) {
 		const name = raw.toLowerCase();
 		const [user, org, repos, official] = await Promise.all([
@@ -1014,13 +1014,13 @@ const gemini = defineChannel({
 		};
 	}
 });
-const VALID$9 = /^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$/i;
+const VALID$10 = /^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$/i;
 const github = defineChannel({
 	id: "github",
 	label: "GitHub user/org",
 	category: "code",
 	rules: (name) => /^[A-Za-z0-9_-]{1,39}$/.test(name) ? void 0 : "GitHub names are letters, digits, hyphens and underscores (max 39)",
-	refuses: (name) => VALID$9.test(name) ? void 0 : "new GitHub names are letters, digits and single inner hyphens (max 39)",
+	refuses: (name) => VALID$10.test(name) ? void 0 : "new GitHub names are letters, digits and single inner hyphens (max 39)",
 	async lookup(name, ctx) {
 		const headers = { accept: "application/vnd.github+json" };
 		if (ctx.githubToken) headers.authorization = `Bearer ${ctx.githubToken}`;
@@ -1056,6 +1056,68 @@ const github = defineChannel({
 			note: "rate limited; set GITHUB_TOKEN or log in with `gh auth login`"
 		};
 		return unexpected("GitHub", res);
+	}
+});
+const VALID$9 = /^(?!\.{1,2}$)[A-Za-z0-9._-]{1,100}$/;
+/** Search ranks a repository named exactly the query near the top, so its first page holds the clashes. */
+const PER_PAGE = 100;
+const YEAR_MS = 31536e6;
+const githubRepo = defineChannel({
+	id: "github-repo",
+	label: "GitHub repository",
+	category: "code",
+	rules: (name) => VALID$9.test(name) ? void 0 : "GitHub repository names are letters, digits, '.', '-' and '_' (max 100)",
+	async lookup(name, ctx) {
+		const headers = { accept: "application/vnd.github+json" };
+		if (ctx.githubToken) headers.authorization = `Bearer ${ctx.githubToken}`;
+		const res = await get(ctx, `https://api.github.com/search/repositories?q=${encodeURIComponent(`"${name}" in:name`)}&per_page=${PER_PAGE}`, { headers });
+		if (res.status === 401) return {
+			status: "unknown",
+			note: "GitHub rejected the token (HTTP 401); check GITHUB_TOKEN"
+		};
+		if (res.status === 403 || res.status === 429) return {
+			status: "unknown",
+			note: "rate limited; set GITHUB_TOKEN or log in with `gh auth login`"
+		};
+		if (res.status !== 200) return unexpected("GitHub", res);
+		const body = await res.json();
+		if (!Array.isArray(body?.items)) return {
+			status: "unknown",
+			note: "GitHub returned something other than search results"
+		};
+		const wanted = name.toLowerCase();
+		const now = ctx.now?.() ?? Date.now();
+		const active = (r) => !r.archived && now - Date.parse(r.pushed_at) < YEAR_MS;
+		const same = body.items.filter((r) => r.name.toLowerCase() === wanted).sort((a, b) => Number(active(b)) - Number(active(a)) || b.stargazers_count - a.stargazers_count);
+		if (!same.length) {
+			if (body.incomplete_results) return {
+				status: "unknown",
+				note: "GitHub's search timed out before it finished"
+			};
+			return {
+				status: "available",
+				certainty: "probable",
+				note: "no repository is named exactly this among GitHub's first 100 matches; forks are not searched"
+			};
+		}
+		const [lead] = same;
+		const describe = (r) => `${r.full_name} (★${r.stargazers_count}, ${r.archived ? "archived" : `pushed ${r.pushed_at.slice(0, 10)}`})`;
+		const more = same.length > 1 ? ` and ${same.length - 1} more` : "";
+		return {
+			status: "taken",
+			url: lead.html_url,
+			note: `clash, not a block: ${describe(lead)}${more}; repository names are unique only within an account`,
+			meta: {
+				repositories: same.slice(0, 10).map((r) => ({
+					name: r.full_name,
+					description: r.description,
+					stars: r.stargazers_count,
+					pushed: r.pushed_at,
+					archived: r.archived
+				})),
+				count: same.length
+			}
+		};
 	}
 });
 const DATA = /AF_initDataCallback\(\{key: 'ds:4',.*?data:(.*?), sideChannel: \{\}\}\);<\/script>/s;
@@ -4596,6 +4658,7 @@ const fixed = [
 	nuget,
 	docker,
 	github,
+	githubRepo,
 	mcpRegistry,
 	smithery,
 	claudePlugins,
@@ -4654,6 +4717,7 @@ const GENERAL_CHANNELS = [
 	"crates",
 	"homebrew",
 	"github",
+	"github-repo",
 	"domain"
 ];
 const MCP_PACKAGES = /"(?:@modelcontextprotocol\/(?:sdk|server)|fastmcp|mcp-framework)"\s*:/;
@@ -5054,7 +5118,11 @@ async function detect(dir, depth) {
 	for (const member of workspace?.members ?? []) {
 		const found = await detect(join(dir, member), depth + 1);
 		if (found) projects++;
-		const ids = found?.only.filter((id) => id !== "github" && id !== "domain") ?? [];
+		const ids = found?.only.filter((id) => ![
+			"github",
+			"github-repo",
+			"domain"
+		].includes(id)) ?? [];
 		if (!ids.length) continue;
 		for (const id of ids) only.add(id);
 		for (const file of found.from) if (!from.includes(join(member, file))) from.push(join(member, file));
@@ -5065,6 +5133,7 @@ async function detect(dir, depth) {
 		only: [
 			...only,
 			"github",
+			"github-repo",
 			"domain"
 		],
 		from

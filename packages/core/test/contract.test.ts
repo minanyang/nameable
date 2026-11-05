@@ -146,6 +146,21 @@ live("GitHub API", () => {
     expect((await json("https://api.github.com/users/torvalds", auth)).type).toBe("User");
     expect((await json("https://api.github.com/users/github", auth)).type).toBe("Organization");
   });
+  it("ranks a repository named exactly the query on the first page of a name search", async () => {
+    const body = await json(
+      "https://api.github.com/search/repositories?q=%22react%22%20in%3Aname&per_page=100",
+      auth,
+    );
+    expect(body.incomplete_results).toBe(false);
+    // React itself, whichever account holds it (it moved from facebook to react).
+    const repo = body.items.find(
+      (r: { name: string; stargazers_count: number }) =>
+        r.name === "react" && r.stargazers_count > 100_000,
+    );
+    expect(repo).toMatchObject({ archived: false, description: expect.any(String) });
+    expect(repo.html_url).toBe(`https://github.com/${repo.full_name}`);
+    expect(Date.parse(repo.pushed_at)).toBeGreaterThan(0);
+  });
 });
 
 live("RubyGems", () => {

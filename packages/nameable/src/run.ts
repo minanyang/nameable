@@ -239,7 +239,9 @@ export async function run(argv: string[], io: Io): Promise<number> {
     fetch: io.fetch,
     whois: io.whois,
     // Asking `gh` for a token can take a moment, so only when GitHub is checked.
-    githubToken: channels.some((c) => c.id === "github") ? await io.githubToken?.() : undefined,
+    githubToken: channels.some((c) => c.id.startsWith("github"))
+      ? await io.githubToken?.()
+      : undefined,
     store: io.cacheDir ? fileStore(io.cacheDir) : undefined,
     refresh: values.refresh,
     onResult: json

@@ -56,7 +56,7 @@ repository root) and it checks the channels the project ships on, picked from it
 - an Xcode project for the App Store, an Android app for Google Play, and an Expo or Flutter app for both
 - at an npm, pnpm, Yarn, Lerna or Cargo workspace root, the channels of each member, read the same way
 
-GitHub and domains are always checked; a project that ships on none of these, such as a Rails app or a Go library,
+GitHub accounts and repositories and domains are always checked; a project that ships on none of these, such as a Rails app or a Go library,
 gets only those (and Homebrew for a Go command). Outside a project it checks a general set: npm, PyPI, crates.io,
 Homebrew, GitHub and domains.
 
@@ -65,7 +65,7 @@ npx nameable nameable --all --tlds com,dev,sh
 ```
 
 ```
-Checking "nameable" on 23 channels
+Checking "nameable" on 25 channels
 
   ✗ npm                   taken              Find out if a name is free everywhere it matters for …
   ✓ PyPI                  available
@@ -77,6 +77,7 @@ Checking "nameable" on 23 channels
   ✓ NuGet                 probably available no package with this ID; reserved prefixes and the ty…
   ✓ Docker Hub            probably available no user or organization; deactivated or reserved Dock…
   ✓ GitHub user/org       probably available suspended, deleted or reserved accounts also look fre…
+  ✗ GitHub repository     taken              clash, not a block: dwightwatson/nameable (★30, pushe…
   ✓ MCP Registry          probably available no server uses this name in the registry as of 2026-10…
   ✓ Smithery              probably available no public servers; a namespace with none, or with onl…
   ✓ Claude plugins        available          not in the official marketplace
@@ -87,15 +88,17 @@ Checking "nameable" on 23 channels
   ✓ JetBrains Marketplace probably available no plugin with this name or ID; unapproved and hidden…
   ✓ App Store             probably available no app with this name in the US store; unreleased app…
   ✓ Google Play           probably available no app with this title in search results of the US st…
+  ✓ Trademarks (TW)       probably available no Taiwan trademark uses exactly this name as of 2026…
   ✗ .com                  taken              registered 1999-02-13, expires 2027-02-13
   ✓ .dev                  probably available not registered; a registry can still refuse premium o…
   ✓ .sh                   probably available not registered (whois); a registry can still refuse p…
 
-  npm       https://www.npmjs.com/package/nameable
-  RubyGems  https://rubygems.org/gems/nameable
-  .com      https://lookup.icann.org/en/lookup?name=nameable.com
+  npm                https://www.npmjs.com/package/nameable
+  RubyGems           https://rubygems.org/gems/nameable
+  GitHub repository  https://github.com/dwightwatson/nameable
+  .com               https://lookup.icann.org/en/lookup?name=nameable.com
 
-  20 available (16 probably) · 3 taken
+  21 available (17 probably) · 4 taken
 ```
 
 Several names show a grid to compare them:
@@ -118,14 +121,14 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
   Check one name at a time for the details behind each mark.
 ```
 
-| Option          |                                                                                                                                                                                                                                                                                                                          |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--all`         | Check every channel                                                                                                                                                                                                                                                                                                      |
-| `--only <ids>`  | Channels to check: `npm`, `pypi`, `crates`, `homebrew`, `rubygems`, `packagist`, `pub`, `nuget`, `docker`, `github`, `mcp-registry`, `smithery`, `claude-plugins`, `cursor`, `gemini`, `vscode`, `open-vsx`, `jetbrains`, `app-store`, `google-play`, `trademark-tw`, `domain` (every TLD in `--tlds`) or `domain:<tld>` |
-| `--tlds <list>` | Domains to check, any TLD, at most 20 (default `com,dev`). TLDs without RDAP, such as `.io`, `.sh` and `.de`, go through whois. With `--only`, include `domain`                                                                                                                                                          |
-| `--json`        | Print JSON; also the default when the output is not a terminal                                                                                                                                                                                                                                                           |
-| `--refresh`     | Download the registry name lists again                                                                                                                                                                                                                                                                                   |
-| `--clear-cache` | Delete the cached name lists                                                                                                                                                                                                                                                                                             |
+| Option          |                                                                                                                                                                                                                                                                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--all`         | Check every channel                                                                                                                                                                                                                                                                                                                     |
+| `--only <ids>`  | Channels to check: `npm`, `pypi`, `crates`, `homebrew`, `rubygems`, `packagist`, `pub`, `nuget`, `docker`, `github`, `github-repo`, `mcp-registry`, `smithery`, `claude-plugins`, `cursor`, `gemini`, `vscode`, `open-vsx`, `jetbrains`, `app-store`, `google-play`, `trademark-tw`, `domain` (every TLD in `--tlds`) or `domain:<tld>` |
+| `--tlds <list>` | Domains to check, any TLD, at most 20 (default `com,dev`). TLDs without RDAP, such as `.io`, `.sh` and `.de`, go through whois. With `--only`, include `domain`                                                                                                                                                                         |
+| `--json`        | Print JSON; also the default when the output is not a terminal                                                                                                                                                                                                                                                                          |
+| `--refresh`     | Download the registry name lists again                                                                                                                                                                                                                                                                                                  |
+| `--clear-cache` | Delete the cached name lists                                                                                                                                                                                                                                                                                                            |
 
 GitHub checks use `GITHUB_TOKEN`, `GH_TOKEN` or `gh auth token` when one is available, for a higher rate limit.
 
@@ -189,6 +192,7 @@ confirmed PyPI answer cannot cover them: names its admins prohibited, and names 
 | NuGet                 | ID rules, unlisted packages, IDs NuGet deleted but still holds; reserved prefixes and the typosquatting check are private, so a free answer is probable                                                                                                                                                                                                                                                                       |
 | Docker Hub            | Docker ID rules, users and organizations (including ones only a redirect reveals), official images; deactivated IDs are hidden, so a free answer is probable                                                                                                                                                                                                                                                                  |
 | GitHub                | Users and organizations; hidden accounts make a free answer probable                                                                                                                                                                                                                                                                                                                                                          |
+| GitHub repositories   | Repositories named exactly the name, ignoring case, among the first 100 results of GitHub's search, most recently active first; a name is unique only within an account, so a match is a clash, not a block, and since search covers neither forks nor results past the first 100, a free answer is probable                                                                                                                  |
 | Domains               | Any TLD through RDAP or whois, internationalized names, labels registries cannot accept                                                                                                                                                                                                                                                                                                                                       |
 | MCP Registry          | Servers whose name part matches, in any namespace, from a list of every server this project rebuilds daily from the registry API (its own search takes 30 seconds or more); nobody owns a bare name there, so a match is a clash and a free answer is probable                                                                                                                                                                |
 | Smithery              | Namespace rules; a namespace with no public servers also looks free, so a free answer is probable                                                                                                                                                                                                                                                                                                                             |
@@ -255,8 +259,8 @@ project can change in any release; pass `--only` to fix the channels.
 
 ## Planned channels
 
-Nameable checks npm, PyPI, crates.io, Homebrew, RubyGems, Packagist, pub.dev, NuGet, Docker Hub, GitHub users and
-organizations, the MCP Registry, Smithery, Claude Code's official plugin marketplace, Cursor's marketplace, the Gemini
+Nameable checks npm, PyPI, crates.io, Homebrew, RubyGems, Packagist, pub.dev, NuGet, Docker Hub, GitHub users,
+organizations and repositories, the MCP Registry, Smithery, Claude Code's official plugin marketplace, Cursor's marketplace, the Gemini
 CLI gallery, VS Code Marketplace, Open VSX, JetBrains Marketplace, the App Store, Google Play, Taiwan trademarks, and
 domains today. Each
 channel below was tested before it was listed: a request about a name gets an answer that tells an existing name apart

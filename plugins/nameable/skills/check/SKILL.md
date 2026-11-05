@@ -42,7 +42,8 @@ Check only what matters, and say which channels you picked and why.
 | Mobile app                             | `app-store`, `google-play`, `domain` with `com` first, `github`                      |
 | Consumer app or brand                  | `domain` with `com` first, `github`                                                  |
 
-Add `trademark-tw` when the project will be sold or marketed in Taiwan, or when the user asks about trademarks.
+Add `github-repo` wherever `github` is checked. Add `trademark-tw` when the project will be sold or marketed in
+Taiwan, or when the user asks about trademarks.
 
 Add TLDs the project would really use (`io`, `sh`, `app`, `ai`, a country code). Not every channel matters
 equally:
@@ -101,8 +102,9 @@ For every candidate still standing, look for someone who already built the same 
 
 - **Taken entries**: read the description behind each `taken` result. A package in the same category is the
   strongest signal.
-- **GitHub**: search repositories for the exact name; filter to exact repository names, because search matches
-  loosely.
+- **GitHub**: `github-repo` lists the repositories named exactly the name, most recently active first; read their
+  descriptions in `meta` for one in the same category; one under the user's own account is their own. Search further
+  only for close spellings.
 - **Web**: search the exact name in quotes with a word for the category. Ignore results the engine rewrote to a
   similar spelling.
 - **The category itself**: search what the project does (for example "name availability checker CLI") to find

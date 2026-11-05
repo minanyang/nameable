@@ -6,7 +6,15 @@ import { dirname, join, relative, resolve } from "node:path";
 export type Detection = { only: string[]; from: string[] };
 
 /** Checked when no manifest says what the project is: the channels most projects meet. */
-export const GENERAL_CHANNELS: string[] = ["npm", "pypi", "crates", "homebrew", "github", "domain"];
+export const GENERAL_CHANNELS: string[] = [
+  "npm",
+  "pypi",
+  "crates",
+  "homebrew",
+  "github",
+  "github-repo",
+  "domain",
+];
 
 const MCP_PACKAGES = /"(?:@modelcontextprotocol\/(?:sdk|server)|fastmcp|mcp-framework)"\s*:/;
 // A requirement such as "mcp[cli]>=1.2" or "fastmcp", inside a dependency list (not keywords).
@@ -579,7 +587,7 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
   for (const member of workspace?.members ?? []) {
     const found = await detect(join(dir, member), depth + 1);
     if (found) projects++;
-    const ids = found?.only.filter((id) => id !== "github" && id !== "domain") ?? [];
+    const ids = found?.only.filter((id) => !["github", "github-repo", "domain"].includes(id)) ?? [];
     // Only members that ship somewhere are named, not every internal package.
     if (!ids.length) continue;
     for (const id of ids) only.add(id);
@@ -592,7 +600,7 @@ async function detect(dir: string, depth: number): Promise<Detection | undefined
   if (workspace?.js && !projects && rootPublishes) pick("package.json", "npm");
 
   if (!from.length) return undefined;
-  return { only: [...only, "github", "domain"], from };
+  return { only: [...only, "github", "github-repo", "domain"], from };
 }
 
 /**

@@ -219,13 +219,13 @@ describe("channel selection", () => {
 
   it("picks channels from the project files in the current directory", async () => {
     expect(await header({ "Cargo.toml": "[package]" })).toBe(
-      'Checking "zz" on 4 channels (picked from Cargo.toml; --all for every channel)',
+      'Checking "zz" on 5 channels (picked from Cargo.toml; --all for every channel)',
     );
   });
 
   it("checks a general set outside a project", async () => {
     expect(await header({})).toBe(
-      'Checking "zz" on 7 channels (no project files found: general set; --all for every channel)',
+      'Checking "zz" on 8 channels (no project files found: general set; --all for every channel)',
     );
   });
 

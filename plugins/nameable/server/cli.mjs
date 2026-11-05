@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { a as clearStore, c as findProject, i as checkMany, l as selectChannels, n as GENERAL_CHANNELS, o as defaultCacheDir, r as channelIds, s as fileStore, t as DEFAULT_TLDS } from "./dist-DuWfWjTC.mjs";
+import { a as clearStore, c as findProject, i as checkMany, l as selectChannels, n as GENERAL_CHANNELS, o as defaultCacheDir, r as channelIds, s as fileStore, t as DEFAULT_TLDS } from "./dist-KigI7dim.mjs";
 import { createRequire } from "node:module";
 import { execFile } from "node:child_process";
 import { parseArgs, promisify, styleText } from "node:util";
@@ -279,7 +279,7 @@ async function run(argv, io) {
 		if (values.version) return io.stdout.write(`${version}\n`), 0;
 		if (mcp) {
 			if (Object.values(values).some((v) => v !== void 0)) throw new UsageError("`mcp` takes no options; the agent chooses them in each call");
-			const { serveMcp } = await import("./mcp-BzNisibL.mjs");
+			const { serveMcp } = await import("./mcp-DYZHHXS3.mjs");
 			const { githubToken, fetch, whois, cacheDir, mcpTransport } = io;
 			serveMcp({
 				version,
@@ -349,7 +349,7 @@ async function run(argv, io) {
 	const reports = await checkMany(names, channels, {
 		fetch: io.fetch,
 		whois: io.whois,
-		githubToken: channels.some((c) => c.id === "github") ? await io.githubToken?.() : void 0,
+		githubToken: channels.some((c) => c.id.startsWith("github")) ? await io.githubToken?.() : void 0,
 		store: io.cacheDir ? fileStore(io.cacheDir) : void 0,
 		refresh: values.refresh,
 		onResult: json ? void 0 : single ? render.liveTable(channels) : render.liveGrid(channels, names)

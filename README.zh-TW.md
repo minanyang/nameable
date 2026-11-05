@@ -45,14 +45,14 @@ Nameable 套用每個 registry 自己的規則（直接取自它們的原始碼�
 - Xcode 專案查 App Store、Android app 查 Google Play，Expo 或 Flutter app 兩個都查
 - 在 npm、pnpm、Yarn、Lerna 或 Cargo workspace 根目錄時，用同樣方式讀每個成員，合併它們的管道
 
-GitHub 和網域一定會查；不會發佈到上述任何地方的專案（例如 Rails app 或 Go 函式庫）就只查這兩個（Go 命令列工具加查 Homebrew）。不在專案裡時，查一組通用管道：npm、PyPI、crates.io、Homebrew、GitHub 和網域。
+GitHub 帳號、GitHub repo 和網域一定會查；不會發佈到上述任何地方的專案（例如 Rails app 或 Go 函式庫）就只查這兩個（Go 命令列工具加查 Homebrew）。不在專案裡時，查一組通用管道：npm、PyPI、crates.io、Homebrew、GitHub 和網域。
 
 ```sh
 npx nameable nameable --all --tlds com,dev,sh
 ```
 
 ```
-Checking "nameable" on 23 channels
+Checking "nameable" on 25 channels
 
   ✗ npm                   taken              Find out if a name is free everywhere it matters for …
   ✓ PyPI                  available
@@ -64,6 +64,7 @@ Checking "nameable" on 23 channels
   ✓ NuGet                 probably available no package with this ID; reserved prefixes and the ty…
   ✓ Docker Hub            probably available no user or organization; deactivated or reserved Dock…
   ✓ GitHub user/org       probably available suspended, deleted or reserved accounts also look fre…
+  ✗ GitHub repository     taken              clash, not a block: dwightwatson/nameable (★30, pushe…
   ✓ MCP Registry          probably available no server uses this name in the registry as of 2026-10…
   ✓ Smithery              probably available no public servers; a namespace with none, or with onl…
   ✓ Claude plugins        available          not in the official marketplace
@@ -74,15 +75,17 @@ Checking "nameable" on 23 channels
   ✓ JetBrains Marketplace probably available no plugin with this name or ID; unapproved and hidden…
   ✓ App Store             probably available no app with this name in the US store; unreleased app…
   ✓ Google Play           probably available no app with this title in search results of the US st…
+  ✓ Trademarks (TW)       probably available no Taiwan trademark uses exactly this name as of 2026…
   ✗ .com                  taken              registered 1999-02-13, expires 2027-02-13
   ✓ .dev                  probably available not registered; a registry can still refuse premium o…
   ✓ .sh                   probably available not registered (whois); a registry can still refuse p…
 
-  npm       https://www.npmjs.com/package/nameable
-  RubyGems  https://rubygems.org/gems/nameable
-  .com      https://lookup.icann.org/en/lookup?name=nameable.com
+  npm                https://www.npmjs.com/package/nameable
+  RubyGems           https://rubygems.org/gems/nameable
+  GitHub repository  https://github.com/dwightwatson/nameable
+  .com               https://lookup.icann.org/en/lookup?name=nameable.com
 
-  20 available (16 probably) · 3 taken
+  21 available (17 probably) · 4 taken
 ```
 
 一次查好幾個名稱時，會用表格比較：
@@ -105,14 +108,14 @@ npx nameable twinsy dupefind fclones --only crates,homebrew,github,domain --tlds
   Check one name at a time for the details behind each mark.
 ```
 
-| 選項            |                                                                                                                                                                                                                                                                                                                   |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--all`         | 查全部管道                                                                                                                                                                                                                                                                                                        |
-| `--only <ids>`  | 要查的管道：`npm`、`pypi`、`crates`、`homebrew`、`rubygems`、`packagist`、`pub`、`nuget`、`docker`、`github`、`mcp-registry`、`smithery`、`claude-plugins`、`cursor`、`gemini`、`vscode`、`open-vsx`、`jetbrains`、`app-store`、`google-play`、`trademark-tw`、`domain`（`--tlds` 裡的每個 TLD）或 `domain:<tld>` |
-| `--tlds <list>` | 要查的網域，任何 TLD 都可以，最多 20 個（預設 `com,dev`）。沒有 RDAP 的 TLD，例如 `.io`、`.sh`、`.de`，會改用 whois。搭配 `--only` 時要包含 `domain`                                                                                                                                                              |
-| `--json`        | 輸出 JSON；輸出不是終端機時預設就是 JSON                                                                                                                                                                                                                                                                          |
-| `--refresh`     | 重新下載 registry 的名稱清單                                                                                                                                                                                                                                                                                      |
-| `--clear-cache` | 刪除快取的名稱清單                                                                                                                                                                                                                                                                                                |
+| 選項            |                                                                                                                                                                                                                                                                                                                                  |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--all`         | 查全部管道                                                                                                                                                                                                                                                                                                                       |
+| `--only <ids>`  | 要查的管道：`npm`、`pypi`、`crates`、`homebrew`、`rubygems`、`packagist`、`pub`、`nuget`、`docker`、`github`、`github-repo`、`mcp-registry`、`smithery`、`claude-plugins`、`cursor`、`gemini`、`vscode`、`open-vsx`、`jetbrains`、`app-store`、`google-play`、`trademark-tw`、`domain`（`--tlds` 裡的每個 TLD）或 `domain:<tld>` |
+| `--tlds <list>` | 要查的網域，任何 TLD 都可以，最多 20 個（預設 `com,dev`）。沒有 RDAP 的 TLD，例如 `.io`、`.sh`、`.de`，會改用 whois。搭配 `--only` 時要包含 `domain`                                                                                                                                                                             |
+| `--json`        | 輸出 JSON；輸出不是終端機時預設就是 JSON                                                                                                                                                                                                                                                                                         |
+| `--refresh`     | 重新下載 registry 的名稱清單                                                                                                                                                                                                                                                                                                     |
+| `--clear-cache` | 刪除快取的名稱清單                                                                                                                                                                                                                                                                                                               |
 
 有 `GITHUB_TOKEN`、`GH_TOKEN` 或 `gh auth token` 時，GitHub 查詢會使用它，以取得較高的 rate limit。
 
@@ -165,6 +168,7 @@ plugin 內附一份 CLI，用 Node.js 22 以上執行。安裝時，Claude Code 
 | NuGet                 | ID 規則、unlisted 套件、NuGet 刪除但仍保留的 ID；保留前綴和 typosquatting 檢查不公開，所以「可用」只能是 probable                                                                                                                                                                 |
 | Docker Hub            | Docker ID 規則、使用者和組織（包括只有轉址才看得出來的帳號）、官方 image；停用的帳號看不到，所以「可用」只能是 probable                                                                                                                                                           |
 | GitHub                | 使用者和組織；隱藏的帳號讓「可用」只能是 probable                                                                                                                                                                                                                                 |
+| GitHub repo           | 在 GitHub 搜尋的前 100 筆結果中，找名稱完全相同（不分大小寫）的 repo，近期活躍的排前面；repo 名稱只在同一個帳號內唯一，所以查到是撞名，不一定會被擋；搜尋不含 fork，也看不到前 100 筆以外的結果，所以「可用」只能是 probable                                                      |
 | 網域                  | 任何 TLD，透過 RDAP 或 whois；國際化網域名稱；registry 無法接受的 label                                                                                                                                                                                                           |
 | MCP Registry          | 任何 namespace 下名稱部分相同的 server，資料來自本專案每天從 registry API 重建的完整 server 清單（registry 自己的搜尋一次要 30 秒以上）；名稱部分沒有人能擁有，所以查到同名代表撞名，「可用」只能是 probable                                                                      |
 | Smithery              | Namespace 命名規則；沒有公開 server 的 namespace 看起來也是空的，所以「可用」只能是 probable                                                                                                                                                                                      |
@@ -218,7 +222,7 @@ plugin 內附一份 CLI，用 Node.js 22 以上執行。安裝時，Claude Code 
 
 ## 預計加入的管道
 
-Nameable 目前查詢 npm、PyPI、crates.io、Homebrew、RubyGems、Packagist、pub.dev、NuGet、Docker Hub、GitHub 使用者和組織、MCP Registry、Smithery、Claude Code 官方 plugin marketplace、Cursor marketplace、Gemini CLI 擴充目錄、VS Code Marketplace、Open VSX、JetBrains Marketplace、App Store、Google Play、台灣商標，以及網域。下列每個管道在列出前都實際測試過：查詢一個名稱時，回應能分辨「已存在」和「不存在」。
+Nameable 目前查詢 npm、PyPI、crates.io、Homebrew、RubyGems、Packagist、pub.dev、NuGet、Docker Hub、GitHub 使用者、組織和 repo、MCP Registry、Smithery、Claude Code 官方 plugin marketplace、Cursor marketplace、Gemini CLI 擴充目錄、VS Code Marketplace、Open VSX、JetBrains Marketplace、App Store、Google Play、台灣商標，以及網域。下列每個管道在列出前都實際測試過：查詢一個名稱時，回應能分辨「已存在」和「不存在」。
 
 | 類別     | 管道               |
 | -------- | ------------------ |

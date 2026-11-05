@@ -1,4 +1,4 @@
-import { i as checkMany, l as selectChannels, r as channelIds, s as fileStore, t as DEFAULT_TLDS } from "./dist-DuWfWjTC.mjs";
+import { i as checkMany, l as selectChannels, r as channelIds, s as fileStore, t as DEFAULT_TLDS } from "./dist-KigI7dim.mjs";
 import { Readable } from "node:stream";
 import { McpServer } from "@modelcontextprotocol/server";
 import { StdioServerTransport, serveStdio } from "@modelcontextprotocol/server/stdio";
@@ -33,7 +33,8 @@ Each result has a status:
   that public data allows was checked; "probable" means one could not be, and note says which.
 - reclaimable: held before but released; it can be taken again.
 - taken: someone holds it; url shows who. Where names are not exclusive (MCP Registry, Google Play, Gemini
-  CLI gallery, trademarks) it means another entry uses the name, and note says it does not block a new one.
+  CLI gallery, GitHub repositories, trademarks) it means another entry uses the name, and note says it does
+  not block a new one.
 - unavailable: nobody holds it exactly, but the registry would refuse it (invalid, reserved, too
   similar to an existing name, or blocked for now after a deletion); note says why.
 - unknown: no trustworthy answer (network error, rate limit). Never treat it as free.
@@ -98,7 +99,7 @@ function createMcpServer(deps) {
 				shared,
 				fetch: deps.fetch,
 				whois: deps.whois,
-				githubToken: channels.some((c) => c.id === "github") ? await deps.githubToken?.() : void 0,
+				githubToken: channels.some((c) => c.id.startsWith("github")) ? await deps.githubToken?.() : void 0,
 				store: deps.cacheDir ? fileStore(deps.cacheDir) : void 0,
 				refresh
 			}).finally(() => {
