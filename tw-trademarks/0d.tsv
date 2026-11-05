@@ -1,7 +1,7 @@
 #nameable-data tw-trademarks v1
 #source	Taiwan Intellectual Property Office open data, under the Open Government Data License, version 1.0
 #shard	0d/16
-#asof	2026-11-03T00:00:00.000Z
+#asof	2026-11-04T00:00:00.000Z
 0101	0101	25	registered	090032387
 0101	0101	35	registered	102022068
 0416x1024及屋形圖	'0416x1024 及屋形圖	25	registered	100030920
@@ -4303,7 +4303,6 @@ beethoven	貝多芬及圖Beethoven	old:27	registered	077039172
 beethoven	貝多芬音樂教室及圖BEETHOVEN	15	registered	089056029
 beethoven	貝多芬BEETHOVEN	33	registered	096020613
 beethoven	貝多芬 BEETHOVEN	20	registered	096025847
-beethoven	Bee Thoven	9	applied	112076687
 beetlesinitial	蟲心初現 Beetles lnitial 及圖	31	registered	111074441
 beeworld	蜜蜂世界BEE WORLD	30	registered	085042559
 beeworld	蜜蜂世界BEE WORLD	29	registered	085045304
@@ -10818,8 +10817,6 @@ deerchaser	DEER CHASER	41	registered	111019388
 deerchaser	DEER CHASER	43	registered	111019389
 deerday	鹿日 Deer Day及圖	35	registered	107027578
 deerday	鹿日 Deer Day及圖	30	registered	107027579
-deerdrunk	白鹿依山境 Deerdrunk	43	applied	112076438
-deerdrunk	白鹿依山境 Deerdrunk	43	applied	112076445
 deerdrunk	白鹿依山境 Deerdrunk	43	registered	112076449
 deerjoy	deerjoy	5,29,30,32,33,35,43	registered	107047702
 deermoment	森日暖光Deer Moment及圖	41	applied	115039813
@@ -18411,7 +18408,6 @@ guardol	GUARDOL（墨色）	old:14	registered	064031635
 guardready	GuardReady及圖	8,9,18	applied	115057169
 gubao	gubao	3	registered	112058486
 gubao	gubao	5	registered	112058487
-gubeauty	水漾女孩gubeauty及圖	5	applied	112076372
 guccibloom	GUCCI BLOOM (device)	3	registered	106066081
 gudeng	Gudeng及圖	20	registered	090046457
 gudeng	Gudeng	7	registered	100015950
@@ -29641,7 +29637,6 @@ makerddianchuangtechnology	MAKER D CT Dian Chuang Technology 電創科技有限�
 makersbasepersonalbrandsupporterm	Makers' Base Personal Brand Supporter 及圖	40	registered	109041591
 makersbasepersonalbrandsupporterm	Makers' Base Personal Brand Supporter 及圖	41	registered	109041595
 makerstudio	MAKER STUDIO	12,35,40	applied	115049331
-makethefirstmove	MAKE THE FIRST MOVE	9,35,38,41,42,45	applied	112076246
 maketure	Maketure	3	applied	115040111
 mako	MAKO (word mark)	36	registered	099021902
 mako	MAKO	9,10	registered	105028918
@@ -71987,7 +71982,6 @@ zzzerolabelzerowaste	ZEROLABEL ZEROWASTE及圖	16,20,35	applied	113025806
 川井	川井	11	registered	097033649
 川井	川井及圖	37	registered	110047059
 川井	川井及圖	44	registered	110047060
-川井	川井	5	applied	112076282
 川井	川井KAWAI及圖	9	applied	115018977
 川伯麵	川伯の麵	43	registered	106070509
 川元參藥行	川元、川元參藥行、CHUAN‧YUAN 及圖	35	registered	110021370
@@ -86523,10 +86517,8 @@ zzzerolabelzerowaste	ZEROLABEL ZEROWASTE及圖	16,20,35	applied	113025806
 標章圖	標章圖	45	registered	112075682
 標章圖	標章圖	43	registered	112075683
 標章圖	標章圖	43	registered	112076235
-標章圖	標章圖	25	applied	112076298
 標章圖	標章圖	43	registered	112076655
 標章圖	標章圖	39	registered	112076658
-標章圖	標章圖	43	applied	112076660
 標章圖	標章圖	5	registered	112076722
 標章圖	標章圖	18	registered	112077002
 標章圖	標章圖	20	registered	112077003
@@ -113637,4 +113629,4 @@ zzzerolabelzerowaste	ZEROLABEL ZEROWASTE及圖	16,20,35	applied	113025806
 龜霸王	龜霸王	43	applied	115019950
 龜鹿高高	龜鹿高高及圖	5	registered	111042892
 龢雨軒	龢雨軒	21	registered	102023356
-#end	113635
+#end	113627

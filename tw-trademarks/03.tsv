@@ -1,7 +1,7 @@
 #nameable-data tw-trademarks v1
 #source	Taiwan Intellectual Property Office open data, under the Open Government Data License, version 1.0
 #shard	03/16
-#asof	2026-11-03T00:00:00.000Z
+#asof	2026-11-04T00:00:00.000Z
 007andgun	007 and Gun Design	9	registered	090047598
 007andgun	007 and Gun Design	25	registered	090047601
 007andgun	007 and  Gun  Design	28	registered	090047604
@@ -56585,7 +56585,6 @@ zzt	台東製造及圖	41	registered	107081074
 ハン	夯麻辣天外天Hangハン設計圖	35	registered	109057168
 ハン	夯麻辣天外天Hangハン設計圖	43	registered	109057169
 ハーバルスリー	ハーバルスリー Herbalthree	3	registered	112038582
-バイオロッケト	Bio Rocket バイオ　ロッケト及圖	5	applied	112076384
 バイソン	野牛及圖BISON バィソン	7	registered	087800582
 バイソン	野牛及圖BISON   バイソン	8	registered	087800584
 バイソン	BI  SON バイソン 及圖	17	registered	089800208
@@ -90278,8 +90277,6 @@ zzt	台東製造及圖	41	registered	107081074
 老客馥	老客馥	16	registered	105060055
 老客馥	老客馥	29	registered	105060061
 老客馥	老客馥	35	registered	105060062
-老屋不能倒	老屋不能倒	37	applied	112076343
-老屋不能倒	老屋不能倒	43	applied	112076347
 老山檀	老山檀（墨色）	old:12	registered	071019333
 老山西	老山西及圖 Old shanxi	43	registered	106013398
 老山野生茶	老山野生茶	30	registered	105012781
@@ -102281,7 +102278,6 @@ zzt	台東製造及圖	41	registered	107081074
 鴻運港式飲茶	鴻運港式飲茶LUCKY HK STYLE 24HR RESTAURANT及圖	43	registered	092020519
 鴻醫	鴻醫 HDM+	10,35	registered	105033827
 鴻鈦自動化股份有限公司	鴻鈦自動化股份有限公司標章	7	registered	113082355
-鴻騂國際有限公司	設計圖	39	applied	112076500
 鴻麗	鴻麗	35	registered	107082273
 鴻麗	鴻麗	36	registered	107082274
 鴻麗	鴻麗	37	registered	107082275
@@ -103239,4 +103235,4 @@ zzt	台東製造及圖	41	registered	107081074
 龜記冰	龜記冰CRAZY ICE BAR及圖	35	registered	108073711
 龜記冰	龜記冰 CRAZY ICE BAR 及圖	32	registered	109082474
 龜豆冰室	龜豆冰室TURTLE DO及圖	30	applied	114053464
-#end	103237
+#end	103233

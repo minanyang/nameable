@@ -1,7 +1,7 @@
 #nameable-data tw-trademarks v1
 #source	Taiwan Intellectual Property Office open data, under the Open Government Data License, version 1.0
 #shard	09/16
-#asof	2026-11-03T00:00:00.000Z
+#asof	2026-11-04T00:00:00.000Z
 0260	0260（Logo）	25,30,43	applied	114087401
 1021	1021及圖	43	registered	113000773
 1050	1050（墨色）	old:69	registered	071030480
@@ -4759,7 +4759,6 @@ biorion	biorion設計字	35	registered	109068866
 biorion	biorion設計字	42	registered	109068867
 biorion	biorion	1	registered	114052107
 bioris	BIORIS 及圖	3	registered	108072187
-biorocket	Bio Rocket バイオ　ロッケト及圖	5	applied	112076384
 biorosea	BIOROSEA	5	registered	108057847
 biosarom	普羅香頌 BIOSAROM 及圖	3	registered	095011796
 biosciencehumanitiesandartstciacademyreadwritethinkdream	TCI及圖	41	registered	107053491
@@ -17165,16 +17164,11 @@ fuji	FUJI	45	registered	110062271
 fuji	FUJI	7	registered	112002451
 fuji	FUJI	7	registered	112006634
 fuji	FUJI富士	7	registered	112006636
-fuji	FUJI按摩椅及圖(一)	20	applied	112076457
 fuji	FUJI按摩椅及圖(二)	20	registered	112076458
 fuji	FUJI按摩椅及圖	24	registered	112076459
-fuji	FUJI按摩椅及圖(一)	35	applied	112076460
 fuji	FUJI按摩椅及圖(二)	35	registered	112076461
-fuji	FUJI及圖	20	applied	112076462
-fuji	FUJI及圖(一)	35	applied	112076463
 fuji	FUJI及圖(二)	35	registered	112076464
 fuji	FUJI富士及圖	35	registered	112076466
-fuji	FUJI富士及圖	35	applied	112076467
 fuji	不二車坊及圖	9	registered	112081230
 fuji	不二車坊及圖	35	registered	112081231
 fuji	不二車坊及圖	37	registered	112081232
@@ -22104,7 +22098,6 @@ hunlo	HUNLO	11	registered	112014861
 hunming	HUNMING  及其設計圖	6	registered	090022219
 hunming	HUNMING 及其設計圖	20	registered	090022220
 hunming	HUNMING  及其設計圖	35	registered	090022221
-hunterfitness	Hunter fitness及圖	32,41	applied	112076492
 hunterinternational	HUNTER INTERNATIONAL	8	registered	096024557
 huntington	HUNTINGTON	20	registered	109016949
 huntiso	HUNTISO	5	registered	108040081
@@ -31423,10 +31416,7 @@ mimi	mimi洗染車縫鞋包皮件及圖	37	registered	112071474
 mimi	mimi洗染車縫鞋包皮件及圖	40	registered	112071476
 mimi	何Mimi彥蓁及圖	44	registered	112073573
 mimi	烘焙生活坊mimi設計字及圖	29	registered	112076395
-mimi	烘焙生活坊mimi設計字及圖	30	applied	112076396
 mimi	烘焙生活坊mimi設計字及圖	31	registered	112076397
-mimi	烘焙生活坊mimi設計字及圖	35	applied	112076398
-mimi	烘焙生活坊mimi設計字及圖	43	applied	112076399
 mimi	烘焙生活坊mimi設計字及圖	35	applied	112076574
 mimi	MIMI 寶島越式沐髮の美學及圖	44	registered	112079632
 mimi	Mi Mi 設計圖	18	applied	113001390
@@ -67348,7 +67338,6 @@ zzzcoffee	ZZZ Coffee及圖	30	registered	111002287
 大格	大格	5	registered	108060543
 大格	大格	30	registered	108060544
 大格	大格	35	registered	108060547
-大森醫研	大森醫研	5	applied	112076285
 大業水族	大業水族 Daye aqua 及圖	7,31	registered	107024638
 大榔頭	大榔頭	old:24	registered	078036137
 大榔頭	大榔頭	old:20	registered	078036138
@@ -90035,14 +90024,6 @@ zzzcoffee	ZZZ Coffee及圖	30	registered	111002287
 聲紋製作	聲紋製作	41	applied	115004291
 聲紋製作	聲紋製作	41	applied	115056820
 聲量音創學院	1500 聲量音創學院 SOUND ACADEMY 及圖	9,16,18,21,25,35,41,45	registered	111037535
-聲量音創學院	聲量音創學院	9	applied	112076184
-聲量音創學院	聲量音創學院	16	applied	112076191
-聲量音創學院	聲量音創學院	18	applied	112076193
-聲量音創學院	聲量音創學院	21	applied	112076195
-聲量音創學院	聲量音創學院	25	applied	112076197
-聲量音創學院	聲量音創學院	35	applied	112076198
-聲量音創學院	聲量音創學院	41	applied	112076206
-聲量音創學院	聲量音創學院	45	applied	112076211
 聲鶴	聲鶴 SUN HOPE 及圖	2	registered	099021881
 聲鶴	聲鶴 SUN HOPE 及圖	20	registered	099021882
 聲鶴	聲鶴 SUN HOPE 及圖	35	registered	099021884
@@ -102547,4 +102528,4 @@ zzzcoffee	ZZZ Coffee及圖	30	registered	111002287
 龜鹿二仙丸	龜鹿二仙丸及圖	5	registered	111001485
 龜鹿杞凍	龜鹿杞凍	5	registered	111014732
 龜鹿杞凍	龜鹿杞凍	35	registered	111014733
-#end	102545
+#end	102526

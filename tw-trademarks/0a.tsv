@@ -1,7 +1,7 @@
 #nameable-data tw-trademarks v1
 #source	Taiwan Intellectual Property Office open data, under the Open Government Data License, version 1.0
 #shard	0a/16
-#asof	2026-11-03T00:00:00.000Z
+#asof	2026-11-04T00:00:00.000Z
 003	0.03	10	registered	095032530
 01	01 及圖	9,35	registered	102034541
 01	0_1	25	registered	103045220
@@ -38573,7 +38573,6 @@ prpuntoroma	PR PUNT O ROMA 及圖	25	registered	101023727
 prqstar	PRQSTAR	14	registered	105026649
 prrsfree	寬活 PRRSFREE	5	registered	098043455
 prsr	帕莎 Prsr及圖	9	registered	104032200
-prsr	PRSR	35	applied	112076685
 prtcpartice	帕爾堤絲 PARTICE PRTC 及圖	25	registered	097016691
 prtg	PRTG	9	registered	110002559
 pruman	PRUMAN & Device	8	registered	109079561
@@ -50625,7 +50624,6 @@ votatex	Votatex	24	expiring	105009027
 votatex	Votatex	25	expiring	105009029
 vowoliviawang	VOW OLIVIA WANG設計字	16,20	applied	114009476
 voyageenikat	VOYAGE EN IKAT	21	registered	103029469
-voyagelevoyagecestlavie	Voyage Le voyage ， c'est la vie	18	applied	112076470
 voylux	VoyLux 設計字（彩色）	18	registered	098042484
 vpap	VPAP	10	registered	086041140
 vpet	VPET及圖	35	registered	090001910
@@ -63803,7 +63801,6 @@ zzzs	王威竣設計標章	35	registered	109071186
 喝一杯一起美麗吧	MELIBAR 喝一杯一起美麗吧 MELILEA及圖	32	registered	110024388
 喝一杯一起美麗吧	MELIBAR 喝一杯一起美麗吧 MELILEA及圖	30	registered	110024389
 喝一杯尚飲	喝一杯尚飲 DRINK INTO HEART及圖	43	registered	110009815
-喝喝茶日月天地	喝喝茶日月天地	41	applied	112076426
 喝得旺	喝得旺	43	registered	097056073
 喝得旺	喝得旺	43	registered	098001615
 喝爽不超標	喝爽不超標	32	applied	114059931
@@ -81815,10 +81812,7 @@ zzzs	王威竣設計標章	35	registered	109071186
 烏龜圖	烏龜圖(二)	25	registered	109056659
 烏龜圖	烏龜圖	36	registered	114068053
 烘焙生活坊	烘焙生活坊mimi設計字及圖	29	registered	112076395
-烘焙生活坊	烘焙生活坊mimi設計字及圖	30	applied	112076396
 烘焙生活坊	烘焙生活坊mimi設計字及圖	31	registered	112076397
-烘焙生活坊	烘焙生活坊mimi設計字及圖	35	applied	112076398
-烘焙生活坊	烘焙生活坊mimi設計字及圖	43	applied	112076399
 烘焙生活坊	烘焙生活坊mimi設計字及圖	35	applied	112076574
 烘豆賞賞	烘豆賞賞及圖	11	registered	109086142
 烘豆賞賞	烘豆賞賞及圖	30	registered	109086143
@@ -91679,7 +91673,6 @@ zzzs	王威竣設計標章	35	registered	109071186
 藍貓	藍貓Blue Cat設計字及圖	35	registered	108036243
 藍貓	藍貓 Blue cat	41	applied	115044614
 藍輝	藍輝(簡體字)LANHUI	16	applied	115072284
-藍逸牧場	藍逸牧場及圖	30	applied	112076329
 藍金磚	藍金磚	35,36	registered	110029946
 藍鯨聚脲	藍鯨 BLUE WHALE 聚脲及圖	2	applied	115046462
 藍鳥	藍鳥	old:82	registered	080046839
@@ -101219,4 +101212,4 @@ zzzs	王威竣設計標章	35	registered	109071186
 龜隱田園	龜隱田園及圖	35	registered	110041322
 龜鹿泌粹	龜鹿泌粹GuiLu ExoEssence及圖	3	applied	115062231
 龜鹿泌粹	龜鹿泌粹GuiLu ExoEssence及圖	5	applied	115062232
-#end	101217
+#end	101210
